@@ -1,7 +1,9 @@
 import React from 'react';
 import Sidebar from './Sidebar';
+import { useSiteConfig } from './SiteConfigContext';
 
 function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarCollapsed, activePath, footerText }) {
+  const { siteFooter } = useSiteConfig();
   return (
     <div className="el-layout">
       <Sidebar
@@ -30,7 +32,7 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
           {children}
         </div>
         <footer className="el-footer">
-          <p>{footerText || '© 无锡职业技术大学    Powered By 信息化与数据服务中心'}</p>
+          <p>{footerText || siteFooter}</p>
         </footer>
       </div>
     </div>

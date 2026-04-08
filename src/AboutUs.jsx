@@ -70,7 +70,6 @@ function AboutUs() {
       title="关于我们"
       isSidebarCollapsed={isSidebarCollapsed}
       setIsSidebarCollapsed={setIsSidebarCollapsed}
-      footerText="© 无锡职业技术大学    Powered By 信息化与数据服务中心"
     >
       {/* WIKI标题和信息 */}
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>

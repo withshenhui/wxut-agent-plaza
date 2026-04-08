@@ -1,151 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from './components/PageLayout';
+import { searchModels } from './api/model';
 
 function ModelManagement() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(null);
+  const [models, setModels] = useState({ general: [], vertical: [] });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 模拟模型数据
-  const [models, setModels] = useState({
-    general: [
-      {
-        id: 1,
-        name: 'deepeek-r1-distill-qwen',
-        provider: '震泽',
-        type: '推理',
-        description: '320亿参数精简模型，强化性能与长文本处理效率。',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/deepseek.svg'
-      },
-      {
-        id: 2,
-        name: 'deepeek-v3-671b',
-        provider: '震泽',
-        type: '文本生成',
-        description: 'V形架构超大模型，本土版本，拥有6710亿参数，支持128K上下文长度的强大AI语言模型，擅长长文本理解、复杂推理和多语言任务。',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/deepseek.svg'
-      },
-      {
-        id: 3,
-        name: 'deepeek-r1-671b',
-        provider: '震泽',
-        type: '文本生成',
-        description: '6710亿参数的高效能推理优化模型，专注于长文本理解与延迟响应。',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/deepseek.svg'
-      },
-      {
-        id: 4,
-        name: 'qwen2.5-instruct',
-        provider: '4.0',
-        type: '文本生成',
-        description: '70亿参数指令优化模型，强化多轮对话与复杂任务执行能力。',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/qwen2.svg'
-      },
-      {
-        id: 5,
-        name: 'bge-m3',
-        provider: 'BAAI',
-        type: '嵌入',
-        description: '新一代多语言嵌入模型（Embedding），支持多语言文本向量化，优化检索与语义匹配任务，适应短文本混合场景。',
-        date: '2025-03-01',
-        tags: ['接入中', '限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/zhiyuan.svg'
-      },
-      {
-        id: 6,
-        name: 'bge-reranker-v2-m3',
-        provider: 'BAAI',
-        type: 'Reranker',
-        description: '基于BGE-M3优化的高性能重排模型，增强跨语言检索结果精度，适配短文本混合场景。',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/zhiyuan.svg'
-      },
-      {
-        id: 7,
-        name: 'QWQ-32B',
-        provider: '震泽',
-        type: '大模型',
-        description: 'QWQ-32B通过大规模模型学习，实现了在数学推理和代码生成等核心场景中的卓越表现，同时将部署成本压缩至消费级显卡可承载范围',
-        date: '2025-03-01',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/qwen2.svg'
-      },
-      {
-        id: 8,
-        name: 'qwen3',
-        provider: '震泽',
-        type: '大模型',
-        description: 'Qwen-3.2在推理、指令理解、代理能力和多语言支持方面取得了突破性的进展，支持思考链测试和非思考链测试的无缝切换。',
-        date: '2025-04-29',
-        tags: ['限时免费'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'https://assets.watone.cn/model_image/qwen2.svg'
-      }
-    ],
-    vertical: [
-      {
-        id: 9,
-        name: '智造锡言校本大模型',
-        provider: '无锡职大',
-        type: '校本大模型',
-        description: '基于无锡职业技术大学特色打造的校本大模型，融合学校教学、科研、管理等多维度数据，为师生提供个性化智能服务。',
-        date: '2025-06-01',
-        tags: ['校本', '特色'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'http://210.28.145.186:3001/plaza/avatar.png'
-      },
-      {
-        id: 10,
-        name: '汽车专业领域垂类模型',
-        provider: '无锡职大',
-        type: '垂类模型',
-        description: '针对汽车专业领域优化的AI模型，涵盖汽车构造、维修、设计等专业知识，为汽车专业师生提供精准的智能辅助。',
-        date: '2025-07-15',
-        tags: ['汽车', '专业'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'http://210.28.145.186:3001/plaza/avatar.png'
-      },
-      {
-        id: 11,
-        name: '人工智能专业领域垂类模型',
-        provider: '无锡职大',
-        type: '垂类模型',
-        description: '聚焦人工智能专业领域的深度模型，覆盖机器学习、深度学习、自然语言处理等核心知识，助力AI专业教学与研究。',
-        date: '2025-08-10',
-        tags: ['人工智能', '专业'],
-        apiDocs: '#',
-        tryout: '#',
-        icon: 'http://210.28.145.186:3001/plaza/avatar.png'
-      }
-    ]
-  });
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([
+      searchModels({ category: 'general', size: 50 }).catch(() => ({ records: [] })),
+      searchModels({ category: 'vertical', size: 50 }).catch(() => ({ records: [] })),
+    ]).then(([generalRes, verticalRes]) => {
+      setModels({
+        general: generalRes.records || [],
+        vertical: verticalRes.records || [],
+      });
+    }).finally(() => setIsLoading(false));
+  }, []);
+
+  const currentModels = models[activeTab] || [];
 
   return (
     <PageLayout
@@ -153,7 +31,6 @@ function ModelManagement() {
       title="模型服务"
       isSidebarCollapsed={isSidebarCollapsed}
       setIsSidebarCollapsed={setIsSidebarCollapsed}
-      footerText="© 无锡职业技术大学    Powered By 信息化与数据服务中心"
     >
       {/* 提示信息 */}
       <div className="el-alert el-alert--warning">
@@ -178,51 +55,57 @@ function ModelManagement() {
 
       {/* 模型列表 */}
       <div className="el-grid el-grid--models">
-        {models[activeTab].map(model => (
-          <div key={model.id} className="el-model-card">
-            {/* 模型头部 */}
-            <div className="el-model-card__header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div className="el-model-card__icon">
-                  <img src={model.icon} alt={model.name} />
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>加载中...</div>
+        ) : currentModels.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无模型数据</div>
+        ) : (
+          currentModels.map(model => (
+            <div key={model.id} className="el-model-card">
+              {/* 模型头部 */}
+              <div className="el-model-card__header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div className="el-model-card__icon">
+                    <img src={model.iconUrl} alt={model.name} />
+                  </div>
+                  <div>
+                    <div className="el-model-card__name">{model.name}</div>
+                    <div className="el-model-card__meta">{model.provider} · {model.type}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="el-model-card__name">{model.name}</div>
-                  <div className="el-model-card__meta">{model.provider} · {model.type}</div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {(model.tags || []).map((tag, index) => (
+                    <span key={index} className={`el-badge ${tag === '接入中' ? 'el-badge--warning' : 'el-badge--primary'}`}>
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                {model.tags.map((tag, index) => (
-                  <span key={index} className={`el-badge ${tag === '接入中' ? 'el-badge--warning' : 'el-badge--primary'}`}>
-                    {tag}
-                  </span>
-                ))}
+
+              {/* 模型描述 */}
+              <div className="el-model-card__desc">{model.description}</div>
+
+              {/* 模型底部 */}
+              <div className="el-model-card__footer">
+                <div className="el-model-card__date">{model.releaseDate}</div>
+                <div className="el-model-card__actions">
+                  <button
+                    className="el-button--text"
+                    onClick={() => {
+                      setSelectedModel(model);
+                      setIsDrawerOpen(true);
+                    }}
+                  >
+                    API调用说明
+                  </button>
+                  {!(model.tags || []).includes('接入中') && model.tryoutUrl && (
+                    <a href={model.tryoutUrl} target="_blank" rel="noreferrer" className="el-link">体验使用</a>
+                  )}
+                </div>
               </div>
             </div>
-
-            {/* 模型描述 */}
-            <div className="el-model-card__desc">{model.description}</div>
-
-            {/* 模型底部 */}
-            <div className="el-model-card__footer">
-              <div className="el-model-card__date">{model.date}</div>
-              <div className="el-model-card__actions">
-                <button
-                  className="el-button--text"
-                  onClick={() => {
-                    setSelectedModel(model);
-                    setIsDrawerOpen(true);
-                  }}
-                >
-                  API调用说明
-                </button>
-                {!model.tags.includes('接入中') && (
-                  <a href="#" className="el-link">体验使用</a>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* API调用说明抽屉遮罩层 */}

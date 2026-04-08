@@ -38,7 +38,6 @@ function DigitalCampusPlanning() {
       title="AI科普"
       isSidebarCollapsed={isSidebarCollapsed}
       setIsSidebarCollapsed={setIsSidebarCollapsed}
-      footerText="© 无锡职业技术大学    Powered By 信息化与数据服务中心"
     >
       <div style={{ display: 'flex', gap: '20px', maxWidth: '1600px', margin: '0 auto', width: '100%' }} ref={contentRef}>
         {/* 左侧主要内容 */}
