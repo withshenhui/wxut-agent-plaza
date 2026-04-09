@@ -22,6 +22,8 @@ import UserManagePage from './admin/pages/UserManagePage';
 import ConfigManagePage from './admin/pages/ConfigManagePage';
 import FileManagePage from './admin/pages/FileManagePage';
 import LogManagePage from './admin/pages/LogManagePage';
+import CasCallback from './CasCallback';
+import { UserProvider } from './UserContext';
 
 const staticTabs = [
   { key: 'all', label: '全部' },
@@ -161,9 +163,11 @@ function App() {
   return (
     <SiteConfigProvider>
     <Router>
+      <UserProvider>
       <Routes>
         {/* 前台页面 */}
         <Route path="/" element={<Home />} />
+        <Route path="/cas-callback" element={<CasCallback />} />
         <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/campus-planning" element={<DigitalCampusPlanning />} />
         <Route path="/about" element={<AboutUs />} />
@@ -186,6 +190,7 @@ function App() {
           <Route path="logs" element={<LogManagePage />} />
         </Route>
       </Routes>
+      </UserProvider>
     </Router>
     </SiteConfigProvider>
   );
