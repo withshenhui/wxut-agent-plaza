@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// 生产环境用 VITE_API_BASE_URL，开发环境走 Vite 代理用 /api
+const apiBase = import.meta.env.PROD
+  ? `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1`
+  : '/api/v1';
+
 const adminRequest = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBase,
   timeout: 10000,
 });
 
