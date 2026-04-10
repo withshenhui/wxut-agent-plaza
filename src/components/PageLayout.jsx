@@ -25,7 +25,7 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
             <h1 className="el-header-title">{title}</h1>
           </div>
           <div className="el-header-right">
-            {user ? (
+            {import.meta.env.VITE_CAS_ENABLED !== 'false' && (user ? (
               <div className="el-header-user">
                 <div className="el-header-avatar">{user.nickname ? user.nickname[0] : '用'}</div>
                 <span className="el-header-username">{user.nickname || user.username}</span>
@@ -48,7 +48,7 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
                   统一身份认证登录
                 </button>
               </div>
-            )}
+            ))}
           </div>
         </header>
         <div className="el-content">

@@ -8,7 +8,7 @@ import ModelManagement from './ModelManagement';
 import OpenClaw from './OpenClaw';
 import PageLayout from './components/PageLayout';
 import AgentIcon from './components/AgentIcon';
-import { searchAgents, getCategories } from './api/agent';
+import { searchAgents, getCategories, getAgentDetail } from './api/agent';
 import { SiteConfigProvider, useSiteConfig } from './components/SiteConfigContext';
 import { AdminProvider } from './admin/AdminContext';
 import AdminGuard from './admin/AdminGuard';
@@ -62,11 +62,16 @@ function Home() {
     ? agents
     : agents.filter((a) => a.categoryKey === activeTab);
 
-  const startChat = (agentId) => {
-    const agent = agents.find((a) => a.id === agentId);
-    if (agent.externalUrl) {
-      window.open(agent.externalUrl, '_blank');
-    } else {
+  const startChat = async (agentId) => {
+    try {
+      const detail = await getAgentDetail(agentId);
+      const url = detail.externalUrl || detail.external_url;
+      if (url) {
+        window.open(url, '_blank');
+      } else {
+        navigate(`/chat/${agentId}`);
+      }
+    } catch {
       navigate(`/chat/${agentId}`);
     }
   };
@@ -129,10 +134,20 @@ function Home() {
               <h3 className="el-agent-card__title">{agent.name}</h3>
             </div>
             <p className="el-agent-card__desc">{agent.description}</p>
-            <div className="el-agent-card__tags">
-              {agent.tags.map((tag, index) => (
-                <span key={index} className="el-tag el-tag--default">{tag}</span>
-              ))}
+            <div className="el-agent-card__footer">
+              <div className="el-agent-card__tags">
+                {agent.tags.map((tag, index) => (
+                  <span key={index} className="el-tag el-tag--default">{tag}</span>
+                ))}
+              </div>
+              {agent.visitCount != null && (
+                <div className="el-agent-card__visit">
+                  <svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor">
+                    <path d="M512 192c-223.318 0-416.882 130.042-512 320 95.118 189.958 288.682 320 512 320 223.318 0 416.882-130.042 512-320-95.118-189.958-288.682-320-512-320zM764.45 361.406c52.196 31.994 96.478 73.614 129.548 122.594-33.070 48.98-77.352 90.6-129.548 122.594C700.648 650.254 609.49 680.676 512 680.676s-188.648-30.422-252.45-74.082c-52.196-31.994-96.478-73.614-129.548-122.594 33.070-48.98 77.352-90.6 129.548-122.594 10.538-6.46 21.418-12.474 32.598-18.030C274.476 370.98 290.26 404.6 314.5 432.5c31.436 36.184 74.744 60.5 122.5 68-20.25 20.75-32.5 49.064-32.5 80 0 64.616 52.384 117 117 117s117-52.384 117-117c0-30.936-12.25-59.25-32.5-80 47.756-7.5 91.064-31.816 122.5-68 24.24-27.9 40.024-61.52 45.352-98.124 11.18 5.556 22.060 11.57 32.598 18.030zM512 416c0 53.019-42.981 96-96 96s-96-42.981-96-96 42.981-96 96-96 96 42.981 96 96z" />
+                  </svg>
+                  <span>{agent.visitCount.toLocaleString()}</span>
+                </div>
+              )}
             </div>
           </div>
         ))}

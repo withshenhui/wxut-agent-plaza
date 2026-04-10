@@ -511,10 +511,24 @@ body {
   margin-bottom: 16px;
   flex: 1;
 }
+.el-agent-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
 .el-agent-card__tags {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+.el-agent-card__visit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary, #909399);
 }
 
 /* Agent Icon - clean style matching sidebar icons */

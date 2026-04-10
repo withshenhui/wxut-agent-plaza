@@ -5,6 +5,8 @@ const apiBase = import.meta.env.PROD
   ? `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1`
   : '/api/v1';
 
+const casEnabled = import.meta.env.VITE_CAS_ENABLED !== 'false';
+
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
@@ -22,13 +24,13 @@ export function UserProvider({ children }) {
         .then((info) => setUser(info))
         .catch(() => {
           localStorage.removeItem('user_token');
-          // token 无效，自动跳转 CAS 登录
-          if (!isCasCallback && !isAdminPage) casLogin();
+          // token 无效，CAS 开启时自动跳转登录
+          if (casEnabled && !isCasCallback && !isAdminPage) casLogin();
           else setLoading(false);
         })
         .finally(() => setLoading(false));
-    } else if (!isCasCallback && !isAdminPage) {
-      // 无 token 且不在回调页/管理后台，自动跳转 CAS 登录
+    } else if (casEnabled && !isCasCallback && !isAdminPage) {
+      // CAS 开启：无 token 自动跳转登录
       casLogin();
     } else {
       setLoading(false);
@@ -54,6 +56,7 @@ export function UserProvider({ children }) {
   const logout = async () => {
     localStorage.removeItem('user_token');
     setUser(null);
+    if (!casEnabled) return;
     try {
       const res = await fetch(`${apiBase}/auth/cas-logout-url`);
       const json = await res.json();
