@@ -11,6 +11,11 @@ export default defineConfig({
         target: process.env.VITE_API_BASE_URL || 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/dify': {
+        target: 'http://210.28.145.149',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/dify/, ''),
+      },
     },
   },
   build: {

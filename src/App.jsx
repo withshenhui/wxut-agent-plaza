@@ -23,7 +23,8 @@ import ConfigManagePage from './admin/pages/ConfigManagePage';
 import FileManagePage from './admin/pages/FileManagePage';
 import LogManagePage from './admin/pages/LogManagePage';
 import CasCallback from './CasCallback';
-import { UserProvider } from './UserContext';
+import DifyChatPage from './DifyChatPage';
+import { UserProvider, useUser } from './UserContext';
 
 const staticTabs = [
   { key: 'all', label: '全部' },
@@ -38,6 +39,7 @@ function Home() {
   const [activeTab, setActiveTab] = useState('all');
   const navigate = useNavigate();
   const { siteName, siteSubtitle } = useSiteConfig();
+  const { user } = useUser();
 
   // 加载分类
   useEffect(() => {
@@ -62,12 +64,30 @@ function Home() {
     ? agents
     : agents.filter((a) => a.categoryKey === activeTab);
 
+  const encodeUserId = async (userId) => {
+    const encoded = new TextEncoder().encode(userId);
+    const stream = new Blob([encoded]).stream().pipeThrough(new CompressionStream('gzip'));
+    const compressed = await new Response(stream).arrayBuffer();
+    const bytes = new Uint8Array(compressed);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
   const startChat = async (agentId) => {
     try {
       const detail = await getAgentDetail(agentId);
       const url = detail.externalUrl || detail.external_url;
       if (url) {
-        window.open(url, '_blank');
+        const separator = url.includes('?') ? '&' : '?';
+        let finalUrl = url;
+        if (user?.username) {
+          const encoded = await encodeUserId(user.username);
+          finalUrl = `${url}${separator}sys.user_id=${encodeURIComponent(encoded)}`;
+        }
+        window.open(finalUrl, '_blank');
       } else {
         navigate(`/chat/${agentId}`);
       }
@@ -190,6 +210,7 @@ function App() {
         <Route path="/openclaw" element={<OpenClaw />} />
         <Route path="/guide" element={<UnderConstruction pageType="campus" />} />
         <Route path="/manual" element={<UnderConstruction pageType="manual" />} />
+        <Route path="/dify-chat" element={<DifyChatPage />} />
 
         {/* 管理后台 */}
         <Route path="/admin/login" element={<AdminLoginRoute />} />
