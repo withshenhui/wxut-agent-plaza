@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>智能问数</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    .copilot { height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="copilot"></div>
+  <script>
+    (function(){
+      const script = document.createElement('script');
+      script.defer = true;
+      script.async = true;
+      script.src = "http://210.28.144.245:8005/xpack_static/sqlbot-embedded-dynamic.umd.js";
+      document.head.appendChild(script);
+    })()
+    let sqlbot_embedded_timer = setInterval(() => {
+      if (sqlbot_embedded_handler?.mounted) {
+        sqlbot_embedded_handler.mounted('.copilot', { "embeddedId": "7449411217023569920" })
+        clearInterval(sqlbot_embedded_timer)
+      }
+    }, 1000)
+  </script>
+</body>
+</html>

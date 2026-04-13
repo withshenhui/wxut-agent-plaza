@@ -24,6 +24,7 @@ import FileManagePage from './admin/pages/FileManagePage';
 import LogManagePage from './admin/pages/LogManagePage';
 import CasCallback from './CasCallback';
 import DifyChatPage from './DifyChatPage';
+import SqlBotPage from './SqlBotPage';
 import { UserProvider, useUser } from './UserContext';
 
 const staticTabs = [
@@ -211,6 +212,7 @@ function App() {
         <Route path="/guide" element={<UnderConstruction pageType="campus" />} />
         <Route path="/manual" element={<UnderConstruction pageType="manual" />} />
         <Route path="/dify-chat" element={<DifyChatPage />} />
+        <Route path="/sql-bot" element={<SqlBotPage />} />
 
         {/* 管理后台 */}
         <Route path="/admin/login" element={<AdminLoginRoute />} />

@@ -76,7 +76,7 @@ const menuItems = [
   { external: true, url: 'http://210.28.144.91:12345/dolphinscheduler/ui', icon: 'data', label: '数据中台' },
   { path: '/model-management', icon: 'model', label: '模型服务' },
   { external: true, url: '#', icon: 'cloud', label: '统一云管中台' },
-  { external: true, url: '#', icon: 'search', label: '智能问数' },
+  { external: true, url: 'http://210.28.145.186:3001/sqlbot.html', icon: 'search', label: '智能问数' },
   { external: true, url: '#', icon: 'guide', label: '操作指南' },
   { path: '/campus-planning', icon: 'book', label: 'AI科普' },
 
