@@ -26,6 +26,7 @@ const menuItems = [
   { key: '/admin/users', icon: <UserOutlined />, label: '用户管理' },
   { type: 'divider' },
   { key: '/admin/configs', icon: <SettingOutlined />, label: '系统配置' },
+  { key: '/admin/xixi', label: '锡锡导员管理' },
   { key: '/admin/files', icon: <FileOutlined />, label: '文件管理' },
   { key: '/admin/logs', icon: <FileTextOutlined />, label: '操作日志' },
 ];

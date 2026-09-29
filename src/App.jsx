@@ -20,6 +20,7 @@ import CategoryManagePage from './admin/pages/CategoryManagePage';
 import ModelManagePage from './admin/pages/ModelManagePage';
 import UserManagePage from './admin/pages/UserManagePage';
 import ConfigManagePage from './admin/pages/ConfigManagePage';
+import XixiManagePage from './admin/pages/XixiManagePage';
 import FileManagePage from './admin/pages/FileManagePage';
 import LogManagePage from './admin/pages/LogManagePage';
 import CasCallback from './CasCallback';
@@ -224,6 +225,7 @@ function App() {
           <Route path="models" element={<ModelManagePage />} />
           <Route path="users" element={<UserManagePage />} />
           <Route path="configs" element={<ConfigManagePage />} />
+          <Route path="xixi" element={<XixiManagePage />} />
           <Route path="files" element={<FileManagePage />} />
           <Route path="logs" element={<LogManagePage />} />
         </Route>
