@@ -12,6 +12,7 @@ import { searchAgents, getCategories, getAgentDetail } from './api/agent';
 import { SiteConfigProvider, useSiteConfig } from './components/SiteConfigContext';
 import { AdminProvider } from './admin/AdminContext';
 import AdminGuard from './admin/AdminGuard';
+import AdminSsoCallback from './admin/AdminSsoCallback';
 import AdminLayout from './admin/AdminLayout';
 import LoginPage from './admin/pages/LoginPage';
 import DashboardPage from './admin/pages/DashboardPage';
@@ -217,6 +218,7 @@ function App() {
 
         {/* 管理后台 */}
         <Route path="/admin/login" element={<AdminLoginRoute />} />
+        <Route path="/admin/sso-callback" element={<AdminSsoCallback />} />
         <Route path="/admin" element={<AdminRoute />}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
