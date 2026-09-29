@@ -29,6 +29,15 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
               <div className="el-header-user">
                 <div className="el-header-avatar">{user.nickname ? user.nickname[0] : '用'}</div>
                 <span className="el-header-username">{user.nickname || user.username}</span>
+                {user.role === 'admin' && (
+                  <a
+                    href="#/admin/login"
+                    title="进入 AI 中台管理后台"
+                    style={{ marginLeft: 12, fontSize: 13, color: '#1890ff', textDecoration: 'none' }}
+                  >
+                    管理后台
+                  </a>
+                )}
                 <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>退出</a>
               </div>
             ) : (
