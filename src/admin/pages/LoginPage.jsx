@@ -158,6 +158,16 @@ export default function LoginPage() {
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading} block>登录</Button>
             </Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Button
+                block
+                onClick={() => {
+                  window.location.href = `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/sso/entry?app=plaza-admin`;
+                }}
+              >
+                统一身份认证登录
+              </Button>
+            </Form.Item>
             <div style={{ textAlign: 'center' }}>
               <a href="#/">返回前台首页</a>
             </div>
