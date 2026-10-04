@@ -25,18 +25,31 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
             <h1 className="el-header-title">{title}</h1>
           </div>
           <div className="el-header-right">
+            <button
+              className="el-header-dashboard-btn"
+              onClick={() => window.open('./ai-dashboard-prototype.html', '_blank')}
+              title="打开 AI 中台数据大屏（新窗口全屏展示）"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="13" rx="1.5" />
+                <path d="M8 21h8M12 17v4" />
+              </svg>
+              数据大屏
+            </button>
             {import.meta.env.VITE_CAS_ENABLED !== 'false' && (user ? (
               <div className="el-header-user">
                 <div className="el-header-avatar">{user.nickname ? user.nickname[0] : '用'}</div>
-                <span className="el-header-username">{user.nickname || user.username}</span>
-                {user.role === 'admin' && (
+                {user.role === 'admin' ? (
                   <a
-                    href="#/admin/login"
-                    title="进入 AI 中台管理后台"
-                    style={{ marginLeft: 12, fontSize: 13, color: '#1890ff', textDecoration: 'none' }}
+                    href={`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/sso/entry?app=plaza-admin`}
+                    title="单点登录进入管理后台"
+                    className="el-header-username"
+                    style={{ color: '#1890ff', textDecoration: 'none' }}
                   >
-                    管理后台
+                    {user.nickname || user.username}
                   </a>
+                ) : (
+                  <span className="el-header-username">{user.nickname || user.username}</span>
                 )}
                 <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>退出</a>
               </div>
