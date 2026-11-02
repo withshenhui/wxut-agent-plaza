@@ -16,6 +16,7 @@ const PROVIDER_TEMPLATES = {
   qwen: { name: '通义千问', type: 'OpenAI 兼容', base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', color: '#615CED', hint: '阿里云百炼 DashScope 兼容模式' },
   kimi: { name: 'Kimi(月之暗面)', type: 'OpenAI 兼容', base_url: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k', color: '#000000', hint: '月之暗面 Kimi 大模型' },
   zhipu: { name: '智谱GLM', type: 'OpenAI 兼容', base_url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', color: '#3859FF', hint: '智谱 AI ChatGLM 系列' },
+  moma: { name: '移动云GLM', type: 'OpenAI 兼容', base_url: 'https://moma.cmecloud.cn/v1', model: 'zhipu/glm-5.3', color: '#0085D0', hint: '中国移动 Moma 大模型聚合平台' },
 };
 
 const PROVIDERS_KEY = 'llm.providers';
