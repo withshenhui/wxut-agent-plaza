@@ -1,3 +1,4 @@
+import { apiBase } from '../api/request';
 import React from 'react';
 import Sidebar from './Sidebar';
 import { useSiteConfig } from './SiteConfigContext';
@@ -41,7 +42,7 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
                 <div className="el-header-avatar">{user.nickname ? user.nickname[0] : '用'}</div>
                 {user.role === 'admin' ? (
                   <a
-                    href={`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/sso/entry?app=plaza-admin`}
+                    href={`${apiBase}/sso/entry?app=plaza-admin`}
                     title="单点登录进入管理后台"
                     className="el-header-username"
                     style={{ color: '#1890ff', textDecoration: 'none' }}

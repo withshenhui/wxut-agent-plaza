@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-// 生产环境用 VITE_API_BASE_URL，开发环境走 Vite 代理用 /api
-const apiBase = import.meta.env.PROD
-  ? `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1`
+// 生产环境前后端同源部署（域名 aicenter 根路径与 IP:3001/agent-plaza 均可达），
+// 用同源相对路径让"从哪个入口进就调哪个入口"，IP 入口不被带到域名。
+// 开发环境走 Vite 代理用 /api
+export const apiBase = import.meta.env.PROD
+  ? '/agent-plaza/api/v1'
   : '/api/v1';
 
 const adminRequest = axios.create({

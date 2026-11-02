@@ -1,3 +1,4 @@
+import { apiBase } from '../../api/request';
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -162,7 +163,7 @@ export default function LoginPage() {
               <Button
                 block
                 onClick={() => {
-                  window.location.href = `${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/sso/entry?app=plaza-admin`;
+                  window.location.href = `${apiBase}/sso/entry?app=plaza-admin`;
                 }}
               >
                 统一身份认证登录
