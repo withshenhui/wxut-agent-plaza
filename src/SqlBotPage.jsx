@@ -10,7 +10,7 @@ export default function SqlBotPage() {
 
     const timer = setInterval(() => {
       if (window.sqlbot_embedded_handler?.mounted) {
-        window.sqlbot_embedded_handler.mounted('.copilot', { embeddedId: '7449364213492879360' });
+        window.sqlbot_embedded_handler.mounted('.copilot', { embeddedId: '7449411217023569920' });
         clearInterval(timer);
       }
     }, 1000);
