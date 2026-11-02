@@ -5,7 +5,7 @@ export default function SqlBotPage() {
     const script = document.createElement('script');
     script.defer = true;
     script.async = true;
-    script.src = '/sqlbot/xpack_static/sqlbot-embedded-dynamic.umd.js';
+    script.src = `${import.meta.env.VITE_SQLBOT_BASE_URL}/xpack_static/sqlbot-embedded-dynamic.umd.js`;
     document.head.appendChild(script);
 
     const timer = setInterval(() => {
