@@ -144,7 +144,7 @@ export default function LoginPage() {
         }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <Title level={3} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#1a1a3e', marginBottom: 4 }}>
-              <img src="http://210.28.145.186:3001/plaza/logo3.png" alt="logo" style={{ height: 52, width: 52, borderRadius: 4 }} />
+              <img src="/plaza/logo3.png" alt="logo" style={{ height: 52, width: 52, borderRadius: 4 }} />
               AI管理后台
             </Title>
           </div>

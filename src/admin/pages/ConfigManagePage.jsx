@@ -12,7 +12,9 @@ export default function ConfigManagePage() {
 
   const load = () => {
     setLoading(true);
-    listConfigs().then(setData).finally(() => setLoading(false));
+    listConfigs()
+      .then((list) => setData((list || []).filter((c) => !String(c.configKey || '').startsWith('llm.'))))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

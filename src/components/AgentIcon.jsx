@@ -8,6 +8,8 @@ const categoryColors = {
   research: { bg: '#FDF2F8', color: '#DB2777' },
   logistics: { bg: '#F0F9FF', color: '#0284C7' },
   other: { bg: '#FAF5FF', color: '#7C3AED' },
+  institution: { bg: '#FEF9C3', color: '#CA8A04' },
+  college: { bg: '#E8F6FF', color: '#0EA5E9' },
 };
 
 // Map emoji to icon key
@@ -20,7 +22,7 @@ const emojiToKey = {
   '👥': 'people', '🔬': 'microscope', '💬': 'chat', '✅': 'check',
   '📱': 'phone', '🔌': 'plug', '🛡️': 'shield', '🌐': 'globe',
   '🏠': 'house', '💳': 'creditcard', '📝': 'pencil', '🎯': 'target',
-  '💻': 'computer',
+  '💻': 'computer', '🛠️': 'tools', '⚖️': 'scale',
 };
 
 // SVG icons (20x20, stroke-based, matching sidebar style)
@@ -58,18 +60,20 @@ const svgIcons = {
   pencil: <><line x1="18" y1="2" x2="22" y2="6"/><path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z"/></>,
   target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
   computer: <><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></>,
+  tools: <><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></>,
+  scale: <><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7l-3 6a3.5 3.5 0 0 0 6 0z"/><path d="M19 7l3 6a3.5 3.5 0 0 1-6 0z"/><path d="M8 21h8"/></>,
 };
 
-function AgentIcon({ emoji, category }) {
+function AgentIcon({ emoji, category, size = 28 }) {
   const key = emojiToKey[emoji] || 'briefcase';
   const colors = categoryColors[category] || categoryColors.other;
   const iconSvg = svgIcons[key] || svgIcons.briefcase;
 
   return (
-    <div className="el-agent-icon">
+    <div className="el-agent-icon" style={{ width: size + 8, height: size + 8 }}>
       <svg
-        width="28"
-        height="28"
+        width={size}
+        height={size}
         viewBox="0 0 24 24"
         fill="none"
         stroke={colors.color}

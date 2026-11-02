@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无锡职大 · 大模型运营概览大屏</title>
+<script src="https://registry.npmmirror.com/echarts/5.5.1/files/dist/echarts.min.js"
+        onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js'"></script>
+<style>
+:root{
+  --bg0:#04091A;
+  --panel:rgba(11,26,55,.62);
+  --pb:rgba(64,140,255,.22);
+  --blue:#2563EB; --blue2:#3B82F6; --sky:#38BDF8; --cyan:#06B6D4;
+  --green:#10B981; --amber:#F59E0B; --orange:#F97316; --red:#EF4444; --gray:#64748B;
+  --t1:#DFF1FF; --t2:#8FB8E8; --t3:#5C7DA6;
+  --num:"Bahnschrift","DIN Alternate","Segoe UI","Arial",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--t1)}
+
+/* ---------- 背景装饰（深蓝渐变 + 网格 + 光晕，对齐原型） ---------- */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(160deg,#04091A 0%,#071126 45%,#0A1630 100%)}
+.bg::before{content:'';position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(rgba(59,130,246,.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(59,130,246,.05) 1px,transparent 1px);
+  background-size:56px 56px}
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.5}
+.glow1{width:720px;height:480px;left:-160px;top:-180px;background:radial-gradient(circle,rgba(37,99,235,.45),transparent 70%)}
+.glow2{width:620px;height:420px;right:-140px;bottom:-120px;background:radial-gradient(circle,rgba(6,182,212,.28),transparent 70%)}
+.glow3{width:460px;height:300px;left:44%;top:32%;background:radial-gradient(circle,rgba(59,130,246,.16),transparent 70%)}
+
+/* ========== 1920x1080 固定设计稿 + 等比缩放适配 ========== */
+#screen{position:absolute;left:50%;top:50%;width:1920px;height:1080px;
+  transform:translate(-50%,-50%);transform-origin:center;z-index:1;
+  padding:14px 20px 18px;display:flex;flex-direction:column;gap:12px}
+
+/* ---------- 顶部标题栏（对齐原型：纯居中大标题 + 底部光带） ---------- */
+header{height:74px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;z-index:2}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(59,130,246,.75),rgba(56,189,248,.75),transparent)}
+header::before{content:'';position:absolute;bottom:-3px;left:38%;width:24%;height:8px;border-radius:50%;
+  background:rgba(56,189,248,.35);filter:blur(6px);z-index:2}
+.hd-left{position:absolute;left:26px;top:10px;display:flex;align-items:center;gap:10px}
+.hd-logo{width:40px;height:40px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#2563EB,#38BDF8);box-shadow:0 0 18px rgba(59,130,246,.5)}
+.hd-pt{font-size:15px;color:var(--t2);letter-spacing:2px;line-height:1.4}
+.hd-pt span{font-size:10px;color:var(--t3);letter-spacing:1.5px}
+.hd-center{text-align:center}
+.hd-title{font-size:34px;font-weight:700;letter-spacing:6px;white-space:nowrap;
+  background:linear-gradient(180deg,#FFFFFF 0%,#A9CCFF 55%,#5EA2FF 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:0 0 30px rgba(59,130,246,.35)}
+.hd-sub{font-size:13px;letter-spacing:3px;color:var(--t2);margin-top:3px;
+  display:flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
+.hd-sub::before,.hd-sub::after{content:'';width:42px;height:1px;flex:none;
+  background:linear-gradient(90deg,transparent,var(--t2))}
+.hd-sub::after{background:linear-gradient(90deg,var(--t2),transparent)}
+.hd-sub b{color:#7DE8C8;font-family:var(--num);font-weight:600;letter-spacing:1px}
+.hd-right{position:absolute;right:26px;top:8px;display:flex;align-items:center;gap:14px}
+.tag{font-size:11px;color:#9CC6F2;border:1px solid rgba(56,189,248,.35);border-radius:4px;
+  padding:2.5px 10px;background:rgba(37,99,235,.14);letter-spacing:1px;white-space:nowrap}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:#7DE8C8;letter-spacing:1px;white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hd-time{text-align:right}
+.hd-time .date{font-size:13px;color:var(--t2);letter-spacing:1px}
+.hd-time .clock{font-size:26px;font-weight:600;color:#CDE7FF;font-family:var(--num);
+  font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(56,189,248,.4);line-height:1.15}
+.btn-refresh{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;
+  font-size:12px;color:#BFDCF9;border:1px solid rgba(59,130,246,.45);border-radius:6px;
+  padding:5px 12px;background:linear-gradient(180deg,rgba(37,99,235,.28),rgba(37,99,235,.12));transition:.2s}
+.btn-refresh:hover{background:linear-gradient(180deg,rgba(37,99,235,.5),rgba(37,99,235,.22));color:#fff}
+.btn-refresh svg{width:13px;height:13px;transition:transform .3s}
+.btn-refresh.spin svg{transform:rotate(360deg);transition:transform .6s linear}
+
+/* ---------- 核心指标卡（对齐原型：主题色 + 能量条 + 角落光晕） ---------- */
+.kpi-row{flex:none;height:118px;display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.kpi{position:relative;border-radius:6px;background:var(--panel);border:1px solid var(--pb);
+  padding:14px 18px 10px;cursor:pointer;backdrop-filter:blur(4px);transition:box-shadow .25s,border-color .25s}
+.kpi:hover{box-shadow:0 0 22px rgba(37,99,235,.32);border-color:rgba(90,160,255,.42)}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;
+  background:linear-gradient(180deg,var(--kc,#3B82F6),transparent)}
+.kpi::after{content:'';position:absolute;right:0;top:0;width:96px;height:96px;pointer-events:none;
+  background:radial-gradient(circle at 100% 0%,var(--kc,#3B82F6) 0%,transparent 70%);opacity:.14}
+.kpi-head{display:flex;align-items:center;justify-content:space-between}
+.kpi-label{font-size:14px;color:var(--t2);letter-spacing:1px}
+.kpi-icon{width:30px;height:30px;flex:none;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  background:rgba(59,130,246,.14);color:var(--kc,#3B82F6);border:1px solid rgba(59,130,246,.25)}
+.kpi-icon svg{width:16px;height:16px}
+.kpi-value{margin-top:6px;font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;
+  line-height:1.05;color:#EAF5FF;font-family:var(--num);text-shadow:0 0 16px rgba(59,130,246,.35)}
+.kpi-value em{font-style:normal;font-size:15px;font-weight:400;color:var(--t2);margin-left:5px;
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif}
+.kpi-foot{margin-top:7px;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t3)}
+.kpi-trend{display:inline-flex;align-items:center;gap:3px;font-weight:600;font-family:var(--num)}
+.kpi-trend.up{color:var(--green)}
+.kpi-trend.down{color:var(--red)}
+.kpi-pop{position:absolute;left:8px;right:8px;top:calc(100% + 6px);z-index:30;display:none;
+  background:rgba(6,16,34,.96);border:1px solid rgba(56,189,248,.4);border-radius:6px;
+  padding:7px 10px;font-size:10.5px;color:var(--t2);line-height:1.8;pointer-events:none;
+  box-shadow:0 8px 22px rgba(0,0,0,.5)}
+.kpi-pop b{color:#7CC4F8;font-weight:600;font-family:var(--num)}
+.kpi:hover .kpi-pop{display:block}
+.kpi-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(64,140,255,.1)}
+.kpi-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--kc,#3B82F6),rgba(56,189,248,.5));
+  box-shadow:0 0 8px var(--kc,#3B82F6);transition:width 1.2s ease}
+
+/* ---------- 主区三栏（对齐原型比例 1 : 1.06 : 1） ---------- */
+.main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.06fr 1fr;gap:14px}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.col>.panel{flex:1;min-height:0}
+.col-m>.panel:first-child{flex:2.2;min-height:0}
+.col-m>.panel:last-child{flex:1;min-height:0}
+
+/* ---------- 底部：轮播 + 资源 ---------- */
+.bottom{flex:none;height:142px;display:grid;grid-template-columns:1.7fr 1fr;gap:14px}
+
+/* ---------- 面板（对齐原型：四角发光角标 + 发光标题条） ---------- */
+.panel{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--pb);border-radius:6px;
+  padding:10px 12px 8px;backdrop-filter:blur(4px);z-index:1}
+.panel::before,.panel::after,.panel .c2,.panel .c3{position:absolute;width:14px;height:14px;pointer-events:none}
+.panel::before{content:'';left:-1px;top:-1px;border-left:2px solid #3B82F6;border-top:2px solid #3B82F6;
+  border-top-left-radius:6px;filter:drop-shadow(0 0 5px rgba(59,130,246,.8))}
+.panel::after{content:'';right:-1px;top:-1px;border-right:2px solid #3B82F6;border-top:2px solid #3B82F6;
+  border-top-right-radius:6px;filter:drop-shadow(0 0 5px rgba(59,130,246,.8))}
+.panel .c2{left:-1px;bottom:-1px;border-left:2px solid #38BDF8;border-bottom:2px solid #38BDF8;
+  border-bottom-left-radius:6px;filter:drop-shadow(0 0 5px rgba(56,189,248,.8))}
+.panel .c3{right:-1px;bottom:-1px;border-right:2px solid #38BDF8;border-bottom:2px solid #38BDF8;
+  border-bottom-right-radius:6px;filter:drop-shadow(0 0 5px rgba(56,189,248,.8))}
+.p-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px 8px}
+.p-title{font-size:15px;font-weight:600;letter-spacing:1px;color:#D6EAFF;display:flex;align-items:center;gap:8px}
+.p-title::before{content:'';width:4px;height:15px;border-radius:2px;flex:none;
+  background:linear-gradient(180deg,#3B82F6,#38BDF8);box-shadow:0 0 8px rgba(59,130,246,.8)}
+.p-extra{font-size:11px;color:var(--t3);letter-spacing:1px}
+.p-body{flex:1;min-height:0;position:relative}
+.p-body>div:only-child{width:100%;height:100%}
+
+/* ---------- 地图卡片 ---------- */
+.map-flex{display:flex;gap:6px}
+#chartMap{flex:1;min-width:0}
+.map-side{flex:none;width:210px;display:flex;flex-direction:column}
+.map-side-cap{font-size:10.5px;color:var(--t3);letter-spacing:1px;padding:2px 0 6px}
+.map-item{display:flex;align-items:center;gap:8px;padding:4.5px 8px;border-radius:4px;cursor:pointer;
+  font-size:11.5px;color:#BCD6F5;transition:.15s;border:1px solid transparent}
+.map-item:hover{background:rgba(37,99,235,.14)}
+.map-item.active{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.45)}
+.map-rank{width:16px;height:16px;flex:none;border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font:700 10px/1 var(--num);color:#0A1830;background:#5C8DC6}
+.map-item:nth-child(2) .map-rank{background:#38BDF8}
+.map-item:nth-child(3) .map-rank{background:#06B6D4}
+.map-item:nth-child(4) .map-rank,.map-item:nth-child(5) .map-rank{background:rgba(140,180,225,.35);color:#D5E9FF}
+.map-name{flex:1}
+.map-val{font:600 12px/1 var(--num);color:#9CC6F2;font-variant-numeric:tabular-nums}
+.map-foot{margin-top:auto;font-size:10px;color:var(--t3);line-height:1.7;border-top:1px dashed rgba(92,125,166,.3);padding-top:6px}
+.map-foot b{color:#7CC4F8;font-weight:600}
+
+/* ---------- 资源进度条 ---------- */
+.res-body{display:flex;flex-direction:column;justify-content:space-around;padding:2px 4px}
+.res-item{display:flex;align-items:center;gap:12px}
+.res-name{flex:none;width:150px;font-size:12px;color:#C3DCF8;letter-spacing:.5px}
+.res-track{flex:1;height:10px;border-radius:5px;background:rgba(30,55,95,.55);overflow:hidden;position:relative}
+.res-track::before{content:'';position:absolute;inset:0;opacity:.4;
+  background-image:repeating-linear-gradient(90deg,transparent 0 28px,rgba(5,12,24,.5) 28px 30px)}
+.res-fill{height:100%;border-radius:5px;position:relative;transition:width .8s cubic-bezier(.22,.9,.35,1)}
+.res-fill::after{content:'';position:absolute;right:0;top:-2px;bottom:-2px;width:3px;border-radius:2px;background:rgba(255,255,255,.75)}
+.res-num{flex:none;width:52px;text-align:right;font:700 15px/1 var(--num);font-variant-numeric:tabular-nums}
+.res-lv{flex:none;width:34px;font-size:9.5px;text-align:center;border-radius:3px;padding:1.5px 0;letter-spacing:1px}
+.res-lv.red{color:#FCA5A5;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3)}
+.res-lv.amber{color:#FCD34D;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3)}
+.res-lv.green{color:#6EE7B7;background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.3)}
+
+/* ---------- 模型轮播卡片 ---------- */
+.car-track{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.m-card{position:relative;display:flex;flex-direction:column;justify-content:space-between;
+  padding:10px 13px 9px;cursor:pointer;overflow:hidden;
+  background:linear-gradient(160deg,rgba(23,46,86,.55),rgba(10,24,46,.88));
+  border:1px solid rgba(59,130,246,.22);border-radius:6px;transition:.2s;
+  animation:cardIn .45s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.m-card:hover{border-color:rgba(56,189,248,.6);transform:translateY(-2px)}
+.m-card.err{border-color:rgba(239,68,68,.55);
+  background:linear-gradient(160deg,rgba(96,30,38,.45),rgba(32,12,18,.9))}
+.m-card.err .mc-val{color:#FCA5A5}
+.m-card.off{opacity:.6}
+.mc-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mc-name{font-size:13px;font-weight:600;color:#EAF4FF;letter-spacing:.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-val{font:700 21px/1 var(--num);color:#7CC4F8;font-variant-numeric:tabular-nums}
+.mc-val em{font-style:normal;font-size:10px;color:var(--t3);margin-left:5px;
+  font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-weight:400}
+.mc-row{display:flex;justify-content:space-between;gap:4px;font-size:10.5px;color:var(--t2);white-space:nowrap}
+.mc-row b{color:#D8ECFF;font-weight:600;font-family:var(--num)}
+.mc-mon{position:absolute;right:12px;top:38px;font-size:10px;color:#FCD34D;cursor:pointer;
+  border:1px solid rgba(245,158,11,.4);border-radius:3px;padding:1px 7px;transition:.15s;user-select:none}
+.mc-mon:hover{background:rgba(245,158,11,.18);color:#fff}
+.car-ctl{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--t3)}
+.car-btn{width:19px;height:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;
+  border:1px solid rgba(59,130,246,.4);border-radius:4px;color:#9CC6F2;font-size:12px;transition:.15s;background:rgba(37,99,235,.1)}
+.car-btn:hover{background:rgba(37,99,235,.35);color:#fff}
+#carNow{font-family:var(--num);color:#D8ECFF;min-width:34px;text-align:center}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;flex:none}
+.st i{width:7px;height:7px;border-radius:50%;flex:none}
+.st.run i{background:#10B981;box-shadow:0 0 7px rgba(16,185,129,.8);animation:blink 2.4s infinite}
+.st.run{color:#6EE7B7}
+.st.err i{background:#EF4444;box-shadow:0 0 7px rgba(239,68,68,.8);animation:blink 1.2s infinite}
+.st.err{color:#FCA5A5}
+.st.off i{background:#64748B}
+.st.off{color:#94A3B8}
+
+/* ---------- 底部系统信息条 ---------- */
+.sysbar{flex:none;height:34px;display:flex;align-items:center;justify-content:center;gap:11px;
+  font-size:11px;color:var(--t3);letter-spacing:1px;position:relative;z-index:1}
+.sysbar b{color:#9CC6F2;font-weight:600;font-family:var(--num);letter-spacing:.5px}
+.sysbar .sbd{width:3px;height:3px;border-radius:50%;background:rgba(92,125,166,.55);flex:none}
+.sysbar .ok{display:inline-flex;align-items:center;gap:6px;color:#6EE7B7}
+.sysbar .ok i{width:7px;height:7px;border-radius:50%;background:#10B981;box-shadow:0 0 7px #10B981;animation:blink 2s infinite}
+
+/* ---------- Loading 遮罩 ---------- */
+#loading{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;gap:14px;
+  align-items:center;justify-content:center;background:rgba(5,12,26,.55);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .3s}
+#loading.show{opacity:1;pointer-events:auto}
+.ld-ring{width:42px;height:42px;border-radius:50%;border:3px solid rgba(56,189,248,.18);border-top-color:#38BDF8;
+  animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-size:13px;color:#9CC6F2;letter-spacing:3px}
+
+/* ---------- 通用模态 ---------- */
+#mask{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(4,10,22,.66);backdrop-filter:blur(3px)}
+#mask.show{display:flex}
+.modal{width:640px;max-width:92%;max-height:82%;display:flex;flex-direction:column;
+  background:linear-gradient(165deg,#13294B,#0A1830);border:1px solid rgba(56,189,248,.4);border-radius:8px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(56,189,248,.08) inset;animation:pop .22s cubic-bezier(.3,1.4,.6,1)}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.m-head{flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;border-bottom:1px solid rgba(59,130,246,.2)}
+.m-title{font-size:14px;font-weight:600;color:#E4F1FF;letter-spacing:1px}
+.m-title::before{content:'◈';color:#38BDF8;margin-right:8px}
+.m-close{cursor:pointer;user-select:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;color:var(--t2);font-size:15px;transition:.15s;border:1px solid transparent}
+.m-close:hover{color:#fff;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.12)}
+.m-body{flex:1;min-height:0;padding:14px 16px;overflow:auto;font-size:12px;color:var(--t2)}
+.m-body::-webkit-scrollbar{width:5px}
+.m-body::-webkit-scrollbar-thumb{background:rgba(59,130,246,.35);border-radius:3px}
+
+/* 详情网格 */
+.d-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.d-cell{background:rgba(23,46,86,.5);border:1px solid rgba(59,130,246,.16);border-radius:6px;padding:8px 10px}
+.d-k{font-size:10px;color:var(--t3);letter-spacing:1px;margin-bottom:4px}
+.d-v{font-size:13.5px;color:#E4F1FF;font-family:var(--num);font-variant-numeric:tabular-nums}
+.d-desc{margin-top:10px;font-size:11.5px;line-height:1.8;color:var(--t2);
+  background:rgba(37,99,235,.08);border-left:2px solid #3B82F6;border-radius:0 4px 4px 0;padding:8px 12px}
+
+/* 监控弹窗 */
+.mon-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.mon-cell{background:rgba(23,46,86,.5);border:1px solid rgba(59,130,246,.16);border-radius:6px;padding:8px 12px}
+.mon-cell .d-k{margin-bottom:3px}
+#monChart{width:100%;height:190px}
+</style>
+</head>
+<body>
+<div class="bg"><div class="glow glow1"></div><div class="glow glow2"></div><div class="glow glow3"></div></div>
+
+<div id="screen">
+
+  <!-- 顶部标题栏（对齐原型：居中大标题） -->
+  <header>
+    <div class="hd-left">
+      <div class="hd-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4M9.5 12h5M12 9.5v5"/>
+        </svg>
+      </div>
+      <div class="hd-pt">AI大模型管理平台<br><span>LLM MANAGEMENT PLATFORM</span></div>
+    </div>
+    <div class="hd-center">
+      <div class="hd-title">无锡职业技术大学 · 大模型运营概览大屏</div>
+      <div class="hd-sub">私有化部署 · V2.3.1 · 已稳定运行 <b id="hdUptime">36天 12小时 35分</b></div>
+    </div>
+    <div class="hd-right">
+      <div class="live"><i></i>数据实时更新</div>
+      <div class="hd-time">
+        <div class="date" id="hDate">--</div>
+        <div class="clock" id="hClock">--:--:--</div>
+      </div>
+      <div class="btn-refresh" id="btnRefresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/>
+        </svg>刷新数据
+      </div>
+    </div>
+  </header>
+
+  <!-- 核心指标卡（JS 渲染） -->
+  <section class="kpi-row" id="kpiRow"></section>
+
+  <!-- 主区三栏 -->
+  <section class="main">
+    <div class="col col-l">
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">大模型类型分布</span><span class="p-extra">MODEL TYPES</span></div>
+        <div class="p-body" id="chartType"></div>
+      </div>
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">模型能力分布</span><span class="p-extra">CAPABILITIES</span></div>
+        <div class="p-body" id="chartAbility"></div>
+      </div>
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">调用量分时分布（今日）</span><span class="p-extra">HOURLY · 24H</span></div>
+        <div class="p-body" id="chartHourly"></div>
+      </div>
+    </div>
+    <div class="col col-m">
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head">
+          <span class="p-title">大模型调用量地域分布</span>
+          <span class="p-extra" id="mapPicked">点击省份查看调用量</span>
+        </div>
+        <div class="p-body map-flex">
+          <div id="chartMap"></div>
+          <div class="map-side">
+            <div class="map-side-cap">省份调用量 TOP5</div>
+            <div id="mapTop"></div>
+            <div class="map-foot" id="mapFoot">全国覆盖 <b>34</b> 省级行政区 · 校内调用占比 <b>68.2%</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">调用量趋势（近7天）</span><span class="p-extra">7-DAY TREND</span></div>
+        <div class="p-body" id="chartTrend"></div>
+      </div>
+    </div>
+    <div class="col col-r">
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">模型运行状态</span><span class="p-extra">STATUS · LIVE</span></div>
+        <div class="p-body" id="chartStatus"></div>
+      </div>
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">用户活跃趋势（近7天）</span><span class="p-extra">USER ACTIVITY</span></div>
+        <div class="p-body" id="chartUser"></div>
+      </div>
+      <div class="panel"><i class="c2"></i><i class="c3"></i>
+        <div class="p-head"><span class="p-title">模型调用方式分布</span><span class="p-extra">CALL METHODS</span></div>
+        <div class="p-body" id="chartMethod"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部：模型轮播 + 资源使用 -->
+  <section class="bottom">
+    <div class="panel"><i class="c2"></i><i class="c3"></i>
+      <div class="p-head">
+        <span class="p-title">重点模型运行监测</span>
+        <div class="car-ctl">
+          <span>共 32 个 · 悬停暂停</span>
+          <div class="car-btn" id="carPrev">‹</div>
+          <span id="carNow">1 / 7</span>
+          <div class="car-btn" id="carNext">›</div>
+        </div>
+      </div>
+      <div class="p-body">
+        <div class="car-track" id="carTrack"></div>
+      </div>
+    </div>
+    <div class="panel"><i class="c2"></i><i class="c3"></i>
+      <div class="p-head"><span class="p-title">资源使用情况</span><span class="p-extra">CPU · MEMORY · GPU</span></div>
+      <div class="p-body res-body" id="resBody"></div>
+    </div>
+  </section>
+
+  <!-- 底部系统信息条 -->
+  <footer class="sysbar">
+    <span>平台名称 <b>AI大模型管理平台</b></span><i class="sbd"></i>
+    <span>部署环境 <b>私有化部署</b></span><i class="sbd"></i>
+    <span>数据中心 <b>华东数据中心</b></span><i class="sbd"></i>
+    <span>版本号 <b>V2.3.1</b></span><i class="sbd"></i>
+    <span>运行时长 <b id="sysUptime">36天 12小时 35分</b></span><i class="sbd"></i>
+    <span class="ok"><i></i>系统运行正常</span>
+  </footer>
+
+  <!-- 刷新 Loading -->
+  <div id="loading"><div class="ld-ring"></div><div class="ld-txt">数据刷新中</div></div>
+
+  <!-- 通用模态 -->
+  <div id="mask"><div class="modal">
+    <div class="m-head"><span class="m-title" id="mTitle">详情</span><div class="m-close" id="mClose">✕</div></div>
+    <div class="m-body" id="mBody"></div>
+  </div></div>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ================= 工具 ================= */
+function $(id){return document.getElementById(id)}
+function fmt(n){return Math.round(n).toLocaleString('en-US')}
+function p2(n){return (n<10?'0':'')+n}
+function rnd(a,b){return a+Math.random()*(b-a)}
+function GR(c1,c2,vert){return new echarts.graphic.LinearGradient(0,0,vert?0:1,vert?1:0,
+  [{offset:0,color:c1},{offset:1,color:c2}])}
+function GR3(a,b,c){return new echarts.graphic.LinearGradient(0,0,1,0,
+  [{offset:0,color:a},{offset:.55,color:b},{offset:1,color:c}])}
+var AXL={lineStyle:{color:'rgba(64,140,255,.25)'}};
+function AX(o){return Object.assign({axisTick:{show:false},axisLine:AXL,
+  axisLabel:{color:'#8FB8E8',fontSize:11}},o||{})}
+var TIP={backgroundColor:'rgba(8,20,45,.92)',borderColor:'rgba(59,130,246,.4)',borderWidth:1,
+  textStyle:{color:'#DFF1FF',fontSize:12},extraCssText:'border-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,.5)'};
+
+/* ================= 数据字典 ================= */
+var DAYS=['08-16','08-17','08-18','08-19','08-20','08-21','08-22'];
+var HOUR_LABELS=(function(){var a=[];for(var i=0;i<24;i++)a.push(p2(i)+':00');return a})();
+
+var ICONS={
+cube:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><path d="M12 22V12M12 12L3 7m9 5l9-5"/></svg>',
+bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>',
+gem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M12 21L8 9l4-6 4 6-4 12"/></svg>',
+clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-4.5"/></svg>'};
+
+var S={
+  kpi:[
+    {label:'大模型总数',val:32,unit:'个',delta:14.0,period:'较上月',dec:0,ic:'cube',bg:'rgba(59,130,246,.16)',
+     spark:[27,28,28,29,30,31,32],dd:9.6,ww:14.0},
+    {label:'今日调用总量',val:1268235,unit:'次',delta:18.6,period:'较昨日',dec:0,ic:'bolt',bg:'rgba(56,189,248,.14)',
+     spark:[96.8,102.4,98.6,112.3,118.5,126.8,126.8],dd:18.6,ww:24.2},
+    {label:'今日活跃用户数',val:8321,unit:'人',delta:12.3,period:'较昨日',dec:0,ic:'user',bg:'rgba(34,211,238,.14)',
+     spark:[6720,7010,6880,7240,7610,8640,8321],dd:12.3,ww:19.6},
+    {label:'今日Token消耗',val:285643215,unit:'Tokens',delta:20.4,period:'较昨日',dec:0,ic:'gem',bg:'rgba(245,158,11,.13)',
+     spark:[2.02,2.21,2.35,2.52,2.48,2.71,2.86],dd:20.4,ww:28.8},
+    {label:'平均响应时长',val:1.23,unit:'s',delta:8.7,period:'较昨日',dec:2,ic:'clock',bg:'rgba(249,115,22,.13)',
+     spark:[1.31,1.28,1.34,1.26,1.30,1.19,1.23],dd:8.7,ww:5.4},
+    {label:'成功率',val:99.42,unit:'%',delta:0.6,period:'较昨日',dec:2,ic:'shield',bg:'rgba(16,185,129,.13)',
+     spark:[99.21,99.30,99.18,99.35,99.28,99.48,99.42],dd:0.6,ww:1.2}
+  ]
+};
+var typeDist=[{n:'垂直领域模型',v:10},{n:'多模态大模型',v:17},{n:'行业大模型',v:28},{n:'通用大模型',v:32}];
+var statusDist=[{n:'运行中',v:28,c:'#10B981'},{n:'异常',v:2,c:'#EF4444'},{n:'已下线',v:2,c:'#64748B'}];
+var abilityDist=[{n:'图像生成',v:8},{n:'代码生成',v:16},{n:'知识问答',v:25},{n:'文本生成',v:28}];
+var trend={calls:[98.2,105.6,112.4,96.8,128.4,156.2,126.8],tokens:[2.12,2.34,2.61,2.25,3.05,3.92,2.86]};
+var resUse=[{n:'CPU 利用率',v:72},{n:'内存使用率',v:58},{n:'GPU 利用率',v:65}];
+var userTrend={act:[6980,7240,7560,6890,7850,8640,8321],nw:[128,146,175,132,203,286,241]};
+var hourly=[0.2,0.1,0.1,0.1,0.2,0.5,1.8,4.2,7.8,10.6,12.4,11.2,8.6,9.8,11.5,12.2,10.4,7.2,5.4,6.8,9.6,10.2,7.4,3.2];
+var methodDist=[{n:'API 调用',v:58.3,c:'#3B82F6'},{n:'Web 应用',v:24.6,c:'#38BDF8'},{n:'批量任务',v:12.7,c:'#06B6D4'},{n:'其他',v:4.4,c:'#64748B'}];
+
+var AD={110000:'北京',120000:'天津',130000:'河北',140000:'山西',150000:'内蒙古',210000:'辽宁',220000:'吉林',
+230000:'黑龙江',310000:'上海',320000:'江苏',330000:'浙江',340000:'安徽',350000:'福建',360000:'江西',
+370000:'山东',410000:'河南',420000:'湖北',430000:'湖南',440000:'广东',450000:'广西',460000:'海南',
+500000:'重庆',510000:'四川',520000:'贵州',530000:'云南',540000:'西藏',610000:'陕西',620000:'甘肃',
+630000:'青海',640000:'宁夏',650000:'新疆',710000:'台湾',810000:'香港',820000:'澳门'};
+var REGION={110000:98650,120000:14280,130000:18320,140000:12470,150000:7640,210000:15640,220000:8720,
+230000:9840,310000:87320,320000:186420,330000:68910,340000:38640,350000:22890,360000:13950,
+370000:42380,410000:32150,420000:27430,430000:21540,440000:76540,450000:10960,460000:4960,
+500000:19870,510000:29870,520000:8150,530000:11830,540000:1650,610000:24160,620000:6320,
+630000:2870,640000:3540,650000:5870,710000:920,810000:2340,820000:860};
+
+/* 模型列表：[名称,类型,版本,状态,今日调用] 28运行/2异常/2下线 */
+var MODELS=[
+['通用大模型A','通用','V2.1','run',286542],['通用大模型B','通用','V3.0','run',198765],
+['通用大模型C','通用','V4.0','run',175231],['行业大模型D','行业','V1.5','run',156321],
+['CodeGeeX-Pro','代码','V2.2','run',134265],['DeepSeek-R1','通用','V3.0','run',128460],
+['DeepSeek-V3','通用','V2.5','run',120830],['Qwen2.5-72B','通用','V2.0','run',112470],
+['GLM-4-Plus','通用','V4.0','run',98650],['文心大模型4.5','通用','V4.5','run',87230],
+['讯飞星火4.0','通用','V4.0','run',76120],['Llama-3.1-70B','通用','V3.1','run',65380],
+['教学设计大模型','行业','V2.0','run',58240],['智能制造大模型','行业','V1.8','run',54180],
+['金融风控大模型','行业','V1.6','run',47650],['医疗问诊大模型','行业','V1.2','err',42130],
+['汽车工程大模型','行业','V1.4','run',38520],['物流供应链大模型','行业','V1.1','run',32470],
+['电商运营大模型','行业','V1.0','off',28360],['多模态大模型E','多模态','V2.0','run',26540],
+['视觉理解大模型','多模态','V1.5','run',24380],['语音交互大模型','多模态','V1.3','run',22150],
+['视频生成大模型','多模态','V1.0','err',19870],['图像创作大模型','多模态','V2.1','run',17640],
+['物联网垂直模型','垂直','V1.2','run',15420],['法务合规垂直模型','垂直','V1.0','run',13280],
+['农业植保垂直模型','垂直','V0.9','off',11050],['网络安全垂直模型','垂直','V1.1','run',9830],
+['校园服务垂直模型','垂直','V1.0','run',8640],['代码助手-mini','代码','V1.8','run',7420],
+['论文润色模型','垂直','V1.2','run',6280],['求职辅导模型','垂直','V1.0','run',5140]];
+function derived(m,i){return{tk:Math.round(m[4]*(190+(i%7)*9)),rt:(0.84+(i%13)*0.058).toFixed(2),
+  sr:m[3]==='err'?(97.1+(i%5)*0.3).toFixed(2):(99.05+(i%9)*0.1).toFixed(2)}}
+var STN={run:'运行中',err:'异常',off:'已下线'};
+
+/* ================= 图表实例 ================= */
+var ch={};
+
+/* ---------- KPI 渲染 ---------- */
+var KC=['#3B82F6','#38BDF8','#06B6D4','#10B981','#F59E0B','#F97316'];
+var KBAR=[72,64,58,76,42,90];
+function renderKpi(){
+  var html='';
+  S.kpi.forEach(function(k,i){
+    var up=k.delta>=0;
+    html+='<div class="kpi" style="--kc:'+KC[i]+'" data-i="'+i+'">'
+      +'<div class="kpi-head"><span class="kpi-label">'+k.label+'</span>'
+      +'<span class="kpi-icon">'+ICONS[k.ic]+'</span></div>'
+      +'<div class="kpi-value">'+(k.dec?k.val.toFixed(k.dec):fmt(k.val))+'<em>'+k.unit+'</em></div>'
+      +'<div class="kpi-foot"><span class="kpi-trend '+(up?'up':'down')+'">'+(up?'▲ +':'▼ ')+Math.abs(k.delta).toFixed(1)+'%</span>'+k.period+'</div>'
+      +'<div class="kpi-pop">日环比 <b>'+(k.dd>=0?'+':'')+k.dd.toFixed(1)+'%</b> · 周环比 <b>'+(k.ww>=0?'+':'')+k.ww.toFixed(1)+'%</b><br>点击查看近7日趋势</div>'
+      +'<div class="kpi-bar"><i style="width:'+KBAR[i]+'%"></i></div>'
+      +'</div>';
+  });
+  $('kpiRow').innerHTML=html;
+  Array.prototype.forEach.call($('kpiRow').children,function(el){
+    el.onclick=function(){openKpi(+el.getAttribute('data-i'))};
+  });
+}
+
+/* ---------- 图表初始化 ---------- */
+function initType(){
+  ch.type=echarts.init($('chartType'));
+  ch.type.setOption({tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'}},TIP),
+    grid:{left:96,right:56,top:16,bottom:8},
+    xAxis:AX({type:'value',axisLine:{show:false},splitLine:{lineStyle:{color:'rgba(64,140,255,.12)'}}}),
+    yAxis:AX({type:'category',data:typeDist.map(function(d){return d.n}),splitLine:{show:false},
+      axisLabel:{color:'#BCD6F5',fontSize:12}}),
+    series:[{type:'bar',barWidth:16,data:typeDist.map(function(d){return d.v}),
+      itemStyle:{borderRadius:[0,4,4,0],color:GR3('#1D4ED8','#3B82F6','#38BDF8')},
+      label:{show:true,position:'right',color:'#8FB8E8',fontSize:12,fontWeight:600,
+        fontFamily:'Bahnschrift',formatter:'{c} 个'},
+      showBackground:true,backgroundStyle:{color:'rgba(64,140,255,.07)',borderRadius:[0,4,4,0]}}]});
+}
+function initStatus(){
+  ch.status=echarts.init($('chartStatus'));
+  ch.status.setOption({tooltip:Object.assign({trigger:'item',
+      formatter:'{b}：<b style="color:#7CC4F8">{c}</b> 个（{d}%）'},TIP),
+    legend:{bottom:2,left:'center',itemWidth:10,itemHeight:10,itemGap:16,
+      textStyle:{color:'#8FB8E8',fontSize:11}},
+    series:[{type:'pie',radius:['48%','68%'],center:['50%','42%'],
+      itemStyle:{borderColor:'rgba(8,18,38,.9)',borderWidth:2,borderRadius:4},
+      label:{color:'#BCD6F5',fontSize:10.5,formatter:'{d}%'},
+      labelLine:{length:6,length2:6,lineStyle:{color:'rgba(140,180,225,.4)'}},
+      data:statusDist.map(function(s){return{value:s.v,name:s.n,
+        itemStyle:{color:s.c,shadowColor:s.c,shadowBlur:10}}})}],
+    graphic:[{type:'text',left:'center',top:'30%',style:{text:'32',fill:'#EAF4FF',
+        font:'700 25px Bahnschrift, Segoe UI',textAlign:'center'}},
+      {type:'text',left:'center',top:'47%',style:{text:'模型总数',fill:'#5C7DA6',
+        font:'10px "Segoe UI","Microsoft YaHei"',textAlign:'center'}}]});
+}
+function initAbility(){
+  ch.ability=echarts.init($('chartAbility'));
+  ch.ability.setOption({tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},
+      formatter:function(p){return p[0].name+'：<b style="color:#7CC4F8">'+p[0].value+'</b> 个（'
+        +(p[0].value/32*100).toFixed(1)+'%）'}},TIP),
+    grid:{left:70,right:76,top:10,bottom:6},
+    xAxis:AX({type:'value',axisLine:{show:false},max:32,splitLine:{lineStyle:{color:'rgba(64,140,255,.12)'}}}),
+    yAxis:AX({type:'category',data:abilityDist.map(function(d){return d.n}),splitLine:{show:false},
+      axisLabel:{color:'#BCD6F5',fontSize:12}}),
+    series:[{type:'bar',barWidth:12,data:abilityDist.map(function(d){return d.v}),
+      itemStyle:{borderRadius:[0,4,4,0],color:GR3('#155E75','#06B6D4','#67E8F9')},
+      label:{show:true,position:'right',color:'#8FB8E8',fontSize:11.5,fontWeight:600,
+        fontFamily:'Bahnschrift',formatter:function(p){return (p.value/32*100).toFixed(1)+'%'}},
+      showBackground:true,backgroundStyle:{color:'rgba(64,140,255,.07)',borderRadius:[0,4,4,0]}}]});
+}
+function initTrend(){
+  ch.trend=echarts.init($('chartTrend'));
+  ch.trend.setOption({tooltip:Object.assign({trigger:'axis'},TIP),
+    legend:{top:0,right:6,itemWidth:16,itemHeight:8,itemGap:18,
+      textStyle:{color:'#8FB8E8',fontSize:11},data:['调用次数','Token消耗']},
+    grid:{left:48,right:56,top:28,bottom:6},
+    xAxis:AX({type:'category',boundaryGap:false,data:DAYS}),
+    yAxis:[AX({type:'value',name:'万次',max:200,min:0,
+        nameTextStyle:{color:'#5C7DA6',fontSize:9.5,align:'left'}}),
+      AX({type:'value',name:'亿Tokens',max:5,min:0,splitLine:{show:false},
+        nameTextStyle:{color:'#8A6D1F',fontSize:9.5,align:'right'}})],
+    series:[
+      {name:'调用次数',type:'line',smooth:true,symbol:'circle',symbolSize:5,data:trend.calls,
+        lineStyle:{width:2.5,color:'#3B82F6',shadowColor:'rgba(59,130,246,.6)',shadowBlur:10},
+        itemStyle:{color:'#3B82F6',borderColor:'#0A1830',borderWidth:1},
+        areaStyle:{color:GR('rgba(59,130,246,.30)','rgba(59,130,246,0)',true)}},
+      {name:'Token消耗',type:'line',yAxisIndex:1,smooth:true,symbol:'circle',symbolSize:5,data:trend.tokens,
+        lineStyle:{width:2.5,color:'#F59E0B',shadowColor:'rgba(245,158,11,.5)',shadowBlur:8},
+        itemStyle:{color:'#F59E0B',borderColor:'#0A1830',borderWidth:1},
+        areaStyle:{color:GR('rgba(245,158,11,.22)','rgba(245,158,11,0)',true)}}]});
+}
+function initUser(){
+  ch.user=echarts.init($('chartUser'));
+  ch.user.setOption({tooltip:Object.assign({trigger:'axis'},TIP),
+    legend:{top:0,right:6,itemWidth:16,itemHeight:8,itemGap:16,
+      textStyle:{color:'#8FB8E8',fontSize:11},data:['活跃用户','新增用户']},
+    grid:{left:50,right:14,top:26,bottom:4},
+    xAxis:AX({type:'category',boundaryGap:false,data:DAYS}),
+    yAxis:AX({type:'value'}),
+    series:[
+      {name:'活跃用户',type:'line',smooth:true,symbol:'circle',symbolSize:5,data:userTrend.act,
+        lineStyle:{width:2.5,color:'#38BDF8',shadowColor:'rgba(56,189,248,.6)',shadowBlur:10},
+        itemStyle:{color:'#38BDF8',borderColor:'#0A1830',borderWidth:1},
+        areaStyle:{color:GR('rgba(56,189,248,.28)','rgba(56,189,248,0)',true)}},
+      {name:'新增用户',type:'line',smooth:true,symbol:'circle',symbolSize:5,data:userTrend.nw,
+        lineStyle:{width:2,color:'#10B981',shadowColor:'rgba(16,185,129,.5)',shadowBlur:8},
+        itemStyle:{color:'#10B981',borderColor:'#0A1830',borderWidth:1}}]});
+}
+function initHourly(){
+  ch.hourly=echarts.init($('chartHourly'));
+  ch.hourly.setOption({tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},
+      formatter:function(p){return p[0].name+'<br>调用量：<b style="color:#7CC4F8">'
+        +p[0].value.toFixed(1)+'</b> 万次'}},TIP),
+    grid:{left:48,right:12,top:14,bottom:4},
+    xAxis:AX({type:'category',data:HOUR_LABELS,
+      axisLabel:{color:'#7FA6D9',fontSize:9.5,interval:2}}),
+    yAxis:AX({type:'value',axisLine:{show:false},splitLine:{lineStyle:{color:'rgba(64,140,255,.12)'}}}),
+    series:[{type:'bar',barWidth:'52%',data:hourlyBuild(),
+      markLine:{silent:true,symbol:'none',lineStyle:{color:'rgba(245,158,11,.55)',type:'dashed'},
+        label:{color:'#FCD34D',fontSize:9.5,formatter:'均值 {c} 万'},
+        data:[{type:'average',name:'均值'}]}}]});
+}
+function hourlyBuild(){
+  var nowH=new Date().getHours();
+  return hourly.map(function(v,i){
+    if(i>nowH)return{value:v,itemStyle:{color:'rgba(59,130,246,.20)',borderRadius:[3,3,0,0]}};
+    if(i===nowH)return{value:v,itemStyle:{color:GR('#0E7490','#06B6D4',true),borderRadius:[3,3,0,0]}};
+    return{value:v,itemStyle:{color:GR('#1D4ED8','#5BB8F6',true),borderRadius:[3,3,0,0]}};
+  });
+}
+function initMethod(){
+  ch.method=echarts.init($('chartMethod'));
+  ch.method.setOption({tooltip:Object.assign({trigger:'item',
+      formatter:function(p){return p.name+'<br><b style="color:#7CC4F8">'
+        +fmt(S.kpi[1].val*p.value/100)+'</b> 次（'+p.value+'%）'}},TIP),
+    legend:{orient:'vertical',right:14,top:'middle',itemWidth:11,itemHeight:11,itemGap:13,
+      textStyle:{color:'#BCD6F5',fontSize:11.5},
+      formatter:function(n){for(var i=0;i<methodDist.length;i++)
+        if(methodDist[i].n===n)return n+'  '+methodDist[i].v.toFixed(1)+'%';return n}},
+    series:[{type:'pie',radius:['46%','68%'],center:['31%','50%'],
+      itemStyle:{borderColor:'rgba(8,18,38,.9)',borderWidth:3,borderRadius:4},
+      label:{show:false},
+      data:methodDist.map(function(m){return{value:m.v,name:m.n,
+        itemStyle:{color:m.c,shadowColor:m.c,shadowBlur:10}}})}]});
+}
+function initRes(){
+  var html='';
+  resUse.forEach(function(r){
+    var lv=r.v>=80?'red':r.v>=60?'amber':'green';
+    var col=lv==='red'?GR('rgba(239,68,68,.25)','#EF4444')
+      :lv==='amber'?GR('rgba(245,158,11,.22)','#F59E0B'):GR('rgba(16,185,129,.20)','#10B981');
+    var txt=lv==='red'?'#FCA5A5':lv==='amber'?'#FCD34D':'#6EE7B7';
+    html+='<div class="res-item"><div class="res-name">'+r.n+'</div>'
+      +'<div class="res-track"><div class="res-fill" style="width:'+r.v+'%;background:'+col+'"></div></div>'
+      +'<div class="res-num" style="color:'+txt+'">'+r.v+'%</div>'
+      +'<div class="res-lv '+lv+'">'+(lv==='red'?'高':lv==='amber'?'中':'低')+'</div></div>';
+  });
+  $('resBody').innerHTML=html;
+}
+
+/* ---------- 中国地图 ---------- */
+var mapData=null,pickedAd=null;
+function mapOption(){
+  return{tooltip:Object.assign({trigger:'item',
+      formatter:function(p){return p.name+'<br>调用量：<b style="color:#7CC4F8">'+fmt(p.value||0)+'</b> 次'}},TIP),
+    visualMap:{type:'continuous',min:0,max:200000,left:4,bottom:2,calculable:true,
+      text:['高','低'],textStyle:{color:'#7FA6D9',fontSize:9},itemWidth:9,itemHeight:76,
+      inRange:{color:['#0E2A50','#1B4E92','#2E7FD0','#56B8F0','#9FDEFF']}},
+    series:[{type:'map',map:'china',roam:false,selectedMode:'single',zoom:1,
+      itemStyle:{areaColor:'#0D2038',borderColor:'rgba(96,165,250,.42)',borderWidth:.7},
+      emphasis:{itemStyle:{areaColor:'#2E86D8'},label:{show:true,color:'#fff',fontSize:9}},
+      select:{itemStyle:{areaColor:'#F59E0B',borderColor:'#FCD34D',borderWidth:1.2},
+        label:{show:true,color:'#fff',fontSize:9}},
+      label:{show:false},data:[]}]};
+}
+function initMap(){
+  ch.map=echarts.init($('chartMap'));
+  /* 注意：map series 必须在 registerMap('china') 之后 setOption，否则同步抛异常中断启动序列 */
+  fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+    .then(function(r){return r.json()})
+    .then(function(gj){
+      echarts.registerMap('china',gj);
+      ch.map.setOption(mapOption());
+      mapData=gj.features.map(function(f){
+        var ad=+(f.properties.adcode||f.properties.id);
+        return{name:f.properties.name,adcode:ad,value:REGION[ad]||0};
+      });
+      setMapData();
+      ch.map.on('click',function(p){
+        if(p.componentType==='series'&&p.data){pickRegion(p.data.adcode,p.value)}
+      });
+    })
+    .catch(function(){
+      ch.map.clear();
+      ch.map.setOption({graphic:[{type:'text',left:'center',top:'middle',
+        style:{text:'中国地图数据加载失败\n（离线环境）\n右侧可查看省份排行',fill:'#5C7DA6',
+          font:'13px "Segoe UI","Microsoft YaHei"',textAlign:'center',lineHeight:22}}]});
+    });
+}
+function setMapData(){
+  if(!mapData)return;
+  var d=mapData.map(function(m){return{name:m.name,adcode:m.adcode,value:REGION[m.adcode]||0}});
+  ch.map.setOption({series:[{data:d}]});
+  if(pickedAd!=null){
+    var hit=d.filter(function(x){return x.adcode===pickedAd})[0];
+    if(hit)ch.map.dispatchAction({type:'select',name:hit.name});
+  }
+}
+function pickRegion(ad,v){
+  pickedAd=ad;
+  $('mapPicked').innerHTML='<b style="color:#FCD34D">'+AD[ad]+'</b> · '+fmt(v)+' 次（今日）';
+  if(mapData){var hit=mapData.filter(function(x){return x.adcode===ad})[0];
+    if(hit)ch.map.dispatchAction({type:'select',name:hit.name});}
+  renderTop();
+}
+function renderTop(){
+  var list=Object.keys(REGION).map(function(ad){return{ad:+ad,name:AD[ad],v:REGION[ad]}})
+    .sort(function(a,b){return b.v-a.v}).slice(0,5);
+  $('mapTop').innerHTML=list.map(function(r,i){
+    return'<div class="map-item'+(r.ad===pickedAd?' active':'')+'" data-ad="'+r.ad+'">'
+      +'<div class="map-rank">'+(i+1)+'</div><div class="map-name">'+r.name+'</div>'
+      +'<div class="map-val">'+fmt(r.v)+'</div></div>';
+  }).join('');
+  Array.prototype.forEach.call($('mapTop').children,function(el){
+    el.onclick=function(){pickRegion(+el.getAttribute('data-ad'),REGION[+el.getAttribute('data-ad')])};
+  });
+}
+
+/* ---------- 模型轮播卡片 ---------- */
+var CAR_N=5;
+var carList=MODELS.map(function(_,i){return i});
+function carSort(){
+  carList.sort(function(a,b){
+    var lv=function(i){return MODELS[i][3]==='err'?0:MODELS[i][3]==='run'?1:2};
+    return lv(a)-lv(b)||MODELS[b][4]-MODELS[a][4];
+  });
+}
+carSort();
+var CAR_P=Math.ceil(carList.length/CAR_N),carPage=0,carTimer=null;
+function renderCarousel(){
+  if(carPage>=CAR_P)carPage=0;
+  var idx=carList.slice(carPage*CAR_N,carPage*CAR_N+CAR_N);
+  var html='';
+  idx.forEach(function(gi){
+    var m=MODELS[gi],d=derived(m,gi);
+    html+='<div class="m-card '+m[3]+'" data-i="'+gi+'">'
+      +'<div class="mc-top"><span class="mc-name">'+m[0]+' · '+m[2]+'</span>'
+      +'<span class="st '+m[3]+'"><i></i>'+STN[m[3]]+'</span></div>'
+      +'<div class="mc-val">'+fmt(m[4])+'<em>次 · 今日调用</em></div>'
+      +'<span class="mc-mon" data-i="'+gi+'">监控</span>'
+      +'<div class="mc-row"><span>Token <b>'+(d.tk/10000).toFixed(0)+' 万</b></span>'
+      +'<span>成功率 <b>'+d.sr+'%</b></span><span>响应 <b>'+d.rt+'s</b></span></div>'
+      +'</div>';
+  });
+  for(var k=idx.length;k<CAR_N;k++)html+='<div></div>';
+  $('carTrack').innerHTML=html;
+  $('carNow').textContent=(carPage+1)+' / '+CAR_P;
+  Array.prototype.forEach.call($('carTrack').querySelectorAll('.m-card'),function(el){
+    el.onclick=function(){openDetail(+el.getAttribute('data-i'))};
+  });
+  Array.prototype.forEach.call($('carTrack').querySelectorAll('.mc-mon'),function(el){
+    el.onclick=function(e){e.stopPropagation();openMonitor(+el.getAttribute('data-i'))};
+  });
+}
+function carGo(d){carPage=(carPage+d+CAR_P)%CAR_P;renderCarousel()}
+function carAuto(on){
+  if(carTimer){clearInterval(carTimer);carTimer=null}
+  if(on)carTimer=setInterval(function(){carGo(1)},3000);
+}
+
+/* ---------- 模态框 ---------- */
+var monTimer=null;
+function openModal(t,html){$('mTitle').textContent=t;$('mBody').innerHTML=html;
+  $('mask').classList.add('show')}
+function closeModal(){
+  $('mask').classList.remove('show');
+  if(monTimer){clearInterval(monTimer);monTimer=null}
+  if(ch.modal){ch.modal.dispose();ch.modal=null}
+  $('mBody').innerHTML='';
+}
+$('mClose').onclick=closeModal;
+$('mask').onclick=function(e){if(e.target===this)closeModal()};
+
+function openKpi(i){
+  var k=S.kpi[i];
+  openModal(k.label+' · 近7日趋势',
+    '<div id="kpiSpark" style="width:100%;height:230px"></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px">'
+    +'<span>日环比 <b style="color:'+(k.dd>=0?'#10B981':'#EF4444')+'">'+(k.dd>=0?'+':'')+k.dd.toFixed(1)+'%</b></span>'
+    +'<span>周环比 <b style="color:'+(k.ww>=0?'#10B981':'#EF4444')+'">'+(k.ww>=0?'+':'')+k.ww.toFixed(1)+'%</b></span>'
+    +'<span>'+k.period+' <b style="color:#7CC4F8">'+(k.delta>=0?'+':'')+k.delta.toFixed(1)+'%</b></span></div>');
+  ch.modal=echarts.init($('kpiSpark'));
+  ch.modal.setOption({tooltip:Object.assign({trigger:'axis'},TIP),
+    grid:{left:56,right:18,top:18,bottom:26},
+    xAxis:AX({type:'category',boundaryGap:false,data:DAYS}),
+    yAxis:AX({type:'value',scale:true,splitLine:{lineStyle:{color:'rgba(64,140,255,.12)'}}}),
+    series:[{type:'line',smooth:true,symbol:'circle',symbolSize:6,data:k.spark,
+      lineStyle:{width:2.5,color:'#38BDF8'},itemStyle:{color:'#38BDF8',borderColor:'#0A1830',borderWidth:1},
+      areaStyle:{color:GR('rgba(56,189,248,.30)','rgba(56,189,248,0)',true)},
+      label:{show:true,color:'#9CC6F2',fontSize:10}}]});
+}
+function cell(k,v){return'<div class="d-cell"><div class="d-k">'+k+'</div><div class="d-v">'+v+'</div></div>'}
+function openDetail(i){
+  var m=MODELS[i],d=derived(m,i);
+  var node='推理节点-0'+(i%6+1),since='2025-0'+((i%9)+1)+'-1'+(i%9),
+    owner=['王振华','李明哲','张晓东','赵思远','陈立群'][i%5];
+  openModal(m[0]+' · 模型详情',
+    '<div class="d-grid">'
+    +cell('模型类型',m[1])+cell('版本',m[2])+cell('状态',STN[m[3]])+cell('部署节点',node)
+    +cell('上线时间',since)+cell('负责人',owner)+cell('调用次数',fmt(m[4])+' 次')
+    +cell('Token 消耗',fmt(d.tk))+cell('平均响应时长',d.rt+' s')+cell('成功率',d.sr+'%')
+    +'</div><div class="d-desc">该模型已接入平台统一网关，支持流式输出与函数调用；当前服务于教学、科研与办公场景，'
+    +'配额策略为「师生共享 + 高峰保障」。监控数据每 30 秒刷新一次。</div>');
+}
+function openMonitor(i){
+  var m=MODELS[i];
+  openModal('实时监控 · '+m[0],
+    '<div class="mon-nums">'
+    +'<div class="mon-cell"><div class="d-k">实时 QPS</div><div class="d-v" id="monQps" style="color:#7CC4F8">--</div></div>'
+    +'<div class="mon-cell"><div class="d-k">平均延迟</div><div class="d-v" id="monRt" style="color:#FCD34D">--</div></div>'
+    +'<div class="mon-cell"><div class="d-k">错误率</div><div class="d-v" id="monErr" style="color:#FCA5A5">--</div></div>'
+    +'</div><div id="monChart"></div>');
+  var pts=[];for(var j=0;j<40;j++)pts.push(+(rnd(18,26)).toFixed(1));
+  ch.modal=echarts.init($('monChart'));
+  function upd(){
+    pts.push(+(rnd(16,30)).toFixed(1));if(pts.length>40)pts.shift();
+    ch.modal.setOption({tooltip:Object.assign({trigger:'axis'},TIP),
+      grid:{left:40,right:12,top:10,bottom:22},
+      xAxis:AX({type:'category',boundaryGap:false,
+        data:pts.map(function(_,k){return p2(k%24)+':00:0'+(k%9)})}),
+      yAxis:AX({type:'value',min:0,max:40,splitLine:{lineStyle:{color:'rgba(64,140,255,.12)'}}}),
+      series:[{type:'line',smooth:true,symbol:'none',data:pts,
+        lineStyle:{width:2,color:'#06B6D4'},
+        areaStyle:{color:GR('rgba(34,211,238,.30)','rgba(34,211,238,0)',true)}}]});
+    $('monQps').textContent=(pts[pts.length-1]*3).toFixed(0)+' /s';
+    $('monRt').textContent=rnd(0.8,1.5).toFixed(2)+' s';
+    $('monErr').textContent=rnd(0.01,0.4).toFixed(2)+' %';
+  }
+  upd();monTimer=setInterval(upd,1000);
+}
+
+/* ---------- 刷新 ---------- */
+function refreshData(auto){
+  $('loading').classList.add('show');
+  if(!auto){var b=$('btnRefresh');b.classList.add('spin');
+    setTimeout(function(){b.classList.remove('spin')},650)}
+  setTimeout(function(){
+    S.kpi[1].val=Math.round(S.kpi[1].val*rnd(.985,1.015));
+    S.kpi[2].val=Math.round(S.kpi[2].val*rnd(.99,1.01));
+    S.kpi[3].val=Math.round(S.kpi[3].val*rnd(.99,1.01));
+    S.kpi[4].val=+Math.max(.8,S.kpi[4].val*rnd(.97,1.03)).toFixed(2);
+    S.kpi[5].val=+Math.min(99.99,Math.max(98.5,S.kpi[5].val+rnd(-.04,.04))).toFixed(2);
+    S.kpi.forEach(function(k,i){if(i>0){k.delta=+(k.delta+rnd(-.4,.4)).toFixed(1);
+      k.dd=+(k.dd+rnd(-.3,.3)).toFixed(1)}});
+    trend.calls[6]=+(trend.calls[6]*rnd(.99,1.01)).toFixed(1);
+    trend.tokens[6]=+(trend.tokens[6]*rnd(.99,1.01)).toFixed(2);
+    userTrend.act[6]=Math.round(userTrend.act[6]*rnd(.995,1.005));
+    userTrend.nw[6]=Math.round(userTrend.nw[6]*rnd(.98,1.02));
+    resUse.forEach(function(r){r.v=Math.max(5,Math.min(95,Math.round(r.v+rnd(-3,3))))});
+    hourly=hourly.map(function(v){return +(v*rnd(.98,1.02)).toFixed(1)});
+    REGION[320000]=Math.round(REGION[320000]*rnd(.995,1.005));
+    MODELS.forEach(function(m){m[4]=Math.round(m[4]*rnd(.997,1.003))});
+    renderAll();
+    $('loading').classList.remove('show');
+  },600);
+}
+function renderAll(){
+  renderKpi();
+  ch.type.setOption({series:[{data:typeDist.map(function(d){return d.v})}]});
+  ch.trend.setOption({series:[{data:trend.calls},{data:trend.tokens}]});
+  ch.user.setOption({series:[{data:userTrend.act},{data:userTrend.nw}]});
+  ch.hourly.setOption({series:[{data:hourlyBuild()}]});
+  initRes();renderTop();setMapData();carSort();renderCarousel();
+}
+
+/* ---------- 时钟 / 运行时长 / 缩放 ---------- */
+var baseUp=36*86400+12*3600+35*60,t0=Date.now();
+function tick(){
+  var n=new Date(),WK=['日','一','二','三','四','五','六'];
+  $('hDate').textContent=n.getFullYear()+'年'+p2(n.getMonth()+1)+'月'+p2(n.getDate())+'日 星期'+WK[n.getDay()];
+  $('hClock').textContent=p2(n.getHours())+':'+p2(n.getMinutes())+':'+p2(n.getSeconds());
+  var up=baseUp+Math.floor((Date.now()-t0)/1000);
+  var txt=Math.floor(up/86400)+'天 '+Math.floor(up%86400/3600)+'小时 '+Math.floor(up%3600/60)+'分';
+  $('hdUptime').textContent=txt;$('sysUptime').textContent=txt;
+}
+function fit(){
+  var s=Math.min(innerWidth/1920,innerHeight/1080);
+  $('screen').style.transform='translate(-50%,-50%) scale('+s+')';
+}
+
+/* ---------- 启动（safe 容错：单模块异常不中断全局） ---------- */
+function safe(tag,fn){try{fn()}catch(e){console.error('[init:'+tag+']',e)}}
+safe('kpi',renderKpi);safe('type',initType);safe('status',initStatus);safe('ability',initAbility);
+safe('trend',initTrend);safe('user',initUser);safe('hourly',initHourly);safe('method',initMethod);
+safe('res',initRes);safe('map',initMap);safe('top',renderTop);safe('carousel',renderCarousel);
+safe('tick',tick);setInterval(tick,1000);
+setInterval(function(){safe('refresh',function(){refreshData(true)})},30000);
+$('btnRefresh').onclick=function(){refreshData(false)};
+$('carPrev').onclick=function(){carGo(-1)};
+$('carNext').onclick=function(){carGo(1)};
+var carHover=$('carTrack').parentNode;
+carHover.addEventListener('mouseenter',function(){carAuto(false)});
+carHover.addEventListener('mouseleave',function(){carAuto(true)});
+carAuto(true);
+addEventListener('resize',fit);fit();
+})();
+</script>
+</body>
+</html>

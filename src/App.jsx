@@ -21,12 +21,14 @@ import CategoryManagePage from './admin/pages/CategoryManagePage';
 import ModelManagePage from './admin/pages/ModelManagePage';
 import UserManagePage from './admin/pages/UserManagePage';
 import ConfigManagePage from './admin/pages/ConfigManagePage';
+import LlmConfigManagePage from './admin/pages/LlmConfigManagePage';
 import XixiManagePage from './admin/pages/XixiManagePage';
 import FileManagePage from './admin/pages/FileManagePage';
 import LogManagePage from './admin/pages/LogManagePage';
 import CasCallback from './CasCallback';
 import DifyChatPage from './DifyChatPage';
 import SqlBotPage from './SqlBotPage';
+import CollegeQueryPage from './CollegeQueryPage';
 import { UserProvider, useUser } from './UserContext';
 
 const staticTabs = [
@@ -84,13 +86,18 @@ function Home() {
       const detail = await getAgentDetail(agentId);
       const url = detail.externalUrl || detail.external_url;
       if (url) {
-        const separator = url.includes('?') ? '&' : '?';
-        let finalUrl = url;
-        if (user?.username) {
-          const encoded = await encodeUserId(user.username);
-          finalUrl = `${url}${separator}sys.user_id=${encodeURIComponent(encoded)}`;
+        // 站内哈希路由（如 #/college-query/101）走内部导航，避免 window.open 错位
+        if (url.startsWith('#/')) {
+          navigate(url.replace(/^#/, ''));
+        } else {
+          const separator = url.includes('?') ? '&' : '?';
+          let finalUrl = url;
+          if (user?.username) {
+            const encoded = await encodeUserId(user.username);
+            finalUrl = `${url}${separator}sys.user_id=${encodeURIComponent(encoded)}`;
+          }
+          window.open(finalUrl, '_blank');
         }
-        window.open(finalUrl, '_blank');
       } else {
         navigate(`/chat/${agentId}`);
       }
@@ -110,7 +117,7 @@ function Home() {
       {/* Hero Banner */}
       <div className="el-hero">
         <div className="el-hero__image">
-          <img src="http://210.28.145.186:3001/plaza/avatar.png" alt="智能体广场" />
+          <img src="/plaza/avatar.png" alt="智能体广场" />
         </div>
         <div className="el-hero__content">
           <h1 className="el-hero__title">{siteSubtitle}</h1>
@@ -215,6 +222,7 @@ function App() {
         <Route path="/manual" element={<UnderConstruction pageType="manual" />} />
         <Route path="/dify-chat" element={<DifyChatPage />} />
         <Route path="/sql-bot" element={<SqlBotPage />} />
+        <Route path="/college-query/:id" element={<CollegeQueryPage />} />
 
         {/* 管理后台 */}
         <Route path="/admin/login" element={<AdminLoginRoute />} />
@@ -227,6 +235,7 @@ function App() {
           <Route path="models" element={<ModelManagePage />} />
           <Route path="users" element={<UserManagePage />} />
           <Route path="configs" element={<ConfigManagePage />} />
+          <Route path="llm-config" element={<LlmConfigManagePage />} />
           <Route path="xixi" element={<XixiManagePage />} />
           <Route path="files" element={<FileManagePage />} />
           <Route path="logs" element={<LogManagePage />} />

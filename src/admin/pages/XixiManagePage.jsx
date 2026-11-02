@@ -1,35 +1,30 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Card, Space, Button, Tooltip, Alert } from 'antd';
-import { ReloadOutlined, ExportOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Space, Alert, Spin, Tooltip } from 'antd';
+import { InfoCircleOutlined, ExportOutlined } from '@ant-design/icons';
 import adminRequest from '../../api/request';
 
-// 锡锡导员管理平台 SSO 跳板：携带一次性 ticket 由锡锡后端换取登录态后自动进入首页
+// 锡锡导员管理平台 SSO 跳板：携带一次性 ticket 直接跳转，
+// 由锡锡后端服务端换票并 302 回其前端 #/sso-callback（全程不经过学校 CAS，无 Referer 限制）
 const XIXI_SSO_LOGIN = 'http://210.28.144.49:8002/xiaozhi/user/sso-login';
 
 export default function XixiManagePage() {
-  const [frameSrc, setFrameSrc] = useState('');
+  const [jumpUrl, setJumpUrl] = useState('');
   const [ticketError, setTicketError] = useState(null);
 
-  const loadWithTicket = useCallback(async () => {
+  const loadAndJump = useCallback(async () => {
     setTicketError(null);
     try {
       const { ticket } = await adminRequest.post('/sso/ticket');
-      setFrameSrc(`${XIXI_SSO_LOGIN}?ticket=${encodeURIComponent(ticket)}`);
+      const url = `${XIXI_SSO_LOGIN}?ticket=${encodeURIComponent(ticket)}`;
+      setJumpUrl(url);
+      // replace 跳转：不留本跳板页的历史记录，从锡锡返回时不会落回这里造成循环跳转
+      window.location.replace(url);
     } catch (e) {
       setTicketError(e.message || '获取锡锡登录凭证失败');
     }
   }, []);
 
-  useEffect(() => { loadWithTicket(); }, [loadWithTicket]);
-
-  const openInNewWindow = async () => {
-    try {
-      const { ticket } = await adminRequest.post('/sso/ticket');
-      window.open(`${XIXI_SSO_LOGIN}?ticket=${encodeURIComponent(ticket)}`, '_blank');
-    } catch (e) {
-      setTicketError(e.message || '获取锡锡登录凭证失败');
-    }
-  };
+  useEffect(() => { loadAndJump(); }, [loadAndJump]);
 
   return (
     <Card
@@ -37,37 +32,45 @@ export default function XixiManagePage() {
       title={
         <Space>
           <span>锡锡导员管理</span>
-          <Tooltip title="通过统一身份认证自动登录后内嵌展示；如无法加载可点击「在新窗口打开」">
+          <Tooltip
+            title="自动登录并跳转到锡锡导员管理平台（210.28.144.49:8002），无需再次输入账号密码"
+          >
             <InfoCircleOutlined style={{ color: 'rgba(0,0,0,0.45)' }} />
           </Tooltip>
         </Space>
       }
       extra={
-        <Space>
-          <Button size="small" icon={<ReloadOutlined />} onClick={loadWithTicket}>
-            刷新
-          </Button>
-          <Button size="small" type="primary" icon={<ExportOutlined />} onClick={openInNewWindow}>
-            在新窗口打开
-          </Button>
-        </Space>
+        jumpUrl ? (
+          <a href={jumpUrl} target="_blank" rel="noreferrer">
+            <ExportOutlined /> 在新窗口打开
+          </a>
+        ) : null
       }
     >
-      {ticketError && (
+      {ticketError ? (
         <Alert
           type="error"
           showIcon
-          style={{ marginBottom: 12 }}
           message="自动登录失败"
-          description={`${ticketError}；请确认该账号已在锡锡平台开通，然后点击「刷新」重试。`}
+          description={
+            <Space direction="vertical" size={4}>
+              <span>{ticketError}；请确认该账号已在锡锡平台开通。</span>
+              <a onClick={loadAndJump}>重新获取凭证并跳转</a>
+            </Space>
+          }
         />
-      )}
-      {frameSrc && (
-        <iframe
-          title="锡锡导员管理"
-          src={frameSrc}
-          style={{ width: '100%', height: 'calc(100vh - 200px)', border: '1px solid #f0f0f0', borderRadius: 6 }}
-        />
+      ) : (
+        <div style={{ padding: '80px 0', textAlign: 'center' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
+            正在获取登录凭证并跳转到锡锡导员管理平台…
+          </div>
+          {jumpUrl && (
+            <div style={{ marginTop: 12 }}>
+              若未自动跳转，<a href={jumpUrl}>点击这里进入</a>
+            </div>
+          )}
+        </div>
       )}
     </Card>
   );

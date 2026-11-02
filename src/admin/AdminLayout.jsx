@@ -25,8 +25,14 @@ const menuItems = [
   { key: '/admin/models', icon: <CloudServerOutlined />, label: '模型管理' },
   { key: '/admin/users', icon: <UserOutlined />, label: '用户管理' },
   { type: 'divider' },
-  { key: '/admin/configs', icon: <SettingOutlined />, label: '系统配置' },
-  { key: '/admin/xixi', label: '锡锡导员管理' },
+  {
+    key: 'settings', icon: <SettingOutlined />, label: '系统设置',
+    children: [
+      { key: '/admin/xixi', label: '锡锡导员管理' },
+      { key: '/admin/llm-config', label: '大模型配置' },
+      { key: '/admin/configs', label: '基础配置' },
+    ],
+  },
   { key: '/admin/files', icon: <FileOutlined />, label: '文件管理' },
   { key: '/admin/logs', icon: <FileTextOutlined />, label: '操作日志' },
 ];
@@ -38,6 +44,9 @@ export default function AdminLayout() {
   const { user, logout } = useAdmin();
   const { token: themeToken } = theme.useToken();
 
+  // 根据当前路径自动展开所属父级（系统设置子菜单）
+  const [openKeys, setOpenKeys] = useState(['settings']);
+
   const dropdownItems = [
     { key: 'home', icon: <DashboardOutlined />, label: '回到前台', onClick: () => { window.location.hash = '#/'; } },
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', danger: true, onClick: logout },
@@ -48,10 +57,12 @@ export default function AdminLayout() {
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} trigger={null}
         style={{ background: themeToken.colorBgContainer }}>
         <div style={{ height: 48, margin: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 700, fontSize: 16, color: themeToken.colorPrimary }}>
-          <img src="http://210.28.145.186:3001/plaza/logo3.png" alt="logo" style={{ height: 36, width: 36, borderRadius: 4 }} />
+          <img src="/plaza/logo3.png" alt="logo" style={{ height: 36, width: 36, borderRadius: 4 }} />
           {!collapsed && <span>AI管理后台</span>}
         </div>
         <Menu mode="inline" selectedKeys={[location.pathname]} items={menuItems}
+          openKeys={collapsed ? [] : openKeys}
+          onOpenChange={(keys) => setOpenKeys(keys)}
           onClick={({ key }) => navigate(key)} />
       </Sider>
       <Layout>

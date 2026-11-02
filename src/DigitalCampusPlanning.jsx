@@ -379,11 +379,11 @@ function DigitalCampusPlanning() {
               <div className="el-section__image" style={{ marginBottom: '2rem' }}>
                 <h3 className="el-section__subtitle" style={{ color: '#0066cc' }}>智能体广场规划架构</h3>
                 <img
-                  src={`http://210.28.145.186:3001/plaza/arc.png?t=${new Date().getTime()}`}
+                  src={`/plaza/arc.png?t=${new Date().getTime()}`}
                   alt="智能体广场规划架构"
                   style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
                   onClick={() => {
-                    setCurrentImage('http://210.28.145.186:3001/plaza/arc.png');
+                    setCurrentImage('/plaza/arc.png');
                     setShowModal(true);
                   }}
                   onMouseOver={(e) => {
@@ -573,11 +573,11 @@ function DigitalCampusPlanning() {
                   <div style={{ marginBottom: '1.5rem' }}>
                     <div className="el-section__image" style={{ marginBottom: '1.5rem' }}>
                       <img
-                        src={`http://210.28.145.186:3001/plaza/case1.png?t=${new Date().getTime()}`}
+                        src={`/plaza/case1.png?t=${new Date().getTime()}`}
                         alt="智能推荐智能体案例1"
                         style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
                         onClick={() => {
-                          setCurrentImage('http://210.28.145.186:3001/plaza/case1.png');
+                          setCurrentImage('/plaza/case1.png');
                           setShowModal(true);
                         }}
                         onMouseOver={(e) => {
@@ -590,11 +590,11 @@ function DigitalCampusPlanning() {
                     </div>
                     <div className="el-section__image" style={{ marginBottom: '1.5rem' }}>
                       <img
-                        src={`http://210.28.145.186:3001/plaza/case2.png?t=${new Date().getTime()}`}
+                        src={`/plaza/case2.png?t=${new Date().getTime()}`}
                         alt="智能推荐智能体案例2"
                         style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
                         onClick={() => {
-                          setCurrentImage('http://210.28.145.186:3001/plaza/case2.png');
+                          setCurrentImage('/plaza/case2.png');
                           setShowModal(true);
                         }}
                         onMouseOver={(e) => {
@@ -607,11 +607,11 @@ function DigitalCampusPlanning() {
                     </div>
                     <div className="el-section__image">
                       <img
-                        src={`http://210.28.145.186:3001/plaza/case3.png?t=${new Date().getTime()}`}
+                        src={`/plaza/case3.png?t=${new Date().getTime()}`}
                         alt="智能推荐智能体案例3"
                         style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
                         onClick={() => {
-                          setCurrentImage('http://210.28.145.186:3001/plaza/case3.png');
+                          setCurrentImage('/plaza/case3.png');
                           setShowModal(true);
                         }}
                         onMouseOver={(e) => {
