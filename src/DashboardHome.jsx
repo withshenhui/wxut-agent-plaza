@@ -42,6 +42,14 @@ const avaColorOf = (name) => {
 
 const nf = (n) => (n == null ? '—' : Number(n).toLocaleString('zh-CN'));
 
+/* 平台概况卡片图标（16px 线性） */
+const M_ICONS = {
+  agent: <><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 3v4M9 13h.01M15 13h.01" /></>,
+  model: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>,
+  category: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>,
+  visit: <><path d="M3 12h4l3 8 4-16 3 8h4" /></>,
+};
+
 function DashboardHome() {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -141,10 +149,10 @@ function DashboardHome() {
   }, [agents, totalVisits]);
 
   const metrics = [
-    { name: '在架智能体', count: agentTotal, hint: catStats.length ? `${catStats.length} 个分类` : '', link: '/plaza' },
-    { name: '接入大模型', count: modelTotal, hint: providers.length ? `${providers.length} 家供应商` : '', link: '/model-management' },
-    { name: '服务分类', count: categories?.length, hint: topCatByVisit ? `访问最多 · ${topCatByVisit.label}` : '', link: '/plaza' },
-    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, hint: top1Share ? `头名占 ${top1Share}%` : '', link: '/plaza' },
+    { name: '在架智能体', count: agentTotal, hint: catStats.length ? `${catStats.length} 个分类` : '', link: '/plaza', tone: 'primary', ico: 'agent' },
+    { name: '接入大模型', count: modelTotal, hint: providers.length ? `${providers.length} 家供应商` : '', link: '/model-management', tone: 'violet', ico: 'model' },
+    { name: '服务分类', count: categories?.length, hint: topCatByVisit ? `最热 ${topCatByVisit.label}` : '', link: '/plaza', tone: 'amber', ico: 'category' },
+    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, hint: top1Share ? `头名占 ${top1Share}%` : '', link: '/plaza', tone: 'sky', ico: 'visit' },
   ];
 
   return (
@@ -176,10 +184,11 @@ function DashboardHome() {
           <h2 id="summary-title" className="cs-sr">平台概况</h2>
           <dl>{metrics.map((m) => (
             <div key={m.name}>
-              <Link to={m.link} className="cs-item">
+              <Link to={m.link} className={`cs-item cs-item--${m.tone}`}>
+                <span className="cs-item__ico"><svg viewBox="0 0 24 24" aria-hidden="true">{M_ICONS[m.ico]}</svg></span>
                 <dd>{loading ? '—' : nf(m.count)}</dd>
                 <dt>{m.name}</dt>
-                {m.hint ? <p>{m.hint}</p> : null}
+                <p>{loading ? ' ' : (m.hint || '—')}</p>
               </Link>
             </div>
           ))}</dl>
