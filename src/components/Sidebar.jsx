@@ -79,10 +79,8 @@ const menuItems = [
   { path: '/', icon: 'home', label: '首页' },
   { path: '/plaza', icon: 'apps', label: '智能体广场' },
   { external: true, url: `${apiBase}/sso/entry?app=dify`, icon: 'ai', label: '智能体开发平台' },
-  { external: true, url: '#', icon: 'knowledge', label: '知识库中心' },
-  { external: true, url: 'http://210.28.144.91:12345/dolphinscheduler/ui', icon: 'data', label: '数据中台' },
+  { external: true, url: `${apiBase}/sso/entry?app=dify&redirect=/datasets`, icon: 'knowledge', label: '知识库中心' },
   { path: '/model-management', icon: 'model', label: '模型服务' },
-  { external: true, url: '#', icon: 'cloud', label: '统一云管中台' },
   { external: true, url: '/sqlbot.html', icon: 'search', label: '智能问数' },
   { path: '/form-agent', icon: 'form', label: '智能填报' },
   { external: true, url: '#', icon: 'guide', label: '操作指南' },
@@ -160,8 +158,8 @@ function Sidebar({ isCollapsed, onToggle, activePath }) {
                   <li key={i}>
                     <a
                       href={url}
-                      target={url.startsWith('http') ? '_blank' : undefined}
-                      rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`el-menu-item ${isActive ? 'active' : ''}`}
                     >
                       {linkContent}
