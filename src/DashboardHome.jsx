@@ -141,10 +141,10 @@ function DashboardHome() {
   }, [agents, totalVisits]);
 
   const metrics = [
-    { name: '在架智能体', count: agentTotal, hint: catStats.length ? `${catStats.length} 个分类` : '', link: '/plaza', tone: 'primary' },
-    { name: '接入大模型', count: modelTotal, hint: providers.length ? `${providers.length} 家供应商` : '', link: '/model-management', tone: 'success' },
-    { name: '服务分类', count: categories?.length, hint: topCatByVisit ? `访问最多 · ${topCatByVisit.label}` : '', link: '/plaza', tone: 'warning' },
-    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, hint: top1Share ? `头名占 ${top1Share}%` : '', link: '/plaza', tone: 'accent' },
+    { name: '在架智能体', count: agentTotal, hint: catStats.length ? `${catStats.length} 个分类` : '', link: '/plaza' },
+    { name: '接入大模型', count: modelTotal, hint: providers.length ? `${providers.length} 家供应商` : '', link: '/model-management' },
+    { name: '服务分类', count: categories?.length, hint: topCatByVisit ? `访问最多 · ${topCatByVisit.label}` : '', link: '/plaza' },
+    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, hint: top1Share ? `头名占 ${top1Share}%` : '', link: '/plaza' },
   ];
 
   return (
@@ -173,15 +173,12 @@ function DashboardHome() {
         </nav>
 
         <section className="campus-summary" aria-labelledby="summary-title">
-          <h2 id="summary-title">平台概况</h2>
+          <h2 id="summary-title" className="cs-sr">平台概况</h2>
           <dl>{metrics.map((m) => (
             <div key={m.name}>
-              <Link to={m.link} className={`cs-item cs-item--${m.tone}`}>
+              <Link to={m.link} className="cs-item">
+                <dd>{loading ? '—' : nf(m.count)}</dd>
                 <dt>{m.name}</dt>
-                <dd>
-                  {loading ? <span className="cs-skel" /> : nf(m.count)}
-                  <em aria-hidden="true">↗</em>
-                </dd>
                 {m.hint ? <p>{m.hint}</p> : null}
               </Link>
             </div>
