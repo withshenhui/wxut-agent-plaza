@@ -7,72 +7,15 @@ import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
-// 智能体 SVG 插画（带动画）
-const RobotIllustration = () => (
+// 登录页插画：与前台首页横幅同源的吉祥物形象（生产部署于后端静态目录 /plaza/）
+const LoginIllustration = () => (
   <div style={{ animation: 'robotFloat 3s ease-in-out infinite' }}>
-    <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 身体光晕 */}
-      <circle cx="100" cy="100" r="80" fill="url(#glow)" opacity="0.3">
-        <animate attributeName="r" values="78;82;78" dur="3s" repeatCount="indefinite" />
-      </circle>
-      {/* 头部 */}
-      <circle cx="100" cy="90" r="50" fill="#E8F4FD" stroke="#1890FF" strokeWidth="2"/>
-      {/* 左眼 */}
-      <rect x="75" y="72" width="20" height="16" rx="4" fill="#1890FF" opacity="0.8">
-        <animate attributeName="height" values="16;2;16" dur="4s" begin="0s" repeatCount="indefinite" />
-      </rect>
-      {/* 右眼 */}
-      <rect x="105" y="72" width="20" height="16" rx="4" fill="#1890FF" opacity="0.8">
-        <animate attributeName="height" values="16;2;16" dur="4s" begin="0.1s" repeatCount="indefinite" />
-      </rect>
-      <circle cx="85" cy="80" r="4" fill="white"/>
-      <circle cx="115" cy="80" r="4" fill="white"/>
-      {/* 嘴巴 */}
-      <path d="M88 100 Q100 110 112 100" stroke="#1890FF" strokeWidth="2.5" fill="none" strokeLinecap="round">
-        <animate attributeName="d" values="M88 100 Q100 110 112 100;M88 100 Q100 100 112 100;M88 100 Q100 110 112 100" dur="3s" repeatCount="indefinite" />
-      </path>
-      {/* 天线 */}
-      <line x1="100" y1="40" x2="100" y2="28" stroke="#1890FF" strokeWidth="2"/>
-      <circle cx="100" cy="24" r="5" fill="#52C41A">
-        <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
-      </circle>
-      {/* 身体 */}
-      <rect x="60" y="105" width="80" height="40" rx="12" fill="#E8F4FD" stroke="#1890FF" strokeWidth="2"/>
-      {/* 身体按钮 */}
-      <circle cx="85" cy="120" r="4" fill="#1890FF" opacity="0.5">
-        <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" begin="0s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="100" cy="120" r="4" fill="#1890FF" opacity="0.5">
-        <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" begin="0.3s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="115" cy="120" r="4" fill="#1890FF" opacity="0.5">
-        <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" begin="0.6s" repeatCount="indefinite" />
-      </circle>
-      {/* 左手 */}
-      <line x1="60" y1="115" x2="42" y2="108" stroke="#1890FF" strokeWidth="2" strokeLinecap="round">
-        <animate attributeName="y2" values="108;100;108" dur="2s" repeatCount="indefinite" />
-      </line>
-      <circle cx="38" cy="106" r="5" fill="#E8F4FD" stroke="#1890FF" strokeWidth="1.5">
-        <animate attributeName="cy" values="106;98;106" dur="2s" repeatCount="indefinite" />
-      </circle>
-      {/* 右手 */}
-      <line x1="140" y1="115" x2="158" y2="108" stroke="#1890FF" strokeWidth="2" strokeLinecap="round">
-        <animate attributeName="y2" values="108;100;108" dur="2s" begin="0.5s" repeatCount="indefinite" />
-      </line>
-      <circle cx="162" cy="106" r="5" fill="#E8F4FD" stroke="#1890FF" strokeWidth="1.5">
-        <animate attributeName="cy" values="106;98;106" dur="2s" begin="0.5s" repeatCount="indefinite" />
-      </circle>
-      {/* 腿 */}
-      <line x1="75" y1="145" x2="70" y2="170" stroke="#1890FF" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="125" y1="145" x2="130" y2="170" stroke="#1890FF" strokeWidth="2" strokeLinecap="round"/>
-      <ellipse cx="100" cy="178" rx="45" ry="6" fill="#1890FF" opacity="0.08"/>
-      <defs>
-        <radialGradient id="glow">
-          <stop offset="0%" stopColor="#1890FF" stopOpacity="0.2"/>
-          <stop offset="100%" stopColor="#1890FF" stopOpacity="0"/>
-        </radialGradient>
-      </defs>
-    </svg>
+    <img
+      src="/plaza/avatar.png"
+      alt="AI 助手"
+      style={{ width: 240, height: 240, objectFit: 'contain', display: 'block' }}
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+    />
   </div>
 );
 
@@ -127,7 +70,7 @@ export default function LoginPage() {
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <RobotIllustration />
+          <LoginIllustration />
           <Text style={{ color: '#667', fontSize: 15, maxWidth: 300, textAlign: 'center', lineHeight: 1.8, marginTop: 24 }}>
             无锡职业技术大学 AI 管理平台<br />
             管理智能体、模型、用户与系统配置

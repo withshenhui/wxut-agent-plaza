@@ -16,7 +16,7 @@ function UnderConstruction({ pageType }) {
         <ul style={{ display: 'flex', listStyle: 'none', gap: '1rem', margin: 0, padding: 0 }}>
           <li><Link to="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500, transition: 'opacity 0.3s' }}>首页</Link></li>
           <li><Link to="/guide" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>数智化校园建设规划</Link></li>
-          <li><a href="http://210.28.144.91/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>AI中台</a></li>
+          <li><a href="https://aiagent.wxut.edu.cn/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>智能体开发平台</a></li>
           <li><a href="http://210.28.144.91:12345/dolphinscheduler/ui" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>数据中台</a></li>
           <li><Link to="/manual" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>操作指南</Link></li>
           <li><Link to="/about" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>关于我们</Link></li>
@@ -234,16 +234,16 @@ function UnderConstruction({ pageType }) {
         image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=organization%20chart%20of%20AI%20agent%20clusters&image_size=landscape_16_9'
       },
       {
-        title: 'AI中台使用指南',
+        title: '智能体开发平台使用指南',
         content: `
-          <p>AI中台是智能体的管理和部署平台，您可以通过以下步骤使用：</p>
+          <p>智能体开发平台是智能体的管理和部署平台，您可以通过以下步骤使用：</p>
           <ol>
-            <li>点击导航栏中的"AI中台"链接</li>
+            <li>点击导航栏中的"智能体开发平台"链接</li>
             <li>登录系统（使用学校统一身份认证）</li>
             <li>在平台中浏览和管理可用的智能体</li>
             <li>根据需要部署和配置智能体</li>
           </ol>
-          <p>AI中台为智能体的开发和管理提供了便捷的工具和接口。</p>
+          <p>智能体开发平台为智能体的开发和管理提供了便捷的工具和接口。</p>
         `,
         image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AI%20platform%20dashboard%20with%20agent%20management%20interface&image_size=landscape_16_9'
       },
