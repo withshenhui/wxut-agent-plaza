@@ -42,14 +42,6 @@ const avaColorOf = (name) => {
 
 const nf = (n) => (n == null ? '—' : Number(n).toLocaleString('zh-CN'));
 
-/* 平台概况 KPI 图标（16px 线性） */
-const M_ICONS = {
-  agent: <><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 3v4M9 13h.01M15 13h.01" /></>,
-  model: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>,
-  category: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>,
-  visit: <><path d="M3 12h4l3 8 4-16 3 8h4" /></>,
-};
-
 function DashboardHome() {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -83,7 +75,10 @@ function DashboardHome() {
         setModels(list);
         setModelTotal(m.value?.total ?? list.length);
       }
-      if (rec.status === 'fulfilled') setRecommended((rec.value || []).slice(0, 8));
+      // 智能填报暂时下线（2026-11-20）：推荐列表里同名智能体一并隐藏，恢复时移除该过滤
+      if (rec.status === 'fulfilled') {
+        setRecommended((rec.value || []).filter((a) => a.name !== '智能填报').slice(0, 8));
+      }
       setLoading(false);
     });
     return () => { alive = false; };
@@ -139,11 +134,17 @@ function DashboardHome() {
     return m;
   }, [providers]);
 
+  const top1Share = useMemo(() => {
+    if (!agents.length || !totalVisits) return null;
+    const top = Math.max(...agents.map((a) => a.visitCount || 0));
+    return Math.round((top / totalVisits) * 100);
+  }, [agents, totalVisits]);
+
   const metrics = [
-    { name: '在架智能体', count: agentTotal, tone: 'primary', ico: 'agent' },
-    { name: '接入大模型', count: modelTotal, tone: 'success', ico: 'model' },
-    { name: '服务分类', count: categories?.length, tone: 'warning', ico: 'category' },
-    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, tone: 'accent', ico: 'visit' },
+    { name: '在架智能体', count: agentTotal, hint: catStats.length ? `${catStats.length} 个分类` : '', link: '/plaza', tone: 'primary' },
+    { name: '接入大模型', count: modelTotal, hint: providers.length ? `${providers.length} 家供应商` : '', link: '/model-management', tone: 'success' },
+    { name: '服务分类', count: categories?.length, hint: topCatByVisit ? `访问最多 · ${topCatByVisit.label}` : '', link: '/plaza', tone: 'warning' },
+    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, hint: top1Share ? `头名占 ${top1Share}%` : '', link: '/plaza', tone: 'accent' },
   ];
 
   return (
@@ -175,11 +176,14 @@ function DashboardHome() {
           <h2 id="summary-title">平台概况</h2>
           <dl>{metrics.map((m) => (
             <div key={m.name}>
-              <span className={`cs-ico cs-ico--${m.tone}`}>
-                <svg viewBox="0 0 24 24">{M_ICONS[m.ico]}</svg>
-              </span>
-              <dd>{nf(m.count)}</dd>
-              <dt>{m.name}</dt>
+              <Link to={m.link} className={`cs-item cs-item--${m.tone}`}>
+                <dt>{m.name}</dt>
+                <dd>
+                  {loading ? <span className="cs-skel" /> : nf(m.count)}
+                  <em aria-hidden="true">↗</em>
+                </dd>
+                {m.hint ? <p>{m.hint}</p> : null}
+              </Link>
             </div>
           ))}</dl>
         </section>
