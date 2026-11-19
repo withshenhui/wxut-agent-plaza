@@ -1,0 +1,429 @@
+/* ============================================================
+   AI 中台 · 仪表盘首页
+   Linear 风格：细描边取代阴影 / 近黑正文 / 单一克制强调色 /
+   等宽数字 / 紧凑行式信息密度
+   ============================================================ */
+
+.dash {
+  --d-surface: #FFFFFF;
+  --d-line: #ECECEF;
+  --d-line-2: #E3E3E7;
+  --d-t1: #16161A;
+  --d-t2: #6B6F76;
+  --d-t3: #9096A0;
+  --d-accent: #4A6CF7;
+  --d-accent-soft: #EDF0FE;
+  --d-fill: #F4F4F6;
+  --d-hover: #FAFAFB;
+  --d-r: 8px;
+
+  color: var(--d-t1);
+  font-variant-numeric: tabular-nums;
+  animation: dash-in 0.28s ease both;
+}
+
+@keyframes dash-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 页头 ---------- */
+.dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.dash-head__title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--d-t1);
+  line-height: 1.25;
+}
+.dash-head__sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--d-t2);
+}
+.dash-head__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.dash-head__stamp {
+  font-size: 12px;
+  color: var(--d-t3);
+  white-space: nowrap;
+}
+.dash-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--d-t1);
+  background: var(--d-surface);
+  border: 1px solid var(--d-line-2);
+  border-radius: var(--d-r);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.dash-btn:hover {
+  background: var(--d-hover);
+  border-color: #D6D6DC;
+}
+
+/* ---------- 指标卡 ---------- */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.dash-stat {
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-r);
+  padding: 14px 16px 16px;
+  transition: border-color 0.15s ease;
+}
+.dash-stat:hover {
+  border-color: var(--d-line-2);
+}
+.dash-stat__top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--d-t2);
+}
+.dash-stat__icon {
+  color: var(--d-t3);
+  flex: none;
+}
+.dash-stat__label {
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+.dash-stat__value {
+  margin-top: 10px;
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--d-t1);
+  line-height: 1.05;
+}
+
+/* ---------- 两列主体（各自成列，互不拉伸） ---------- */
+.dash-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.dash-colL,
+.dash-colR {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- 面板 ---------- */
+.dash-panel {
+  background: var(--d-surface);
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-r);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dash-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--d-line);
+}
+.dash-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--d-t1);
+}
+.dash-panel__meta {
+  font-size: 11.5px;
+  color: var(--d-t3);
+}
+.dash-panel__body {
+  padding: 4px 16px 8px;
+  min-width: 0;
+}
+
+/* ---------- 行式条形列表（排行 / 分布共用） ---------- */
+.dash-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dash-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--d-line);
+  cursor: pointer;
+}
+.dash-row:first-child { border-top: none; }
+.dash-row--static { cursor: default; }
+.dash-row__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--d-t1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+.dash-row:not(.dash-row--static):hover .dash-row__label { color: var(--d-accent); }
+.dash-row__bar {
+  width: 40%;
+  max-width: 240px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--d-fill);
+  overflow: hidden;
+  flex: none;
+}
+.dash-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--d-accent);
+  opacity: 0.85;
+}
+.dash-row__val {
+  width: 56px;
+  flex: none;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--d-t2);
+}
+
+/* ---------- 分类分布 ---------- */
+.dash-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 0 8px;
+}
+.dash-donut { flex: none; }
+.dash-donut__num {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--d-t1);
+}
+.dash-donut__cap {
+  font-size: 9.5px;
+  fill: var(--d-t3);
+}
+.dash-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dash-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.dash-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.dash-legend__label {
+  flex: 1;
+  min-width: 0;
+  color: var(--d-t2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-legend__val {
+  color: var(--d-t1);
+  font-weight: 500;
+}
+
+/* ---------- 供应商 chips ---------- */
+.dash-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0 12px;
+}
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  color: var(--d-t2);
+  background: var(--d-fill);
+  border-radius: 6px;
+}
+.dash-chip b {
+  font-weight: 600;
+  color: var(--d-t1);
+}
+
+/* ---------- 大模型表格 ---------- */
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dash-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--d-t3);
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--d-line);
+  white-space: nowrap;
+}
+.dash-table td {
+  font-size: 13px;
+  color: var(--d-t1);
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--d-line);
+  vertical-align: middle;
+}
+.dash-table tbody tr:last-child td { border-bottom: none; }
+.dash-table tbody tr { transition: background 0.15s ease; }
+.dash-table tbody tr:hover { background: var(--d-hover); }
+.dash-table__r { text-align: right; }
+.dash-muted { color: var(--d-t2); }
+
+.dash-model {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.dash-model__badge {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--d-t2);
+  background: var(--d-fill);
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.dash-model__name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 19px;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--d-t2);
+  background: var(--d-fill);
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.dash-tag--soft {
+  color: var(--d-accent);
+  background: var(--d-accent-soft);
+}
+
+/* ---------- 推荐智能体 ---------- */
+.dash-reco { list-style: none; margin: 0; padding: 0; }
+.dash-reco__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--d-line);
+  cursor: pointer;
+}
+.dash-reco__row:first-child { border-top: none; }
+.dash-reco__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-reco__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-t1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+.dash-reco__row:hover .dash-reco__name { color: var(--d-accent); }
+.dash-reco__desc {
+  font-size: 11.5px;
+  color: var(--d-t3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 推荐行的图标缩到紧凑尺寸，不抢视觉 */
+.dash-reco .el-agent-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 7px;
+}
+
+/* ---------- 空态 ---------- */
+.dash-empty {
+  padding: 18px 0;
+  font-size: 12.5px;
+  color: var(--d-t3);
+  text-align: center;
+  list-style: none;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1180px) {
+  .dash-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 1024px) {
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .dash-head { flex-direction: column; align-items: flex-start; }
+  .dash-row__bar { display: none; }
+  .dash-donut-wrap { flex-direction: column; align-items: stretch; gap: 12px; }
+  .dash-donut { align-self: center; }
+  .dash-table th:nth-child(3),
+  .dash-table td:nth-child(3) { display: none; }
+}

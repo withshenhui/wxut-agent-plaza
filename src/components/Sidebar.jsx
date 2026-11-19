@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getPublicConfig } from '../api/config';
+import { apiBase } from '../api/request';
 
 // SVG Icons - Line style matching the reference dashboard design
 const icons = {
@@ -46,6 +48,11 @@ const icons = {
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
   ),
+  form: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4"/>
+    </svg>
+  ),
   guide: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
@@ -70,20 +77,53 @@ const icons = {
 
 const menuItems = [
   { path: '/', icon: 'home', label: '首页' },
-  { external: true, url: '#', icon: 'apps', label: '应用广场' },
-  { external: true, url: 'http://210.28.144.91/apps', icon: 'ai', label: 'AI中台' },
+  { path: '/plaza', icon: 'apps', label: '智能体广场' },
+  { external: true, url: `${apiBase}/sso/entry?app=dify`, icon: 'ai', label: '智能体开发平台' },
   { external: true, url: '#', icon: 'knowledge', label: '知识库中心' },
   { external: true, url: 'http://210.28.144.91:12345/dolphinscheduler/ui', icon: 'data', label: '数据中台' },
   { path: '/model-management', icon: 'model', label: '模型服务' },
   { external: true, url: '#', icon: 'cloud', label: '统一云管中台' },
   { external: true, url: '/sqlbot.html', icon: 'search', label: '智能问数' },
+  { path: '/form-agent', icon: 'form', label: '智能填报' },
   { external: true, url: '#', icon: 'guide', label: '操作指南' },
   { path: '/campus-planning', icon: 'book', label: 'AI科普' },
 
   { path: '/about', icon: 'info', label: '关于我们' },
 ];
 
+/** 外链菜单项（label → 默认 url），供管理后台"入口链接配置"页复用，避免两处漂移 */
+export const externalMenuItems = () => menuItems.filter((i) => i.external);
+
+/** 侧栏菜单运行时配置：sys_config `menu.links` 存 JSON。
+ *  值为 URL 字符串 → 覆盖外链地址；值为 "hidden"/"-" /false/null → 隐藏该菜单项；
+ *  未配置或配置加载失败 → 走代码默认菜单。产品环境下线入口只动配置，不动代码。 */
+const LINKS_CONFIG_KEY = 'menu.links';
+
 function Sidebar({ isCollapsed, onToggle, activePath }) {
+  // null = 配置加载中（菜单延迟渲染避免闪现待隐藏项）；{} = 加载失败用默认菜单
+  const [overrides, setOverrides] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    getPublicConfig(LINKS_CONFIG_KEY)
+      .then((cfg) => {
+        if (!alive) return;
+        try {
+          const parsed = JSON.parse(cfg?.configValue || '{}');
+          if (parsed && typeof parsed === 'object') setOverrides(parsed);
+          else setOverrides({});
+        } catch { setOverrides({}); }
+      })
+      .catch(() => { if (alive) setOverrides({}); });
+    return () => { alive = false; };
+  }, []);
+  const linkUrl = (item) => overrides[item.label] || item.url;
+  /** menu.links 值为 "hidden" / "-" / false / null 时隐藏该菜单项（纯配置下线入口，无需改代码） */
+  const isHidden = (item) => {
+    const v = overrides[item.label];
+    return v === 'hidden' || v === '-' || v === false || v === null;
+  };
+
   return (
     <aside className={`el-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="el-sidebar-inner">
@@ -106,7 +146,7 @@ function Sidebar({ isCollapsed, onToggle, activePath }) {
         </div>
         <nav>
           <ul className="el-menu">
-            {menuItems.map((item, i) => {
+            {overrides === null ? null : menuItems.filter((item) => !isHidden(item)).map((item, i) => {
               const isActive = item.path === activePath;
               const linkContent = (
                 <>
@@ -115,12 +155,13 @@ function Sidebar({ isCollapsed, onToggle, activePath }) {
                 </>
               );
               if (item.external) {
+                const url = linkUrl(item);
                 return (
                   <li key={i}>
                     <a
-                      href={item.url}
-                      target={item.url.startsWith('http') ? '_blank' : undefined}
-                      rel={item.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      href={url}
+                      target={url.startsWith('http') ? '_blank' : undefined}
+                      rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
                       className={`el-menu-item ${isActive ? 'active' : ''}`}
                     >
                       {linkContent}
