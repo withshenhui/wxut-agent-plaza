@@ -1,124 +1,65 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PageLayout from './components/PageLayout';
 import AgentIcon from './components/AgentIcon';
 import { searchAgents, getCategories, getRecommendedAgents } from './api/agent';
 import { searchModels } from './api/model';
-import { useSiteConfig } from './components/SiteConfigContext';
 import { useUser } from './UserContext';
 import { launchAgent } from './utils/agentLaunch';
 import logoDeepseek from './assets/model-logos/deepseek.svg';
 import logoQwen from './assets/model-logos/qwen.svg';
-import logoBge from './assets/model-logos/bge.png';
 import './dashboard.css';
 
-/* 仪表盘配色：在既有品牌色基础上做低饱和延展，保持 Linear 式的克制 */
-const DONUT_COLORS = ['#4A6CF7', '#8B5CF6', '#0EA5E9', '#14B8A6', '#F59E0B', '#EC4899', '#94A3B8'];
+/* 环形图配色：主蓝起，配以模板的绿/琥珀/橙，保持同一套色系 */
+const DONUT_COLORS = ['#3B82F6', '#60A5FA', '#F97316', '#10B981', '#F59E0B', '#8B5CF6', '#94A3B8'];
 
-/* 模型品牌 logo：按模型名匹配（来源 simple-icons 官方图标 / FlagEmbedding 官方仓库） */
+/* 模型品牌 logo：按模型名匹配（simple-icons 官方图标）
+   deepseek 系（含库里拼写为 deepeek 的震泽模型）统一用 DeepSeek 官方 logo；
+   其余模型不使用品牌 logo，回落首字母头像 */
 const brandOf = (name) => {
   const n = (name || '').toLowerCase();
-  if (/deep?seek/.test(n)) return { src: logoDeepseek, color: '#4D6BFE' };
-  if (/qwen/.test(n)) return { src: logoQwen, color: '#615CED' };
-  if (/bge/.test(n)) return { src: logoBge, color: null, wide: true };
+  if (/deepeek|deep[- ]?seek/.test(n)) return { src: logoDeepseek, tint: 'deepseek' };
+  if (/qwen/.test(n)) return { src: logoQwen, tint: 'qwen' };
   return null;
+};
+
+/* 供应商彩点 / 首字母头像配色：按索引、按名称哈希取 —— 稳定、不随机 */
+const PROVIDER_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#F97316', '#8B5CF6', '#EC4899'];
+const AVA_COLORS = [
+  { bg: 'rgba(59,130,246,.12)', fg: '#2563EB' },
+  { bg: 'rgba(16,185,129,.12)', fg: '#059669' },
+  { bg: 'rgba(245,158,11,.14)', fg: '#B45309' },
+  { bg: 'rgba(249,115,22,.12)', fg: '#C2410C' },
+  { bg: 'rgba(139,92,246,.12)', fg: '#6D28D9' },
+  { bg: 'rgba(236,72,153,.12)', fg: '#BE185D' },
+];
+const avaColorOf = (name) => {
+  let h = 0;
+  const s = name || '';
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) % 9973;
+  return AVA_COLORS[h % AVA_COLORS.length];
 };
 
 const nf = (n) => (n == null ? '—' : Number(n).toLocaleString('zh-CN'));
 
-/* ---------- 轻量图标（16px 线性，单色） ---------- */
-const I = {
+/* 平台概况 KPI 图标（16px 线性） */
+const M_ICONS = {
   agent: <><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 3v4M9 13h.01M15 13h.01" /></>,
   model: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>,
   category: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>,
   visit: <><path d="M3 12h4l3 8 4-16 3 8h4" /></>,
 };
 
-function Stat({ icon, label, value }) {
-  return (
-    <div className="dash-stat">
-      <div className="dash-stat__top">
-        <svg className="dash-stat__icon" viewBox="0 0 24 24" width="15" height="15" fill="none"
-          stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{I[icon]}</svg>
-        <span className="dash-stat__label">{label}</span>
-      </div>
-      <div className="dash-stat__value">{value}</div>
-    </div>
-  );
-}
-
-function Panel({ title, meta, children, className = '' }) {
-  return (
-    <section className={`dash-panel ${className}`}>
-      <header className="dash-panel__head">
-        <h2 className="dash-panel__title">{title}</h2>
-        {meta ? <span className="dash-panel__meta">{meta}</span> : null}
-      </header>
-      <div className="dash-panel__body">{children}</div>
-    </section>
-  );
-}
-
-/** 行式条形列表：排行 / 分布共用 */
-function BarRow({ label, value, ratio, onClick, title }) {
-  return (
-    <li className={`dash-row ${onClick ? '' : 'dash-row--static'}`} onClick={onClick}>
-      <span className="dash-row__label" title={title || label}>{label}</span>
-      <span className="dash-row__bar">
-        <span className="dash-row__fill" style={{ width: `${Math.max(5, ratio * 100)}%` }} />
-      </span>
-      <span className="dash-row__val">{value}</span>
-    </li>
-  );
-}
-
-function Donut({ items }) {
-  const size = 148;
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const total = items.reduce((s, i) => s + i.count, 0);
-  let offset = 0;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="dash-donut">
-      <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-        {items.map((it, i) => {
-          const frac = total ? it.count / total : 0;
-          const dash = frac * circ;
-          const el = (
-            <circle
-              key={it.key}
-              cx={size / 2}
-              cy={size / 2}
-              r={r}
-              fill="none"
-              stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
-              strokeWidth={stroke}
-              strokeDasharray={`${dash} ${circ - dash}`}
-              strokeDashoffset={-offset}
-            />
-          );
-          offset += dash;
-          return el;
-        })}
-      </g>
-      <text x="50%" y="47%" textAnchor="middle" className="dash-donut__num">{total}</text>
-      <text x="50%" y="62%" textAnchor="middle" className="dash-donut__cap">个智能体</text>
-    </svg>
-  );
-}
-
 function DashboardHome() {
   const navigate = useNavigate();
-  const { siteName, siteSubtitle } = useSiteConfig();
   const { user } = useUser();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [agents, setAgents] = useState([]);
-  const [agentTotal, setAgentTotal] = useState(0);
-  const [categories, setCategories] = useState([]);
+  const [agentTotal, setAgentTotal] = useState(null);
+  const [categories, setCategories] = useState(null);
   const [models, setModels] = useState([]);
-  const [modelTotal, setModelTotal] = useState(0);
+  const [modelTotal, setModelTotal] = useState(null);
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -158,17 +99,29 @@ function DashboardHome() {
     [agents],
   );
   const maxVisit = topAgents.length ? (topAgents[0].visitCount || 1) : 1;
-
   const catStats = useMemo(() => {
-    const counts = new Map();
+    const agg = new Map();
     agents.forEach((a) => {
       const k = a.categoryKey || 'other';
-      counts.set(k, (counts.get(k) || 0) + 1);
+      const cur = agg.get(k) || { count: 0, visits: 0 };
+      cur.count += 1;
+      cur.visits += a.visitCount || 0;
+      agg.set(k, cur);
     });
-    return categories
-      .map((c, i) => ({ key: c.categoryKey, label: c.label, count: counts.get(c.categoryKey) || 0, color: DONUT_COLORS[i % DONUT_COLORS.length] }))
+    return (categories || [])
+      .map((c, i) => ({
+        key: c.categoryKey,
+        label: c.label,
+        ...(agg.get(c.categoryKey) || { count: 0, visits: 0 }),
+        color: DONUT_COLORS[i % DONUT_COLORS.length],
+      }))
+      .filter((c) => c.count > 0)
       .sort((a, b) => b.count - a.count);
   }, [agents, categories]);
+  const topCatByVisit = useMemo(
+    () => [...catStats].sort((a, b) => b.visits - a.visits)[0],
+    [catStats],
+  );
 
   const providers = useMemo(() => {
     const m = new Map();
@@ -176,121 +129,128 @@ function DashboardHome() {
       const p = x.provider || '未标注';
       m.set(p, (m.get(p) || 0) + 1);
     });
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    return [...m.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count], i) => ({ name, count, color: PROVIDER_COLORS[i % PROVIDER_COLORS.length] }));
   }, [models]);
+  const providerColor = useMemo(() => {
+    const m = new Map();
+    providers.forEach((p) => m.set(p.name, p.color));
+    return m;
+  }, [providers]);
 
-  const updatedAt = useMemo(
-    () => new Date().toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-    [],
-  );
-
-  const statItems = [
-    { icon: 'agent', label: '在架智能体', value: loading ? '—' : nf(agentTotal) },
-    { icon: 'model', label: '接入大模型', value: loading ? '—' : nf(modelTotal) },
-    { icon: 'category', label: '服务分类', value: loading ? '—' : nf(categories.length) },
-    { icon: 'visit', label: '累计访问量', value: loading ? '—' : nf(totalVisits) },
+  const metrics = [
+    { name: '在架智能体', count: agentTotal, tone: 'primary', ico: 'agent' },
+    { name: '接入大模型', count: modelTotal, tone: 'success', ico: 'model' },
+    { name: '服务分类', count: categories?.length, tone: 'warning', ico: 'category' },
+    { name: '累计访问量', count: agentTotal === null ? null : totalVisits, tone: 'accent', ico: 'visit' },
   ];
 
   return (
     <PageLayout
-      title={siteName}
       isSidebarCollapsed={isSidebarCollapsed}
       setIsSidebarCollapsed={setIsSidebarCollapsed}
       activePath="/"
+      contentClassName="el-content--plain"
     >
       <div className="dash">
-        {/* 页头 */}
-        <header className="dash-head">
-          <div className="dash-head__left">
-            <h1 className="dash-head__title">{siteSubtitle || siteName}</h1>
-            <p className="dash-head__sub">无锡职业技术大学 · AI 中台运行概览</p>
-          </div>
-          <div className="dash-head__right">
-            <span className="dash-head__stamp">数据更新于 {updatedAt}</span>
-            <button className="dash-btn" onClick={() => navigate('/plaza')}>
-              进入智能体广场
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-            </button>
+        <header className="campus-intro">
+          <div className="campus-copy">
+            <p className="campus-school">无锡职业技术大学 · AI 中台</p>
+            <h1>让 AI 成为<span className="campus-headline-accent">校园的新基础设施</span></h1>
+            <p className="campus-lead">智能体、数据与模型在这里汇聚。找到合适的 AI 助手，开启更高效的教学与工作。</p>
+            <Link className="campus-primary" to="/plaza">探索智能体广场 <span aria-hidden="true">→</span></Link>
           </div>
         </header>
 
-        {/* 指标卡 */}
-        <div className="dash-stats">
-          {statItems.map((s) => <Stat key={s.label} {...s} />)}
-        </div>
+        {/* 智能填报 / 智能问数暂时下线（2026-11-20），入口先换成站内其它常用页 */}
+        <nav className="campus-tools" aria-label="常用服务">
+          {[['智能体广场', '浏览全部智能体服务', '/plaza'], ['模型服务', '浏览已接入的模型', '/model-management'],
+            ['智能体开发平台', '低代码搭建专属智能体', '/'], ['知识库中心', '校内知识统一管理', '/']].map(([name, detail, path]) => (
+            <Link key={name} to={path}><strong>{name}</strong><small>{detail}</small><span aria-hidden="true">↗</span></Link>
+          ))}
+        </nav>
 
-        {/* 两列主体 */}
-        <div className="dash-cols">
-          {/* 左主栏 */}
-          <div className="dash-colL">
-            <Panel title="智能体访问排行" meta={`Top ${topAgents.length}`}>
+        <section className="campus-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">平台概况</h2>
+          <dl>{metrics.map((m) => (
+            <div key={m.name}>
+              <span className={`cs-ico cs-ico--${m.tone}`}>
+                <svg viewBox="0 0 24 24">{M_ICONS[m.ico]}</svg>
+              </span>
+              <dd>{nf(m.count)}</dd>
+              <dt>{m.name}</dt>
+            </div>
+          ))}</dl>
+        </section>
+
+        {/* 排行 + 分类分布 */}
+        <div className="dash-grid dash-grid--21">
+          <section className="dash-card">
+            <header className="dash-card__head dash-card__head--b">
+              <h2 className="dash-card__title">智能体访问排行</h2>
+              <span className="dash-card__sub">Top {topAgents.length}</span>
+            </header>
+            <div className="dash-card__body" style={{ paddingTop: 8 }}>
               <ul className="dash-rows">
-                {topAgents.map((a) => (
-                  <BarRow
-                    key={a.id}
-                    label={a.name}
-                    title={a.name}
-                    value={nf(a.visitCount)}
-                    ratio={(a.visitCount || 0) / maxVisit}
-                    onClick={(e) => { e.currentTarget.classList.add('is-clicked'); launchAgent(navigate, a.id, user); }}
-                  />
+                {topAgents.map((a, i) => (
+                  <li key={a.id}>
+                    <button className="dash-row" onClick={() => launchAgent(navigate, a.id, user)}>
+                      <span className="dash-row__idx">{i + 1}</span>
+                      <span className="dash-row__name" title={a.name}>{a.name}</span>
+                      <span className="dash-row__bar">
+                        <span
+                          className="dash-row__fill"
+                          style={{ width: `${Math.max(3, ((a.visitCount || 0) / maxVisit) * 100)}%`, animationDelay: `${i * 45}ms` }}
+                        />
+                      </span>
+                      <span className="dash-row__val">{nf(a.visitCount)}</span>
+                    </button>
+                  </li>
                 ))}
                 {!topAgents.length && <li className="dash-empty">{loading ? '加载中…' : '暂无数据'}</li>}
               </ul>
-            </Panel>
+            </div>
+          </section>
 
-            <Panel title="大模型一览" meta={`共 ${modelTotal} 个`}>
-              <div className="dash-chips">
-                {providers.map(([p, n]) => (
-                  <span key={p} className="dash-chip">{p}<b>{n}</b></span>
-                ))}
-              </div>
-              <table className="dash-table">
-                <thead>
-                  <tr>
-                    <th>模型</th>
-                    <th>供应商</th>
-                    <th>类别</th>
-                    <th className="dash-table__r">发布时间</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {models.map((m) => {
-                    const brand = brandOf(m.name);
-                    return (
-                      <tr key={m.id}>
-                      <td>
-                        <div className="dash-model">
-                          {brand ? (
-                            <span className={`dash-model__logo${brand.wide ? ' dash-model__logo--wide' : ''}`}>
-                              <img src={brand.src} alt="" style={brand.color ? { color: brand.color } : undefined} />
-                            </span>
-                          ) : (
-                            <span className="dash-model__badge">{(m.name || '?').trim()[0]}</span>
-                          )}
-                          <span className="dash-model__name">{m.name}</span>
-                          {m.type ? <span className="dash-tag">{m.type}</span> : null}
-                        </div>
-                      </td>
-                      <td className="dash-muted">{m.provider || '—'}</td>
-                      <td><span className="dash-tag dash-tag--soft">{m.category || 'general'}</span></td>
-                      <td className="dash-table__r dash-muted">{m.releaseDate || '—'}</td>
-                      </tr>
-                    );
-                  })}
-                  {!models.length && (
-                    <tr><td colSpan={4} className="dash-empty">{loading ? '加载中…' : '暂无数据'}</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </Panel>
-          </div>
-
-          {/* 右侧栏 */}
-          <div className="dash-colR">
-            <Panel title="分类分布" meta={`${categories.length} 类`}>
+          <section className="dash-card">
+            <header className="dash-card__head dash-card__head--b">
+              <h2 className="dash-card__title">分类分布</h2>
+              <span className="dash-card__sub">{catStats.length} 类</span>
+            </header>
+            <div className="dash-card__body" style={{ paddingTop: 18 }}>
               <div className="dash-donut-wrap">
-                <Donut items={catStats} />
+                <svg width={168} height={168} viewBox="0 0 168 168" className="dash-donut">
+                  <g transform="rotate(-90 84 84)">
+                    {(() => {
+                      const stroke = 16;
+                      const r = (168 - stroke) / 2;
+                      const circ = 2 * Math.PI * r;
+                      const sum = catStats.reduce((s, c) => s + c.count, 0) || 1;
+                      let off = 0;
+                      return catStats.map((c) => {
+                        const d = (c.count / sum) * circ;
+                        const el = (
+                          <circle
+                            key={c.key}
+                            cx={84}
+                            cy={84}
+                            r={r}
+                            fill="none"
+                            stroke={c.color}
+                            strokeWidth={stroke}
+                            strokeDasharray={`${d.toFixed(1)} ${(circ - d).toFixed(1)}`}
+                            strokeDashoffset={(-off).toFixed(1)}
+                          />
+                        );
+                        off += d;
+                        return el;
+                      });
+                    })()}
+                  </g>
+                  <text x="50%" y="46%" textAnchor="middle" className="dash-donut__num">{nf(agentTotal)}</text>
+                  <text x="50%" y="61%" textAnchor="middle" className="dash-donut__cap">个智能体</text>
+                </svg>
                 <ul className="dash-legend">
                   {catStats.map((c) => (
                     <li key={c.key} className="dash-legend__row">
@@ -301,23 +261,148 @@ function DashboardHome() {
                   ))}
                 </ul>
               </div>
-            </Panel>
 
-            <Panel title="推荐智能体" meta={`${recommended.length} 个`}>
+              {/* 补充事实：把卡片填满，也让环形图有可读的口径 */}
+              <div className="dash-kv">
+                <div className="dash-kv__r">
+                  <span>规模最大</span>
+                  <b>{catStats[0] ? `${catStats[0].label} · ${catStats[0].count} 个` : '—'}</b>
+                </div>
+                <div className="dash-kv__r">
+                  <span>平均每类</span>
+                  <b>{catStats.length ? `${Math.round(agentTotal / catStats.length)} 个` : '—'}</b>
+                </div>
+                <div className="dash-kv__r">
+                  <span>累计访问</span>
+                  <b>{agentTotal == null ? '—' : `${nf(totalVisits)} 次`}</b>
+                </div>
+                <div className="dash-kv__r">
+                  <span>访问最多</span>
+                  <b>{topCatByVisit ? `${topCatByVisit.label} · ${nf(topCatByVisit.visits)} 次` : '—'}</b>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* 大模型一览 + 推荐智能体 */}
+        <div className="dash-grid dash-grid--21 dash-eq">
+          <section className="dash-card">
+            <header className="dash-card__head dash-card__head--b">
+              <h2 className="dash-card__title">大模型一览</h2>
+              <span className="dash-card__sub">共 {nf(modelTotal)} 个 · {providers.length} 家供应商</span>
+            </header>
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--p-line)' }}>
+              <div className="dash-chips">
+                {providers.map((p) => (
+                  <span key={p.name} className="dash-chip">
+                    <span className="dash-dotp" style={{ background: p.color }} />
+                    {p.name}
+                    <b>{p.count}</b>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto', flex: 1 }}>
+              <table className="dash-tbl">
+                <colgroup>
+                  <col style={{ width: '44%' }} />
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '16%' }} />
+                  <col style={{ width: '18%' }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>模型</th>
+                    <th>供应商</th>
+                    <th>类别</th>
+                    <th className="r">发布时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {models.map((m) => {
+                    const brand = brandOf(m.name);
+                    const ava = avaColorOf(m.name);
+                    const pColor = providerColor.get(m.provider) || '#94A3B8';
+                    const isVertical = m.category === 'vertical';
+                    return (
+                      <tr key={m.id}>
+                        <td>
+                          <div className="dash-mdl">
+                            {brand ? (
+                              <span
+                                className="dash-mdl__ava"
+                                style={{
+                                  background: brand.tint === 'deepseek' ? 'rgba(77,107,254,.12)' : 'rgba(97,92,237,.12)',
+                                }}
+                              >
+                                <img src={brand.src} alt="" />
+                              </span>
+                            ) : (
+                              <span className="dash-mdl__ava" style={{ background: ava.bg, color: ava.fg }}>
+                                {(m.name || '?').trim().slice(0, 1)}
+                              </span>
+                            )}
+                            <span className="dash-mdl__txt">
+                              <span className="dash-mdl__name" title={m.name}>{m.name}</span>
+                              <span className="dash-mdl__meta" title={m.description || ''}>
+                                {[m.type, m.description].filter(Boolean).join(' · ') || '—'}
+                              </span>
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="dash-prov">
+                            <span className="dash-dotp" style={{ background: pColor }} />
+                            <span className="dash-prov__n">{m.provider || '—'}</span>
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="dash-pill"
+                            style={
+                              isVertical
+                                ? { background: 'rgba(249,115,22,.12)', color: '#C2410C' }
+                                : { background: 'rgba(59,130,246,.12)', color: '#2563EB' }
+                            }
+                          >
+                            {isVertical ? '垂直' : '通用'}
+                          </span>
+                        </td>
+                        <td className="r mono">{m.releaseDate || '—'}</td>
+                      </tr>
+                    );
+                  })}
+                  {!models.length && (
+                    <tr><td colSpan={4} className="dash-empty">{loading ? '加载中…' : '暂无数据'}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="dash-card">
+            <header className="dash-card__head dash-card__head--b">
+              <h2 className="dash-card__title">推荐智能体</h2>
+              <span className="dash-card__sub">{recommended.length} 个</span>
+            </header>
+            <div className="dash-card__body" style={{ paddingTop: 8 }}>
               <ul className="dash-reco">
                 {recommended.map((a) => (
-                  <li key={a.id} className="dash-reco__row" onClick={() => launchAgent(navigate, a.id, user)}>
-                    <AgentIcon emoji={a.icon} category={a.categoryKey || 'other'} size={18} />
-                    <div className="dash-reco__text">
-                      <span className="dash-reco__name">{a.name}</span>
-                      <span className="dash-reco__desc">{a.description}</span>
-                    </div>
+                  <li key={a.id}>
+                    <button className="dash-reco__row" onClick={() => launchAgent(navigate, a.id, user)}>
+                      <AgentIcon emoji={a.icon} category={a.categoryKey || 'other'} size={18} />
+                      <span className="dash-reco__text">
+                        <span className="dash-reco__name">{a.name}</span>
+                        <span className="dash-reco__desc">{a.description}</span>
+                      </span>
+                    </button>
                   </li>
                 ))}
                 {!recommended.length && <li className="dash-empty">{loading ? '加载中…' : '暂无推荐'}</li>}
               </ul>
-            </Panel>
-          </div>
+            </div>
+          </section>
         </div>
       </div>
     </PageLayout>

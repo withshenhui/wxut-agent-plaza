@@ -83,10 +83,6 @@ const menuItems = [
   { path: '/model-management', icon: 'model', label: '模型服务' },
   { external: true, url: '/sqlbot.html', icon: 'search', label: '智能问数' },
   { path: '/form-agent', icon: 'form', label: '智能填报' },
-  { external: true, url: '#', icon: 'guide', label: '操作指南' },
-  { path: '/campus-planning', icon: 'book', label: 'AI科普' },
-
-  { path: '/about', icon: 'info', label: '关于我们' },
 ];
 
 /** 外链菜单项（label → 默认 url），供管理后台"入口链接配置"页复用，避免两处漂移 */
