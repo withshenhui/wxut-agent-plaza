@@ -98,7 +98,7 @@ function DashboardHome() {
   );
 
   const topAgents = useMemo(
-    () => [...agents].sort((x, y) => (y.visitCount || 0) - (x.visitCount || 0)).slice(0, 8),
+    () => [...agents].sort((x, y) => (y.visitCount || 0) - (x.visitCount || 0)).slice(0, 10),
     [agents],
   );
   const maxVisit = topAgents.length ? (topAgents[0].visitCount || 1) : 1;
