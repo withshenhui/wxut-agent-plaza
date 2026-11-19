@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>智擎校园 · 企业微信工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#0d6e63;--ink-2:#0a5a50;--ink-weak:#e8f1ef;
+  --paper:#f7f6f2;--card:#fdfcf9;--line:#e2ded3;--line2:#eceae2;
+  --text:#2b2a26;--text2:#6a675e;--text3:#9a968a;
+  --olive:#5c6b3f;--ochre:#a2701f;--jiang:#8c3b3b;
+  --serif:"Songti SC","Noto Serif SC","STSong",serif;
+}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(180deg,#faf9f4 0%,#efede4 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px 20px;color:var(--text)}
+/* ===== 桌面舞台 ===== */
+.stage{display:flex;align-items:center;gap:44px;flex-wrap:wrap;justify-content:center}
+.note{width:352px;max-width:100%}
+.note .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink);background:var(--ink-weak);border:1px solid #cfe0dc;padding:4px 12px;border-radius:3px;letter-spacing:.5px}
+.note .eyebrow svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note h1{font-family:var(--serif);font-size:25px;line-height:1.3;margin:14px 0 4px;letter-spacing:1px}
+.note h1 small{display:block;font-family:-apple-system,"PingFang SC",sans-serif;font-size:12.5px;font-weight:500;color:var(--text3);letter-spacing:.5px;margin-top:6px}
+.note>p{font-size:13px;line-height:1.75;color:var(--text2);margin:10px 0 16px}
+.kvs{border:1px solid var(--line);border-radius:3px;background:var(--card);overflow:hidden}
+.kv{display:flex;gap:12px;padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--line2)}
+.kv:last-child{border-bottom:0}
+.kv span{color:var(--text3);flex:none;width:62px}
+.kv b{font-weight:600;color:var(--text)}
+.wswitch{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.wswitch .lbl{font-size:11.5px;color:var(--text3)}
+.wchips{display:flex;gap:6px}
+.wchip{font-size:11.5px;color:var(--text2);background:var(--card);border:1px solid var(--line);border-radius:3px;padding:5px 13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.wchip.on{color:#fff;background:var(--ink);border-color:var(--ink)}
+.note .foot{margin-top:14px;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.note .foot svg{width:13px;height:13px;fill:none;stroke:var(--olive);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ===== 手机壳 ===== */
+.device{width:395px;flex:none;background:#1e1b15;border-radius:50px;padding:10px;box-shadow:0 34px 80px rgba(43,38,26,.34),0 4px 14px rgba(43,38,26,.16);transition:width .25s ease}
+.disp{position:relative;width:375px;margin:0 auto;background:var(--paper);border-radius:40px;overflow:hidden;display:flex;flex-direction:column;height:772px;transition:width .25s ease}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:98px;height:27px;background:#1e1b15;border-radius:99px;z-index:60}
+.status{display:flex;align-items:center;justify-content:space-between;padding:15px 27px 7px;font-size:12.5px;font-weight:600;color:#2b2a26;flex:none;z-index:5}
+.status .sic{display:flex;align-items:center;gap:5px}
+.status svg{height:11px;fill:#2b2a26}
+.wxn{display:flex;align-items:center;background:#fff;border-bottom:1px solid var(--line);padding:9px 10px 9px 6px;flex:none;position:relative;z-index:5}
+.wxn .bk{display:flex;align-items:center;color:var(--text);font-size:13px;cursor:pointer;padding:4px 6px;border-radius:3px}
+.wxn .bk:active{background:var(--line2)}
+.wxn .bk svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-right:2px}
+.wxn .tt{position:absolute;left:60px;right:60px;text-align:center;font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:2px;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wxn .ops{margin-left:auto;display:flex;gap:13px;align-items:center;padding-right:5px}
+.wxn .ops svg{width:5px;height:19px;fill:none;stroke:#3c3a33;stroke-width:2.4;stroke-linecap:round}
+/* ===== 应用区 ===== */
+.app{flex:1;overflow-y:auto;overscroll-behavior:contain;position:relative;scrollbar-width:none}
+.app::-webkit-scrollbar{display:none}
+.view{display:none;min-height:100%}
+.view.on{display:block}
+/* —— 首页 —— */
+.paperhead{padding:18px 16px 14px;border-bottom:1px solid var(--line)}
+.paperhead .brand{font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:8px}
+.paperhead h2{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:1px}
+.paperhead .sub{font-size:11px;color:var(--text2);margin-top:5px}
+.inkstat{margin:14px 14px 0;background:var(--card);border:1px solid var(--line);border-top:2px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr)}
+.ist{text-align:center;padding:12px 4px;border-right:1px solid var(--line2)}
+.ist:last-child{border-right:0}
+.ist b{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--ink)}
+.ist b small{font-size:10px;font-weight:600;color:var(--text3);margin-left:2px}
+.ist em{display:block;font-style:normal;font-size:10px;color:var(--text3);margin-top:3px}
+.sect{display:flex;align-items:baseline;justify-content:space-between;padding:18px 16px 9px}
+.sect b{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:1.5px}
+.sect i{font-style:normal;font-size:11px;color:var(--ink);cursor:pointer}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px}
+.acard{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:14px 13px;cursor:pointer;transition:background .15s}
+.acard:active{background:var(--ink-weak)}
+.acard .r{display:flex;align-items:center;gap:10px}
+.acard .ic{width:36px;height:36px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex:none}
+.acard .ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.acard .nm{font-family:var(--serif);font-size:14.5px;font-weight:600;letter-spacing:.5px}
+.acard .bd{font-size:9.5px;color:var(--text3);margin-top:2px;letter-spacing:.5px}
+.acard p{font-size:10.5px;color:var(--text2);line-height:1.6;margin-top:10px;border-top:1px solid var(--line2);padding-top:9px}
+.klist{margin:0 14px;background:var(--card);border:1px solid var(--line)}
+.krow{display:flex;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line2);cursor:pointer}
+.krow:last-child{border-bottom:0}
+.krow:active{background:var(--line2)}
+.krow .ic{width:15px;height:15px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.krow .nm{font-size:13px;font-weight:600;flex:1}
+.krow .ct{font-size:10.5px;color:var(--text3);font-variant-numeric:tabular-nums}
+.digest{margin:0 14px 16px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ochre);padding:12px 14px}
+.digest .dt{display:flex;align-items:baseline;gap:8px}
+.digest .dt b{font-family:var(--serif);font-size:14px;letter-spacing:1px}
+.digest .dt span{font-size:10px;color:var(--text3)}
+.digest ul{list-style:none;margin-top:9px;display:flex;flex-direction:column;gap:7px}
+.digest li{font-size:11.5px;color:var(--text2);line-height:1.55;padding-left:12px;position:relative}
+.digest li::before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;background:var(--ochre)}
+.digest li b{color:var(--text);font-weight:600}
+/* —— 问答列表 —— */
+.clist{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:12px}
+.citem{display:flex;gap:11px;padding:13px 15px;cursor:pointer;border-bottom:1px solid var(--line2);align-items:center}
+.citem:last-child{border-bottom:0}
+.citem:active{background:var(--ink-weak)}
+.citem .av{width:42px;height:42px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex:none}
+.citem .av svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.citem .md{flex:1;min-width:0}
+.citem .nm{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:.5px}
+.citem .pv{font-size:11.5px;color:var(--text3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.citem .rt{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.citem .tm{font-size:10px;color:var(--text3);font-variant-numeric:tabular-nums}
+.citem .rd{width:7px;height:7px;border-radius:50%;background:var(--jiang)}
+/* —— 通知 —— */
+.nfilter{display:flex;gap:8px;margin:14px 14px 0}
+.nfilter button{font-family:inherit;font-size:12px;padding:7px 16px;border-radius:3px;border:1px solid var(--line);background:var(--card);color:var(--text2);cursor:pointer}
+.nfilter button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.nitem{background:var(--card);border:1px solid var(--line);margin:10px 14px 0;padding:12px 14px}
+.nitem .r1{display:flex;align-items:center;gap:8px}
+.nitem .tt{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nitem .tag{font-size:9px;font-weight:600;border-radius:2px;padding:2px 7px;flex:none;letter-spacing:1px}
+.nitem .tag.wait{color:var(--ink);background:var(--ink-weak);border:1px solid #cfe0dc}
+.nitem .tag.urge{color:var(--ochre);background:#f6efe0;border:1px solid #e7d8bb}
+.nitem .tag.done{color:var(--text3);background:var(--line2);border:1px solid var(--line)}
+.nitem p{font-size:11.5px;color:var(--text2);line-height:1.6;margin-top:5px}
+.nitem .ft{display:flex;gap:10px;margin-top:8px;align-items:center}
+.nitem .tm{font-size:10px;color:var(--text3);font-variant-numeric:tabular-nums}
+.nitem .go{font-size:11px;color:var(--ink);font-weight:600;cursor:pointer}
+.nend{text-align:center;font-size:10.5px;color:var(--text3);padding:18px 0 22px;letter-spacing:1px}
+/* —— 我的 —— */
+.me{background:var(--card);border-bottom:1px solid var(--line);padding:22px 16px 20px;display:flex;align-items:center;gap:13px}
+.me .av{width:54px;height:54px;border-radius:3px;border:1px solid var(--line);background:var(--ink-weak);color:var(--ink);font-family:var(--serif);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.me .nm{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.me .free{font-size:9px;font-weight:600;color:var(--olive);border:1px solid #d3d9c2;background:#eef1e3;border-radius:2px;padding:2px 7px;letter-spacing:1px}
+.me .dp{font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:.5px}
+.me .qr{margin-left:auto;flex:none;text-align:center;cursor:pointer}
+.me .qr .ic{width:36px;height:36px;border:1px solid var(--line);border-radius:3px;color:var(--text2);display:flex;align-items:center;justify-content:center;margin:0 auto;background:var(--card)}
+.me .qr .ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.me .qr em{display:block;font-style:normal;font-size:9.5px;color:var(--text3);margin-top:4px;white-space:nowrap}
+.mrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);margin:10px 14px 0;border-radius:3px;padding:0 14px;cursor:pointer}
+.mrow:active{background:var(--ink-weak)}
+.mrow .ic{width:15px;height:15px;fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mrow .lb{flex:1;font-size:13.5px;padding:13px 0}
+.mrow .vv{font-size:12px;color:var(--text3)}
+.mrow svg.ar{width:14px;height:14px;fill:none;stroke:#b9b4a5;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.about{text-align:center;font-size:10.5px;color:var(--text3);padding:20px 0 26px;line-height:2;letter-spacing:1px}
+.about b{color:var(--text2);font-weight:600}
+/* ===== 底部标签栏 ===== */
+.tabbar{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding:0 0 calc(12px + env(safe-area-inset-bottom))}
+.tabbar .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text3);cursor:pointer;padding:8px 0 2px;border-top:2px solid transparent;letter-spacing:1px}
+.tabbar .tb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tabbar .tb.on{color:var(--ink);font-weight:600;border-top-color:var(--ink);background:var(--ink-weak)}
+/* ===== 聊天页 ===== */
+.chatpage{position:absolute;inset:0;background:var(--paper);display:none;flex-direction:column;z-index:40}
+.chatpage.on{display:flex}
+.chnav{flex:none;display:flex;align-items:center;background:#fff;border-bottom:1px solid var(--line);padding:9px 8px;gap:8px}
+.chnav .bk{display:flex;align-items:center;cursor:pointer;color:var(--text);padding:4px 6px;border-radius:3px}
+.chnav .bk:active{background:var(--line2)}
+.chnav .bk svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-right:2px}
+.chnav .ag{flex:1;min-width:0;text-align:center}
+.chnav .ag b{font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:2px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chnav .ag i{font-style:normal;font-size:10px;color:var(--olive);display:flex;align-items:center;justify-content:center;gap:4px;margin-top:1px;letter-spacing:.5px}
+.chnav .ag i em{width:5px;height:5px;border-radius:50%;background:var(--olive);font-style:normal}
+.chnav .more{padding:4px 6px;cursor:pointer;color:#3c3a33}
+.chnav .more svg{width:5px;height:19px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;display:block}
+.msgs{flex:1;overflow-y:auto;padding:16px 14px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none}
+.msgs::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:8px;align-items:flex-start;max-width:100%}
+.msg .av{width:32px;height:32px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex:none}
+.msg .av svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.msg .bd{min-width:0;max-width:calc(100% - 46px)}
+.msg.me{flex-direction:row-reverse}
+.msg.me .bd{display:flex;flex-direction:column;align-items:flex-end}
+.msg.me p{background:var(--ink);color:#fff;border-radius:3px}
+.msg p{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:10px 12px;font-size:13px;line-height:1.7;color:var(--text);word-break:break-word}
+.msg p b{color:var(--ink)}
+.msg p code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--line2);border-radius:2px;padding:1px 5px}
+.msg p ol,.msg p ul{margin:4px 0 2px;padding-left:19px;display:flex;flex-direction:column;gap:3px}
+.srcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.src{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--ink);background:var(--ink-weak);border:1px solid #cfe0dc;border-radius:2px;padding:3px 9px;cursor:pointer;letter-spacing:.5px}
+.src svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing i{width:6px;height:6px;border-radius:1px;background:var(--text3);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.16s}
+.typing i:nth-child(3){animation-delay:.32s}
+@keyframes tp{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+.caret{display:inline-block;width:2px;height:14px;background:var(--ink);animation:blink .8s infinite;vertical-align:-2px;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.quick{flex:none;display:flex;gap:8px;overflow-x:auto;padding:10px 14px 4px;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.qk{flex:none;font-size:11.5px;color:var(--ink);background:var(--card);border:1px solid #cfe0dc;border-radius:2px;padding:7px 13px;cursor:pointer}
+.qk:active{background:var(--ink-weak)}
+.cbar{flex:none;display:flex;align-items:center;gap:9px;background:#fff;border-top:1px solid var(--line);padding:9px 12px calc(12px + env(safe-area-inset-bottom))}
+.cbar .in{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:9px 12px;font-size:12.5px;color:var(--text3);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar .mic,.cbar .snd{width:36px;height:36px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.cbar .mic{background:var(--paper);border:1px solid var(--line)}
+.cbar .mic svg{width:17px;height:17px;fill:none;stroke:var(--text2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cbar .snd{background:var(--ink)}
+.cbar .snd svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ===== toast ===== */
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(8px);background:rgba(43,42,38,.9);color:#fff;font-size:11.5px;padding:9px 16px;border-radius:3px;opacity:0;pointer-events:none;transition:all .25s;z-index:99;max-width:82%;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ===== 移动端自适应 ===== */
+@media(max-width:560px){
+  body{padding:0;background:var(--paper);display:block}
+  .stage{display:block}
+  .note{display:none}
+  .device{width:100%!important;border-radius:0;padding:0;box-shadow:none;background:transparent}
+  .disp{width:100%!important;height:100dvh;border-radius:0;transition:none}
+  .island{display:none}
+  .status{padding-top:calc(10px + env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="note">
+    <span class="eyebrow"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>企业微信移动端自适应展示</span>
+    <h1>智擎校园 · 工作台应用<small>智擎 · 校园智能平台 · 移动端</small></h1>
+    <p>核心能力以轻量 H5 内嵌学校企业微信工作台，师生免登录使用；界面按屏宽自适应重排，与桌面端同一服务、同一知识库发布。</p>
+    <div class="kvs">
+      <div class="kv"><span>接入方式</span><b>工作台应用 · 企微免登</b></div>
+      <div class="kv"><span>自适应范围</span><b>320–414px 主流机型及折叠屏</b></div>
+      <div class="kv"><span>覆盖功能</span><b>问答咨询 · 公文起草 · 报修分派 · 通知摘要</b></div>
+      <div class="kv"><span>消息通道</span><b>企微应用消息 · 摘要日报</b></div>
+    </div>
+    <div class="wswitch">
+      <span class="lbl">切换屏宽</span>
+      <div class="wchips">
+        <button class="wchip" data-w="320">320</button>
+        <button class="wchip on" data-w="375">375</button>
+        <button class="wchip" data-w="414">414</button>
+      </div>
+    </div>
+    <div class="foot"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>与桌面端同源发布 · 智擎 · 校园智能平台 v3.1.0</div>
+  </div>
+
+  <div class="device">
+    <div class="disp" id="disp">
+      <div class="island"></div>
+      <div class="status">
+        <span>9:41</span>
+        <span class="sic">
+          <svg viewBox="0 0 17 11" width="17" height="11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 11" width="15" height="11"><path d="M8 9.5 6 7.4a2.9 2.9 0 0 1 4 0zM8 6a5.4 5.4 0 0 0-3.9 1.7L2.7 6.3a7.5 7.5 0 0 1 10.6 0l-1.4 1.4A5.4 5.4 0 0 0 8 6zM8 2.2c-2.3 0-4.4.9-6 2.4L.6 3.2A10.2 10.2 0 0 1 8 .2c2.9 0 5.5 1.1 7.4 3l-1.4 1.4A8.3 8.3 0 0 0 8 2.2z"/></svg>
+          <svg viewBox="0 0 25 12" width="23" height="12"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke-opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" opacity=".4"/></svg>
+        </span>
+      </div>
+      <div class="wxn">
+        <span class="bk" data-act="wx-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>工作台</span>
+        <span class="tt">智擎校园</span>
+        <span class="ops"><svg viewBox="0 0 5 19"><path d="M2.5 0v3M2.5 8v3M2.5 16v3"/></svg></span>
+      </div>
+
+      <div class="app" id="app">
+        <!-- 首页 -->
+        <div class="view on" id="v-home">
+          <div class="paperhead">
+            <div class="brand">智擎 · 校园智能平台</div>
+            <h2>您好，许文博</h2>
+            <div class="sub">9 月 30 日 · 星期三 · 网络信息建设办公室 · 免登已启用</div>
+          </div>
+          <div class="inkstat">
+            <div class="ist"><b>18<small>次</small></b><em>本周问答</em></div>
+            <div class="ist"><b>3<small>件</small></b><em>待办事项</em></div>
+            <div class="ist"><b>12<small>篇</small></b><em>知识更新</em></div>
+          </div>
+          <div class="sect"><b>常用服务</b><i data-act="all-agents">全部 ›</i></div>
+          <div class="agrid" id="agrid"></div>
+          <div class="sect"><b>知识库</b><i data-t="移动端支持检索预览，全文在桌面端查看">管理 ›</i></div>
+          <div class="klist">
+            <div class="krow" data-t="奖助贷政策库 · 更新于 09-28">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+              <span class="nm">奖助贷政策库</span><span class="ct">1,204 条</span>
+            </div>
+            <div class="krow" data-t="实训规程库 · 更新于 09-25">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+              <span class="nm">实训规程库</span><span class="ct">486 条</span>
+            </div>
+            <div class="krow" data-t="后勤服务库 · 更新于 09-22">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+              <span class="nm">后勤服务库</span><span class="ct">312 条</span>
+            </div>
+          </div>
+          <div class="sect"><b>今日摘要</b><i data-act="digest-more">往期 ›</i></div>
+          <div class="digest">
+            <div class="dt"><b>通知智能摘要</b><span>09-30 · 汇总全校通知 3 条</span></div>
+            <ul>
+              <li><b>教务处</b> · 高翔宇发布 10 月调停课安排，涉及 12 门课程，需在 10 月 2 日前确认</li>
+              <li><b>网络中心</b> · 校园网核心设备检修，10 月 4 日 22:00–24:00 部分区域断网</li>
+              <li><b>图书馆</b> · 国庆期间开放时间调整为 9:00–16:00</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 问答 -->
+        <div class="view" id="v-chats">
+          <div class="clist" id="clist"></div>
+          <div class="nend">问答记录云端同步 · 移动端与桌面端一致</div>
+        </div>
+
+        <!-- 通知 -->
+        <div class="view" id="v-msg">
+          <div class="nfilter" id="nfilter">
+            <button class="on" data-m="wait">待办 · 3</button>
+            <button data-m="read">已阅</button>
+          </div>
+          <div id="nlist"></div>
+          <div class="nend">由智擎统一推送 · 通知智能摘要每日 8:00 汇总</div>
+        </div>
+
+        <!-- 我的 -->
+        <div class="view" id="v-me">
+          <div class="me">
+            <div class="av">许</div>
+            <div>
+              <div class="nm">许文博 <span class="free">免登</span></div>
+              <div class="dp">网络信息建设办公室 · 系统运维</div>
+            </div>
+            <div class="qr" data-t="出示给管理员完成设备绑定">
+              <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M20 20v.01M17.5 17.5h.01"/></svg></div>
+              <em>身份码</em>
+            </div>
+          </div>
+          <div class="mrow" data-t="收藏的问答与公文模板">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.3.9-4.5 4.4 1 6.1-5.5-2.9-5.5 2.9 1-6.1L3 9.5l6.3-.9z"/></svg>
+            <span class="lb">我的收藏</span><span class="vv">12 条</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+          <div class="mrow" data-t="摘要日报与待办提醒的接收偏好">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="lb">消息偏好</span><span class="vv">摘要日报</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+          <div class="mrow" data-t="问答、摘要与节省工时按周统计">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+            <span class="lb">使用情况</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+          <div class="about">智擎 · 校园智能平台<br><b>v3.1.0</b> · 企业微信免登通道</div>
+        </div>
+      </div>
+
+      <div class="tabbar" id="tabbar"></div>
+
+      <!-- 聊天页 -->
+      <div class="chatpage" id="chatpage">
+        <div class="chnav">
+          <span class="bk" id="chat-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></span>
+          <div class="ag"><b id="chat-name">服务</b><i><em></em><span id="chat-status">在线</span></i></div>
+          <span class="more"><svg viewBox="0 0 5 19"><path d="M2.5 0v3M2.5 8v3M2.5 16v3"/></svg></span>
+        </div>
+        <div class="msgs" id="msgs"></div>
+        <div class="quick" id="quick"></div>
+        <div class="cbar">
+          <span class="mic" data-t="语音提问需管理员在后台开启"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+          <span class="in" id="cbar-in">输入问题，或点选推荐提问</span>
+          <span class="snd" id="cbar-send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+
+/* ---------- 图标库 ---------- */
+const IC={
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  award:'<circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5 7 21l5-2.6L17 21l-1.5-7.5"/>',
+  wrench:'<path d="M14.7 6.3a4.5 4.5 0 0 0-6 5.6L3 17.6V21h3.4l5.7-5.7a4.5 4.5 0 0 0 5.6-6L14.5 12l-2.5-2.5z"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  ok:'<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14l-3-3"/>',
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  chat:'<path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14.5h4"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+  me:'<circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/>',
+  stat:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+  grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>'
+};
+function svg(n){return '<svg viewBox="0 0 24 24">'+IC[n]+'</svg>'}
+
+/* ---------- 服务数据 ---------- */
+const AGENTS=[
+  {id:"gong",name:"公文起草",icon:"pen",color:"#0d6e63",bg:"#e8f1ef",sub:"常用",desc:"按公文格式规范起草通知、请示与纪要",status:"在线 · 引用格式规范库",srcname:"引用格式规范库",
+   hello:"许老师好，我是公文起草。提供事由与要点，我按学校公文格式规范拟稿，自动套用最新版式。",
+   qa:[
+     {q:"起草一份实验室安全专项检查的通知",
+      a:["已按格式规范拟稿，文号拟为**校发〔2026〕12 号**，要点如下：","1. 检查范围：全部实验教学楼与实训场所","2. 检查时间：10 月 14 日至 18 日，每日 14:00 至 17:00","3. 分工：各学院先行自查，实验室与设备管理处组织抽查","4. 结果报送：10 月 21 日前经 OA 提交《自查表》","正文约 620 字，主送各单位，抄送保卫处。需要调整语气或补充附件说明吗？"],
+      src:["格式规范库 · 公文格式要素","OA 模板 · 专项检查通知"]},
+     {q:"成文日期用汉字还是阿拉伯数字？",
+      a:["按现行规范：**成文日期用阿拉伯数字**，如 2026 年 10 月 8 日。","仅决议类公文保留汉字日期写法。","附件说明中的页数、份数同样统一使用阿拉伯数字。"],
+      src:["格式规范库 · 公文格式要素"]}
+   ]},
+  {id:"zzu",name:"奖助学金向导",icon:"award",color:"#5c6b3f",bg:"#eef1e3",sub:"常用",desc:"奖助贷政策、申请条件与流程解答",status:"在线 · 引用奖助贷政策库",srcname:"引用奖助贷政策库",
+   hello:"你好，我是奖助学金向导。奖助贷政策、申请条件与办理流程，都可以直接问我。",
+   qa:[
+     {q:"国家励志奖学金的申请条件是什么？",
+      a:["依据**奖助贷政策库**最新评审细则：","1. 在校二年级及以上本科生，**家庭经济困难认定**在册","2. 上一学年学习成绩排名与综合测评排名均位于**前 10%**","3. 无不及格科目，未受任何纪律处分","申请材料含申请表、困难认定表与成绩单；今年申请窗口为 **10 月 10 日至 24 日**，经班级评议后报资助中心。"],
+      src:["奖助贷政策库 · 国家励志奖学金评审细则","资助中心 · 2026 申请指南"]},
+     {q:"困难认定等级对助学金金额有影响吗？",
+      a:["有。国家助学金按认定等级分档发放：","- **特别困难**：4400 元每年","- **比较困难**：3300 元每年","- **一般困难**：2200 元每年","励志奖学金金额固定为 **6000 元每年**，与等级无关，但须在困难认定在册。"],
+      src:["奖助贷政策库 · 国家助学金分档标准"]}
+   ]},
+  {id:"bao",name:"后勤报修分派",icon:"wrench",color:"#a2701f",bg:"#f6efe0",sub:"常用",desc:"报修建单、进度查询与超时催办",status:"在线 · 引用后勤服务库",srcname:"引用后勤服务库",
+   hello:"你好，我是后勤报修分派。报修、查询进度、催单都可以找我，结果实时推送到企微。",
+   qa:[
+     {q:"实训楼 B 座 302 空调不制热",
+      a:["已创建报修单 **BW-2026-1087**：","- 位置：实训楼 B 座 302","- 故障：空调不制热，初判四通阀故障","- 派单：动力维修班，预计**今日 16:00 前**上门","维修过程与完工照片将同步推送到你的企业微信。"],
+      src:["后勤服务库 · 空调维保规程"]},
+     {q:"报修单超时未处理会自动升级吗？",
+      a:["会，报修服务时限规则如下：","- 一般故障 **4 小时**未接单，自动提醒维修班长","- 影响教学的重点故障 2 小时未接单，**升级至后勤服务中心调度台**","- 连续两次超时的班组计入月度考核","你可在通知标签查看每张单据的时限状态。"],
+      src:["后勤服务库 · 报修服务时限"]}
+   ]}
+];
+
+const CHATS=[
+  {aid:"gong",time:"09:15",unread:1,pv:"校发〔2026〕12 号初稿已生成，待你确认"},
+  {aid:"zzu",time:"昨天",unread:0,pv:"国家励志奖学金申请条件已解答"},
+  {aid:"bao",time:"09-27",unread:0,pv:"报修单 BW-2026-1087 已完工待验收"}
+];
+const NOTIFS={
+  wait:[
+    {icon:"doc",tag:["wait","待复核"],title:"国家励志奖学金材料 · 秦梦洁（资助中心）",desc:"2024 级软件工程 3 份申请材料已完成班级评议，等待你复核排名信息。",time:"09:40",go:"去复核"},
+    {icon:"ok",tag:["urge","待确认"],title:"10 月调停课汇总表 · 高翔宇（教务处）",desc:"涉及 12 门课程的调停课安排已汇总，请于 10 月 2 日前确认。",time:"昨天",go:"去确认"},
+    {icon:"wrench",tag:["wait","待验收"],title:"报修单 BW-2026-1087 已完工",desc:"实训楼 B 座 302 空调更换四通阀完毕，附完工照片 3 张，请确认验收。",time:"09:32",go:"去验收"}
+  ],
+  read:[
+    {icon:"stat",tag:["done","已阅"],title:"智擎平台月度巡检报告 · 宋雨薇（信建办）",desc:"9 月巡检完成：知识库同步 12 次，服务可用率 99.96%。",time:"09-28",go:"查看"},
+    {icon:"bell",tag:["done","已阅"],title:"通知智能摘要 · 日报已发送",desc:"每日 8:00 汇总全校通知，本期 3 条，已推送至企微应用消息。",time:"09-30",go:"查看"},
+    {icon:"doc",tag:["done","已阅"],title:"奖助贷政策库更新 12 篇",desc:"新增省级资助文件 3 篇、校级细则 9 篇，已完成分段与索引。",time:"09-28",go:"查看"}
+  ]
+};
+const TABS=[["home","首页"],["chats","问答"],["msg","通知"],["me","我的"]];
+
+/* ---------- 渲染 ---------- */
+$("#agrid").innerHTML=AGENTS.map(a=>'<div class="acard" data-ai="'+a.id+'"><div class="r"><span class="ic" style="background:'+a.bg+';color:'+a.color+'">'+svg(a.icon)+'</span><div><div class="nm">'+a.name+'</div><div class="bd">'+a.sub+' · '+a.srcname+'</div></div></div><p>'+a.desc+'</p></div>').join("");
+
+$("#clist").innerHTML=CHATS.map(c=>{const a=AGENTS.find(x=>x.id===c.aid);return '<div class="citem" data-ai="'+a.id+'"><span class="av" style="background:'+a.bg+';color:'+a.color+'">'+svg(a.icon)+'</span><div class="md"><div class="nm">'+a.name+'</div><div class="pv">'+c.pv+'</div></div><div class="rt"><span class="tm">'+c.time+'</span>'+(c.unread?'<span class="rd"></span>':'')+'</div></div>'}).join("");
+
+function renderNotif(k){$("#nlist").innerHTML=NOTIFS[k].map(m=>'<div class="nitem"><div class="r1"><span class="tt">'+m.title+'</span><span class="tag '+m.tag[0]+'">'+m.tag[1]+'</span></div><p>'+m.desc+'</p><div class="ft"><span class="tm">'+m.time+'</span><span class="go" data-t="'+m.title+'">'+m.go+' ›</span></div></div>').join("")}
+renderNotif("wait");
+
+$("#tabbar").innerHTML=TABS.map((t,i)=>'<span class="tb'+(i===0?" on":"")+'" data-v="'+t[0]+'">'+svg(t[0])+'<small>'+t[1]+'</small></span>').join("");
+
+/* ---------- 标签切换 ---------- */
+function tab(v){
+  $$("#tabbar .tb").forEach(x=>x.classList.toggle("on",x.dataset.v===v));
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  $("#app").scrollTop=0;
+}
+$$("#tabbar .tb").forEach(el=>el.onclick=()=>tab(el.dataset.v));
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(t){
+  const el=$("#toast");el.textContent=t;el.classList.add("on");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),1900);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-t]");
+  if(t&&t.dataset.t)toast(t.dataset.t);
+});
+
+/* ---------- 通知筛选 ---------- */
+$("#nfilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $("#nfilter").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  renderNotif(b.dataset.m);
+});
+
+/* ---------- 聊天 ---------- */
+let cur=null,buf="",tick=null;
+function md(t){
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  t=esc(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+  let out="",list=null;
+  const close=()=>{if(list){out+="</"+list+">";list=null}};
+  t.split("\n").forEach(ln=>{
+    if(/^\d+\.\s/.test(ln)){if(list!=="ol"){close();out+="<ol>";list="ol"}out+="<li>"+ln.replace(/^\d+\.\s/,"")+"</li>"}
+    else if(/^-\s/.test(ln)){if(list!=="ul"){close();out+="<ul>";list="ul"}out+="<li>"+ln.replace(/^-\s/,"")+"</li>"}
+    else if(ln.trim()===""){close()}
+    else{close();out+="<p>"+ln+"</p>"}
+  });
+  close();return out;
+}
+function bubble(a,me,html){
+  const d=document.createElement("div");
+  d.className="msg"+(me?" me":"");
+  d.innerHTML='<span class="av" style="background:'+a.bg+';color:'+a.color+'">'+svg(a.icon)+'</span><div class="bd">'+html+"</div>";
+  $("#msgs").appendChild(d);$("#msgs").scrollTop=$("#msgs").scrollHeight;
+  return d;
+}
+function openChat(id){
+  cur=AGENTS.find(a=>a.id===id);buf="";window.__done=[];
+  $("#chat-name").textContent=cur.name;
+  $("#chat-status").textContent=cur.status;
+  $("#msgs").innerHTML="";
+  bubble(cur,false,"<p>"+cur.hello+"</p>");
+  renderQuick();
+  $("#chatpage").classList.add("on");
+  $("#app").style.overflow="hidden";
+}
+function closeChat(){
+  $("#chatpage").classList.remove("on");
+  $("#app").style.overflow="";
+  if(tick){clearTimeout(tick);tick=null}
+}
+function renderQuick(){
+  const done=window.__done||[];
+  $("#quick").innerHTML=cur.qa.map((q,i)=>done.includes(i)?"":'<span class="qk" data-q="'+i+'">'+q.q+"</span>").join("");
+  $$("#quick .qk").forEach(el=>el.onclick=()=>ask(+el.dataset.q));
+}
+function ask(i){
+  const q=cur.qa[i];
+  bubble(cur,true,"<p>"+q.q+"</p>");
+  window.__done=(window.__done||[]).concat(i);
+  renderQuick();
+  const th=bubble(cur,false,'<p><span class="typing"><i></i><i></i><i></i></span></p>');
+  setTimeout(()=>{
+    th.remove();
+    const b=bubble(cur,false,'<p><span class="caret"></span></p>');
+    const p=b.querySelector("p");buf="";
+    let k=0;
+    const step=()=>{
+      if(k<q.a.length){
+        buf+=(k?"\n":"")+q.a[k];k++;
+        p.innerHTML=md(buf)+'<span class="caret"></span>';
+        $("#msgs").scrollTop=$("#msgs").scrollHeight;
+        tick=setTimeout(step,280+Math.random()*320);
+      }else{
+        p.innerHTML=md(buf);
+        if(q.src&&q.src.length){
+          const s=document.createElement("div");
+          s.className="srcs";
+          s.innerHTML=q.src.map(x=>'<span class="src">'+svg("file")+x+"</span>").join("");
+          b.querySelector(".bd").appendChild(s);
+          $$("#msgs .src").forEach(el=>el.onclick=()=>toast("知识来源："+el.textContent.trim()));
+        }
+        $("#msgs").scrollTop=$("#msgs").scrollHeight;
+      }
+    };
+    step();
+  },600);
+}
+$("#chat-back").onclick=closeChat;
+$("#cbar-in").onclick=()=>{if(!$("#quick").innerHTML)toast("当前服务的推荐问题已解答，可返回尝试其他服务")};
+$("#cbar-send").onclick=()=>{
+  const left=cur.qa.map((q,i)=>i).filter(i=>!(window.__done||[]).includes(i));
+  if(left.length){ask(left[0])}
+  else toast("本服务的推荐问题已全部解答");
+};
+
+/* ---------- 入口 ---------- */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-ai]");
+  if(el&&el.dataset.ai){openChat(el.dataset.ai)}
+  const aa=e.target.closest("[data-act]");
+  if(aa){
+    if(aa.dataset.act==="all-agents"){tab("chats")}
+    if(aa.dataset.act==="wx-back"){toast("已返回企业微信工作台")}
+    if(aa.dataset.act==="digest-more"){toast("往期摘要可在桌面端「运行洞察」查阅")}
+  }
+});
+
+/* ---------- 宽度切换 ---------- */
+$$(".wchip").forEach(c=>c.onclick=()=>{
+  $$(".wchip").forEach(x=>x.classList.toggle("on",x===c));
+  const w=+c.dataset.w;
+  $("#disp").style.width=w+"px";
+  document.querySelector(".device").style.width=(w+20)+"px";
+});
+</script>
+</body>
+</html>

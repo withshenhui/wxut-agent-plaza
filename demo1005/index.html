@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>喔PLUS AI中台 · XX大学</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#1668ff;--blue-d:#0d4fd6;--sky:#41b1ff;--sky-weak:#e3f1ff;
+  --bg:#eef5fe;--card:#fff;--line:#e2ecf9;--line2:#ecf3fc;
+  --ink:#0a2540;--ink2:#4a6076;--ink3:#8ba0b6;
+  --ok:#12b76a;--warn:#f59e0b;--bad:#ef4444;
+  --grad:linear-gradient(135deg,#1668ff 0%,#2f9bff 55%,#41b1ff 100%);
+  --grad-soft:linear-gradient(135deg,#eaf3ff,#f5faff);
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;background:
+  radial-gradient(900px 420px at 12% -6%,rgba(65,177,255,.16),transparent 60%),
+  radial-gradient(800px 400px at 96% 0%,rgba(22,104,255,.12),transparent 55%),
+  var(--bg);
+  color:var(--ink);min-height:100vh}
+::selection{background:#cfe5ff}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+button{font-family:inherit}
+/* ============ 左侧导航（悬浮圆角栏） ============ */
+.frame{display:flex;gap:16px;max-width:1440px;margin:0 auto;padding:14px 18px 14px 14px;align-items:flex-start}
+.side{width:230px;flex:none;position:sticky;top:14px;height:calc(100vh - 28px);min-height:560px;display:flex;flex-direction:column;gap:4px;background:linear-gradient(180deg,#ffffff 0%,#f3f9ff 100%);border:1px solid rgba(255,255,255,.95);border-radius:26px;box-shadow:0 18px 44px rgba(22,104,255,.10),0 2px 8px rgba(10,37,64,.04);padding:18px 13px 14px;overflow:hidden}
+.side::before{content:"";position:absolute;left:-46px;top:-46px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(65,177,255,.18),transparent 70%);pointer-events:none}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px 14px;border-bottom:1px solid var(--line);margin-bottom:10px;cursor:pointer}
+.brand .mark{width:40px;height:40px;border-radius:13px;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;box-shadow:0 7px 16px rgba(22,104,255,.35);flex:none}
+.brand .btx{min-width:0}
+.brand .bt{font-size:15.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
+.brand .bt em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .be{font-size:8.5px;color:var(--ink3);letter-spacing:1.5px;font-weight:600;margin-top:2px;white-space:nowrap}
+.nav{display:flex;flex-direction:column;gap:3px;flex:1;overflow-y:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.dk{position:relative;display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--ink2);font-size:13px;font-weight:600;padding:11px 13px;border-radius:14px;cursor:pointer;transition:all .18s;white-space:nowrap;text-align:left}
+.dk svg{width:17px;height:17px;fill:currentColor;flex:none}
+.dk:hover{color:var(--blue);background:var(--sky-weak)}
+.dk.on{color:#fff;background:var(--grad);box-shadow:0 7px 16px rgba(22,104,255,.35)}
+.sidecard{margin:10px 4px 8px;background:var(--grad-soft);border:1px solid #d5e8ff;border-radius:18px;padding:13px 14px;cursor:pointer}
+.sidecard .sch{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--ink2)}
+.sidecard .sch svg{width:14px;height:14px;fill:var(--blue)}
+.sidecard b{display:block;font-size:20px;font-weight:800;letter-spacing:-.4px;margin-top:7px;font-variant-numeric:tabular-nums}
+.sidecard b small{font-size:10.5px;color:var(--ink3);font-weight:600;margin-left:3px}
+.sidecard .track{margin-top:8px;height:6px}
+.sidecard em{display:block;font-style:normal;font-size:10px;color:var(--ink3);margin-top:6px}
+.sidefoot{padding:6px 6px 0;font-size:9.5px;color:var(--ink3);letter-spacing:.4px}
+.main{flex:1;min-width:0;padding-top:2px}
+.mtop{display:flex;align-items:center;gap:10px;padding:4px 2px 12px}
+.mcrumb{font-size:12px;color:var(--ink3);font-weight:600}
+.mcrumb b{color:var(--ink);font-weight:800}
+.mtop .sp{flex:1}
+.tbtn{position:relative;width:36px;height:36px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex:none}
+.tbtn:hover{color:var(--blue);border-color:#bcd8ff;box-shadow:0 4px 12px rgba(22,104,255,.12)}
+.tbtn svg{width:17px;height:17px;fill:currentColor}
+.tbtn .rdot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--bad);border:1.5px solid #fff}
+.who{display:flex;align-items:center;gap:9px;padding:4px 12px 4px 4px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.8);cursor:pointer}
+.who .av{width:29px;height:29px;border-radius:10px;background:var(--grad);color:#fff;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.who .un{font-size:12.5px;font-weight:700;line-height:1.2}
+.who .ur{font-size:10px;color:var(--ink3)}
+/* ============ 骨架 ============ */
+.shell{padding:0 0 56px}
+.view{display:none;animation:vin .3s ease}
+.view.on{display:block}
+@keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 面包屑 */
+.crumb{display:flex;align-items:center;gap:8px;padding:2px 2px 14px;font-size:12px;color:var(--ink3)}
+.crumb b{color:var(--ink);font-size:13px;font-weight:700}
+.crumb svg{width:12px;height:12px;fill:#c2d4ea}
+/* ============ 通用组件 ============ */
+.card{background:var(--card);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 14px 34px rgba(22,104,255,.08),0 2px 6px rgba(10,37,64,.04)}
+.cpad{padding:20px 22px}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ch .t{font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+.ch .sub{font-size:11.5px;color:var(--ink3);margin-left:2px}
+.ch .more{margin-left:auto;font-size:12px;color:var(--blue);font-weight:600;cursor:pointer}
+.chip-ic{width:34px;height:34px;border-radius:11px;background:var(--sky-weak);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:none}
+.chip-ic svg{width:18px;height:18px;fill:currentColor}
+.chip-ic.deep{background:var(--grad);color:#fff;box-shadow:0 5px 12px rgba(22,104,255,.3)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px}
+.pill.g{color:#067647;background:#e7f8f0}
+.pill.b{color:var(--blue);background:var(--sky-weak)}
+.pill.o{color:#b45309;background:#fdf3e2}
+.pill.r{color:#b42318;background:#fee9e7}
+.pill.n{color:var(--ink2);background:var(--line2)}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;border-radius:13px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);transition:all .15s}
+.btn svg{width:15px;height:15px;fill:currentColor}
+.btn:hover{border-color:#bcd8ff;color:var(--blue)}
+.btn.pri{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 8px 18px rgba(22,104,255,.32)}
+.btn.pri:hover{color:#fff;filter:brightness(1.06)}
+.btn.sm{padding:6px 12px;font-size:11.5px;border-radius:11px}
+.table{width:100%;border-collapse:collapse;font-size:12.5px}
+.table th{text-align:left;font-size:11px;color:var(--ink3);font-weight:700;padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+.table td{padding:11px 10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.table tr:last-child td{border-bottom:0}
+.table tr:hover td{background:#f7fbff}
+.tmain{font-weight:700;color:var(--ink)}
+.tsub{font-size:11px;color:var(--ink3);margin-top:2px}
+.num{font-variant-numeric:tabular-nums;font-weight:800}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}
+.track{height:8px;border-radius:99px;background:var(--line2);overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(10px);background:rgba(10,37,64,.92);color:#fff;font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:200;box-shadow:0 12px 30px rgba(10,37,64,.35)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 页签 */
+.tabs{display:flex;gap:6px;background:var(--line2);border-radius:13px;padding:4px;width:max-content}
+.tabs button{border:0;background:transparent;font-size:12px;font-weight:700;color:var(--ink2);padding:7px 14px;border-radius:10px;cursor:pointer;transition:all .15s}
+.tabs button.on{background:#fff;color:var(--blue);box-shadow:0 2px 8px rgba(22,104,255,.14)}
+/* ============ 响应式 ============ */
+@media(max-width:1200px){
+  .frame{padding:10px 12px;gap:12px}
+  .side{width:200px;padding:16px 10px 12px}
+  .shell{padding:0 0 50px}
+  .who .un,.who .ur{display:none}
+  .who{padding:4px}
+}
+@media(max-width:1080px){
+  .frame{padding:10px}
+  .side{width:66px;padding:14px 9px 12px;border-radius:22px}
+  .side .btx,.side .lab,.sidecard,.sidefoot{display:none}
+  .brand{justify-content:center;padding:2px 0 12px}
+  .dk{justify-content:center;padding:12px 0;gap:0}
+  .mcrumb{display:none}
+  .grid4{grid-template-columns:1fr 1fr}
+  .mgrid{grid-template-columns:1fr 1fr}
+  .wiz{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+/* ============ 视图组件 ============ */
+/* 驾驶舱 hero */
+.hero{position:relative;overflow:hidden;border-radius:26px;background:var(--grad);color:#fff;padding:26px 28px;box-shadow:0 18px 44px rgba(22,104,255,.35)}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.14)}
+.hero::before{width:300px;height:300px;right:-90px;top:-160px}
+.hero::after{width:190px;height:190px;right:110px;bottom:-120px;background:rgba(255,255,255,.09)}
+.hero .hg{font-size:23px;font-weight:800;letter-spacing:-.3px}
+.hero .hs{font-size:12.5px;opacity:.85;margin-top:5px}
+.hero .hbtns{display:flex;gap:10px;margin-top:18px;position:relative;z-index:1}
+.hbtn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;border-radius:13px;padding:9px 16px;cursor:pointer;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(4px)}
+.hbtn svg{width:15px;height:15px;fill:currentColor}
+.hbtn.solid{background:#fff;color:var(--blue);border-color:#fff}
+.hero .hstats{position:absolute;right:26px;top:24px;display:flex;gap:26px;z-index:1;text-align:right}
+.hero .hstats b{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.hero .hstats em{font-style:normal;font-size:10.5px;opacity:.8}
+/* Bento */
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{padding:17px 18px;display:flex;flex-direction:column;gap:10px}
+.kpi .r{display:flex;align-items:center;gap:10px}
+.kpi .v{font-size:26px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:12px;color:var(--ink3);font-weight:600;margin-left:3px}
+.kpi .d{font-size:11px;color:var(--ink3)}
+.kpi .d b.up{color:var(--ok)}.kpi .d b.dn{color:var(--bad)}
+/* 卡片网格（模型/员工/知识库） */
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kgrid{grid-template-columns:repeat(auto-fit,minmax(172px,1fr))}
+.mcard{padding:16px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:11px}
+.mcard:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(22,104,255,.16)}
+.mcard .hd{display:flex;align-items:center;gap:10px}
+.mcard .ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.mcard .ic svg{width:21px;height:21px;fill:currentColor}
+.mcard .ic.blue{background:var(--sky-weak);color:var(--blue)}
+.mcard .ic.navy{background:#e7edfb;color:#3b5bd6}
+.mcard .ic.solidg{background:var(--grad);color:#fff;box-shadow:0 5px 12px rgba(22,104,255,.3)}
+.mcard .nm{font-size:14px;font-weight:800;letter-spacing:-.2px}
+.mcard .ds{font-size:10.5px;color:var(--ink3);margin-top:2px}
+.mcard p{font-size:11.5px;color:var(--ink2);line-height:1.6;flex:1}
+.mcard .ft{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line2);padding-top:11px}
+.mcard .ft .k{font-size:10.5px;color:var(--ink3)}
+.mcard .ft .k b{color:var(--ink);font-size:12px}
+.mcard.solo{border:1.5px dashed #b7d4ff;background:var(--grad-soft);align-items:center;justify-content:center;text-align:center;color:var(--blue);min-height:150px;gap:8px}
+.mcard.solo svg{width:26px;height:26px;fill:currentColor}
+.mcard.solo b{font-size:13px}
+/* 流水线 */
+.pipe{display:flex;align-items:stretch;gap:0;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.pnode{flex:1;min-width:150px;position:relative;padding:14px 16px 14px 22px;background:var(--card);border-radius:16px;box-shadow:0 8px 22px rgba(22,104,255,.08)}
+.pnode:not(:last-child){margin-right:26px}
+.pnode:not(:last-child)::after{content:"";position:absolute;right:-24px;top:50%;transform:translateY(-50%);border:7px solid transparent;border-left-color:#9cc7ff}
+.pnode .pn{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px}
+.pnode .pn i{font-style:normal;width:22px;height:22px;border-radius:8px;background:var(--grad);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+.pnode p{font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.55}
+/* 向导 */
+.wiz{display:grid;grid-template-columns:1.25fr .9fr;gap:16px}
+.wsteps{display:flex;gap:6px;margin-bottom:16px}
+.wstep{flex:1;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;background:var(--line2);color:var(--ink3);font-size:12px;font-weight:700}
+.wstep i{font-style:normal;width:21px;height:21px;border-radius:50%;background:#fff;color:var(--ink3);display:flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+.wstep.on{background:var(--grad);color:#fff;box-shadow:0 6px 14px rgba(22,104,255,.3)}
+.wstep.on i{background:rgba(255,255,255,.25);color:#fff}
+.wstep.done{background:var(--sky-weak);color:var(--blue)}
+.wstep.done i{background:var(--blue);color:#fff}
+.selgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.selopt{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s;display:flex;gap:10px;align-items:center}
+.selopt:hover{border-color:#9cc7ff}
+.selopt.on{border-color:var(--blue);background:var(--sky-weak);box-shadow:0 0 0 3px rgba(22,104,255,.12)}
+.selopt .ic{width:34px;height:34px;border-radius:10px;background:var(--sky-weak);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:none}
+.selopt .ic svg{width:18px;height:18px;fill:currentColor}
+.selopt b{font-size:12.5px;display:block}
+.selopt em{font-style:normal;font-size:10.5px;color:var(--ink3)}
+.wfoot{display:flex;gap:10px;margin-top:16px;align-items:center}
+.preview{background:var(--grad-soft);border:1.5px solid #cfe4ff;border-radius:20px;padding:18px;text-align:center}
+.preview .pav{width:64px;height:64px;border-radius:20px;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;margin:6px auto 12px;box-shadow:0 12px 26px rgba(22,104,255,.35)}
+.preview .pav svg{width:32px;height:32px;fill:#fff}
+.preview b{font-size:16px;font-weight:800;display:block}
+.preview .pv{font-size:11px;color:var(--ink2);margin-top:4px}
+.preview .tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.preview .tags span{font-size:10px;font-weight:700;color:var(--blue);background:#fff;border:1px solid #cfe4ff;border-radius:999px;padding:3px 10px}
+/* 代码块 */
+.code{background:#0b1e3d;color:#c9e2ff;border-radius:18px;padding:18px 20px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px;line-height:1.85;overflow-x:auto;position:relative}
+.code .chd{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:#7fa3d4;font-size:11px}
+.code .chd .dots{display:flex;gap:5px}
+.code .chd .dots i{width:9px;height:9px;border-radius:50%;background:#274a7d}
+.code .copy{margin-left:auto;font-size:11px;color:#9cc7ff;border:1px solid #274a7d;border-radius:8px;padding:3px 10px;cursor:pointer}
+.code .copy:hover{color:#fff}
+.code .c1{color:#6ec7ff}.code .c2{color:#8ef0c5}.code .c3{color:#ffd479}.code .c4{color:#93a8c7}
+/* 图表 */
+.chart-wrap{width:100%}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--ink3)}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.hbar{display:flex;flex-direction:column;gap:11px}
+.hb .r{display:flex;align-items:center;gap:10px;font-size:12px}
+.hb .r .lb{width:64px;flex:none;color:var(--ink2);font-weight:600}
+.hb .r .tk{flex:1;height:9px;border-radius:99px;background:var(--line2);overflow:hidden}
+.hb .r .tk i{display:block;height:100%;border-radius:99px;background:var(--grad)}
+.hb .r .vv{width:44px;text-align:right;font-weight:800;font-size:11.5px;font-variant-numeric:tabular-nums}
+/* 时间线 */
+.tl{display:flex;flex-direction:column}
+.tli{display:flex;gap:12px;position:relative;padding-bottom:16px}
+.tli:last-child{padding-bottom:0}
+.tli::before{content:"";position:absolute;left:13px;top:30px;bottom:2px;width:2px;background:var(--line2)}
+.tli:last-child::before{display:none}
+.tli .tic{width:27px;height:27px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;z-index:1}
+.tli .tic svg{width:14px;height:14px;fill:currentColor}
+.tli .tt{font-size:12.5px;font-weight:600}
+.tli .tt b{color:var(--blue)}
+.tli .tm{font-size:10.5px;color:var(--ink3);margin-top:2px}
+@media(max-width:640px){.grid3{grid-template-columns:1fr!important}.grid4{grid-template-columns:1fr}.mgrid{grid-template-columns:1fr}.hero .hstats{display:none}.mcrumb{display:none}}
+/* 开关 */
+.swrow{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line2)}
+.swrow:last-child{border-bottom:0}
+.swrow .lb{flex:1}
+.swrow b{font-size:13px;display:block}
+.swrow p{font-size:11px;color:var(--ink3);margin-top:2px}
+.sw{width:42px;height:24px;border-radius:99px;background:#c8d8ee;position:relative;cursor:pointer;transition:.2s;flex:none;border:0;padding:0}
+.sw::after{content:"";position:absolute;top:2.5px;left:2.5px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(10,37,64,.25);transition:.2s}
+.sw.on{background:var(--blue)}
+.sw.on::after{left:20.5px}
+</style>
+</head>
+<body>
+<div class="frame">
+  <aside class="side">
+    <div class="brand" data-act="go-home">
+      <span class="mark">喔</span>
+      <div class="btx">
+        <div class="bt">喔<em>PLUS</em> AI中台</div>
+        <div class="be">WOPLUS AI PLATFORM</div>
+      </div>
+    </div>
+    <nav class="nav" id="dock-in"></nav>
+    <div class="sidecard" data-t="本月对话 31,204 次 · 较上月 +18.2% · 账单自动推送各部门">
+      <div class="sch"><svg viewBox="0 0 24 24"><path d="M5 3.4c.66 0 1.2.54 1.2 1.2v13.8h13a1.2 1.2 0 1 1 0 2.4H5A1.2 1.2 0 0 1 3.8 19.4V4.6c0-.66.54-1.2 1.2-1.2zm4.2 8.2a1.4 1.4 0 0 1 1.4 1.4v3.6a1.4 1.4 0 0 1-2.8 0V13a1.4 1.4 0 0 1 1.4-1.4zm4.4-4a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-2.8 0V9a1.4 1.4 0 0 1 1.4-1.4zm4.4-3.6A1.4 1.4 0 0 1 19.4 5.4v11.2a1.4 1.4 0 0 1-2.8 0V5.4A1.4 1.4 0 0 1 18 5z"/></svg>本月用量</div>
+      <b>31,204<small>次对话</small></b>
+      <div class="track"><i style="width:72%"></i></div>
+      <em>已用本月配额 72% · +18.2%</em>
+    </div>
+    <div class="sidefoot">v6.0.0 · 等保三级 · CAS 统一认证</div>
+  </aside>
+  <div class="main">
+    <div class="mtop">
+      <span class="mcrumb">XX大学 · 信息中心工作空间</span>
+      <span class="sp"></span>
+      <span class="tbtn" data-t="全局搜索：员工、知识、接口、任务（Ctrl K）"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.23a1.2 1.2 0 0 1-1.7 1.7l-4.23-4.24A7.5 7.5 0 1 1 10.5 3zm0 2.4a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2z"/></svg></span>
+      <span class="tbtn" id="bell" data-t="4 条提醒：招考答疑知识库待更新、SD3-Medium 评测完成等"><svg viewBox="0 0 24 24"><path d="M12 2.6a1.6 1.6 0 0 1 1.6 1.6v.42A6.8 6.8 0 0 1 18.8 11v3.1l1.3 2.2a1.3 1.3 0 0 1-1.12 1.96H5.02A1.3 1.3 0 0 1 3.9 16.3l1.3-2.2V11a6.8 6.8 0 0 1 5.2-6.38v-.42A1.6 1.6 0 0 1 12 2.6zM9.9 19.6h4.2a2.1 2.1 0 0 1-4.2 0z"/></svg><i class="rdot"></i></span>
+      <span class="who" data-t="已登录：简宁 · 信息中心 · 系统管理员">
+        <span class="av">简</span>
+        <span><span class="un">简宁</span><br><span class="ur">信息中心 · 系统管理员</span></span>
+      </span>
+    </div>
+    <main class="shell" id="shell"></main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 喔PLUS AI中台 ================= */
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+
+/* ---------- 纯色实心图标库 ---------- */
+const IC={
+  gauge:'<path d="M12 4a9 9 0 0 1 9 9 9 9 0 0 1-.55 3.1 1.4 1.4 0 0 1-1.31.9H4.86a1.4 1.4 0 0 1-1.31-.9A9 9 0 0 1 12 4zm1.06 4.94-2.9 4.06a1.2 1.2 0 0 0 1.64 1.68l4.14-2.8a1.2 1.2 0 0 0-2.88-2.94z"/>',
+  cube:'<path d="M11.1 2.5a1.8 1.8 0 0 1 1.8 0l6.9 3.8a1.5 1.5 0 0 1 .77 1.31v8.78a1.5 1.5 0 0 1-.77 1.31l-6.9 3.8a1.8 1.8 0 0 1-1.8 0l-6.9-3.8a1.5 1.5 0 0 1-.77-1.3V7.6a1.5 1.5 0 0 1 .77-1.3zM12 12.7 5.4 9.05v6.9L12 19.6zm1.6 6.9 6.4-3.55v-6.9l-6.4 3.55zM12 4.15 6.05 7.4 12 10.7l5.95-3.3z"/>',
+  book:'<path d="M6.5 2.8h11A2.7 2.7 0 0 1 20.2 5.5v13A2.7 2.7 0 0 1 17.5 21.2h-11a1.2 1.2 0 1 1 0-2.4h10.9a.4.4 0 0 0 .4-.4V5.6a.4.4 0 0 0-.4-.4H6.5a1.2 1.2 0 1 1 0-2.4zM8.4 6.6h7.2a1 1 0 0 1 1 1v1.6a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V7.6a1 1 0 0 1 1-1z"/>',
+  bot:'<path fill-rule="evenodd" d="M12 2.2c.8 0 1.5.66 1.5 1.47v.63h3.7A3.3 3.3 0 0 1 20.5 7.6v8.1a3.3 3.3 0 0 1-3.3 3.3H6.8a3.3 3.3 0 0 1-3.3-3.3V7.6a3.3 3.3 0 0 1 3.3-3.3h3.7v-.63c0-.81.67-1.47 1.5-1.47zM9.2 10.4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm5.6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM2.2 9.4c.66 0 1.2.54 1.2 1.2v2.8a1.2 1.2 0 1 1-2.4 0v-2.8c0-.66.54-1.2 1.2-1.2zm19.6 0c.66 0 1.2.54 1.2 1.2v2.8a1.2 1.2 0 1 1-2.4 0v-2.8c0-.66.54-1.2 1.2-1.2z"/>',
+  flow:'<path d="M4 3.4h6a1.6 1.6 0 0 1 1.6 1.6v2.2a1.6 1.6 0 0 1-1.6 1.6H4a1.6 1.6 0 0 1-1.6-1.6V5A1.6 1.6 0 0 1 4 3.4zm10 12.2h6a1.6 1.6 0 0 1 1.6 1.6v2.2a1.6 1.6 0 0 1-1.6 1.6h-6a1.6 1.6 0 0 1-1.6-1.6v-2.2a1.6 1.6 0 0 1 1.6-1.6zM7 10.4h2v2.5a2 2 0 0 0 2 2h2.4v2h-2.4a4 4 0 0 1-4-4m10 0h-2v3.1a1.5 1.5 0 0 1-.9 1.38l-2.5 1.06a1.5 1.5 0 0 1-1.18-2.76L15 12.9V10.4z"/>',
+  plug:'<path d="M8.2 2.6c.66 0 1.2.54 1.2 1.2v3h5.2v-3a1.2 1.2 0 1 1 2.4 0v3h.6A2.4 2.4 0 0 1 20 9.2v1.2a8 8 0 0 1-6.8 7.91v2.09a1.2 1.2 0 1 1-2.4 0v-2.09A8 8 0 0 1 4 10.4V9.2a2.4 2.4 0 0 1 2.4-2.4h.6v-3c0-.66.54-1.2 1.2-1.2z"/>',
+  chart:'<path d="M5 3.4c.66 0 1.2.54 1.2 1.2v13.8h13a1.2 1.2 0 1 1 0 2.4H5A1.2 1.2 0 0 1 3.8 19.4V4.6c0-.66.54-1.2 1.2-1.2zm4.2 8.2a1.4 1.4 0 0 1 1.4 1.4v3.6a1.4 1.4 0 0 1-2.8 0V13a1.4 1.4 0 0 1 1.4-1.4zm4.4-4a1.4 1.4 0 0 1 1.4 1.4v7.6a1.4 1.4 0 0 1-2.8 0V9a1.4 1.4 0 0 1 1.4-1.4zm4.4-3.6A1.4 1.4 0 0 1 19.4 5.4v11.2a1.4 1.4 0 0 1-2.8 0V5.4A1.4 1.4 0 0 1 18 5z"/>',
+  shield:'<path fill-rule="evenodd" d="M11.47 2.53a1.4 1.4 0 0 1 1.06 0l6.5 2.6a1.4 1.4 0 0 1 .87 1.3v5.1c0 4.5-2.94 8.4-7.13 9.86a1.4 1.4 0 0 1-.92 0A10.53 10.53 0 0 1 4.7 11.53v-5.1c0-.57.35-1.09.87-1.3zM9.05 11.7a1.1 1.1 0 0 0-1.56 1.56l2.3 2.3c.43.43 1.13.43 1.56 0l4.36-4.36a1.1 1.1 0 1 0-1.56-1.56l-3.58 3.58z"/>',
+  gear:'<path d="M12 8.4a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 1 1-7.2 0zm8.94 5.53-1.6-.93a7.6 7.6 0 0 0 0-2l1.6-.93a1.1 1.1 0 0 0 .4-1.5l-1.3-2.25a1.1 1.1 0 0 0-1.5-.4l-1.6.92a7.6 7.6 0 0 0-1.74-1V3.9A1.1 1.1 0 0 0 15.73 2.8h-2.6a1.1 1.1 0 0 0-1.1 1.1v1.94c-.63.24-1.21.58-1.73 1l-1.61-.92a1.1 1.1 0 0 0-1.5.4l-1.3 2.25a1.1 1.1 0 0 0 .4 1.5l1.61.93a7.6 7.6 0 0 0 0 2l-1.6.93a1.1 1.1 0 0 0-.4 1.5l1.3 2.25a1.1 1.1 0 0 0 1.5.4l1.6-.92c.53.42 1.1.76 1.74 1v1.94a1.1 1.1 0 0 0 1.1 1.1h2.6a1.1 1.1 0 0 0 1.1-1.1v-1.93a7.6 7.6 0 0 0 1.73-1l1.61.92a1.1 1.1 0 0 0 1.5-.4l1.3-2.25a1.1 1.1 0 0 0-.4-1.5z"/>',
+  search:'<path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.23a1.2 1.2 0 0 1-1.7 1.7l-4.23-4.24A7.5 7.5 0 1 1 10.5 3zm0 2.4a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2z"/>',
+  bell:'<path d="M12 2.6a1.6 1.6 0 0 1 1.6 1.6v.42A6.8 6.8 0 0 1 18.8 11v3.1l1.3 2.2a1.3 1.3 0 0 1-1.12 1.96H5.02A1.3 1.3 0 0 1 3.9 16.3l1.3-2.2V11a6.8 6.8 0 0 1 5.2-6.38v-.42A1.6 1.6 0 0 1 12 2.6zM9.9 19.6h4.2a2.1 2.1 0 0 1-4.2 0z"/>',
+  plus:'<path d="M12 3.4c.66 0 1.2.54 1.2 1.2v6.2h6.2a1.2 1.2 0 1 1 0 2.4h-6.2v6.2a1.2 1.2 0 1 1-2.4 0v-6.2H4.6a1.2 1.2 0 1 1 0-2.4h6.2V4.6c0-.66.54-1.2 1.2-1.2z"/>',
+  doc:'<path d="M13.6 2.6a1.2 1.2 0 0 1 .85.35l5.2 5.2a1.2 1.2 0 0 1 .35.85v11.2a2.2 2.2 0 0 1-2.2 2.2H6.2a2.2 2.2 0 0 1-2.2-2.2V4.8a2.2 2.2 0 0 1 2.2-2.2zM13 4.9v3.3a1.6 1.6 0 0 0 1.6 1.6h3.3zm-4.2 8.1h6.4a1 1 0 1 1 0 2H8.8a1 1 0 1 1 0-2zm0 3.8h4.4a1 1 0 1 1 0 2H8.8a1 1 0 1 1 0-2z"/>',
+  db:'<path d="M12 2.8c4.42 0 8 1.5 8 3.35v11.7c0 1.85-3.58 3.35-8 3.35s-8-1.5-8-3.35V6.15C4 4.3 7.58 2.8 12 2.8zm0 2.4c-3.7 0-5.6 1.1-5.6 1.55S8.3 8.3 12 8.3s5.6-.55 5.6-1.55S15.7 5.2 12 5.2zM6.4 11c1.23.72 3.28 1.15 5.6 1.15s4.37-.43 5.6-1.16v3.05c0 1-1.9 1.56-5.6 1.56s-5.6-.55-5.6-1.56z"/>',
+  clock:'<path d="M12 2.8a9.2 9.2 0 1 1 0 18.4 9.2 9.2 0 0 1 0-18.4zm1.06 4.06h-2.12v5.6c0 .32.13.62.35.84l3.54 3.54 1.5-1.5-3.27-3.27z"/>',
+  check:'<path d="M12 2.8a9.2 9.2 0 1 1 0 18.4 9.2 9.2 0 0 1 0-18.4zm4.53 6.53a1.1 1.1 0 0 0-1.56 0l-4.12 4.12-1.82-1.82a1.1 1.1 0 1 0-1.56 1.56l2.6 2.6c.43.43 1.13.43 1.56 0l4.9-4.9a1.1 1.1 0 0 0 0-1.56z"/>',
+  chat:'<path d="M12 3.2c5.05 0 9.2 3.28 9.2 7.4 0 4.12-4.15 7.4-9.2 7.4-.94 0-1.85-.11-2.7-.32-.83.63-2.35 1.5-4.5 1.86a.75.75 0 0 1-.72-1.22c.63-.75 1.14-1.7 1.32-2.6C3.96 14.7 2.8 12.76 2.8 10.6c0-4.12 4.15-7.4 9.2-7.4z"/>',
+  spark:'<path d="M12 2.4l1.9 5.15a2 2 0 0 0 1.2 1.2L20.25 10.6l-5.15 1.9a2 2 0 0 0-1.2 1.2L12 18.85l-1.9-5.15a2 2 0 0 0-1.2-1.2L3.75 10.6l5.15-1.9a2 2 0 0 0 1.2-1.2zM19 15.4l.83 2.25a.8.8 0 0 0 .47.47l2.25.83-2.25.83a.8.8 0 0 0-.47.47L19 22.5l-.83-2.25a.8.8 0 0 0-.47-.47l-2.25-.83 2.25-.83a.8.8 0 0 0 .47-.47z"/>',
+  send:'<path d="M20.7 3.3a1.5 1.5 0 0 1 .36 1.66l-6.5 16.2a1.2 1.2 0 0 1-2.24-.06L10.4 14.9a2 2 0 0 0-1.2-1.24l-6.2-2.02a1.2 1.2 0 0 1-.05-2.25l16.2-6.44a1.5 1.5 0 0 1 1.55.35z"/>',
+  mic:'<path d="M12 2.6a3.4 3.4 0 0 1 3.4 3.4v5a3.4 3.4 0 1 1-6.8 0V6A3.4 3.4 0 0 1 12 2.6zM5.8 10a1.2 1.2 0 0 1 2.4 0 3.8 3.8 0 0 0 7.6 0 1.2 1.2 0 1 1 2.4 0 6.2 6.2 0 0 1-5 6.09v2.51h2.6a1.2 1.2 0 1 1 0 2.4H9.2a1.2 1.2 0 1 1 0-2.4h2.6v-2.51A6.2 6.2 0 0 1 5.8 10z"/>',
+  arrow:'<path d="M13.06 4.94a1.2 1.2 0 0 1 1.7 0l5.6 5.6a1.7 1.7 0 0 1 0 2.4l-5.6 5.6a1.2 1.2 0 0 1-1.7-1.7l3.5-3.52H4.4a1.2 1.2 0 1 1 0-2.4h12.16l-3.5-3.52a1.2 1.2 0 0 1 0-1.7z"/>',
+  copy:'<path d="M9 2.6h8.4A3 3 0 0 1 20.4 5.6V14a1.1 1.1 0 1 1-2.2 0V5.6a.8.8 0 0 0-.8-.8H9A1.1 1.1 0 0 1 9 2.6zM5.6 6.6H14a3 3 0 0 1 3 3v8.8a3 3 0 0 1-3 3H5.6a3 3 0 0 1-3-3V9.6a3 3 0 0 1 3-3zm.5 2.2a1 1 0 0 0-1 1v7.8a1 1 0 0 0 1 1h7.4a1 1 0 0 0 1-1V9.8a1 1 0 0 0-1-1z"/>',
+  warn:'<path d="M13.4 3.66a1.6 1.6 0 0 0-2.8 0l-8 14.4A1.6 1.6 0 0 0 4 20.4h16a1.6 1.6 0 0 0 1.4-2.34zM12 8.4a1.15 1.15 0 0 1 1.15 1.15v4.1a1.15 1.15 0 1 1-2.3 0v-4.1A1.15 1.15 0 0 1 12 8.4zm0 8a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z"/>',
+  user:'<path d="M12 2.8a4.6 4.6 0 1 1 0 9.2 4.6 4.6 0 0 1 0-9.2zM12 13.6c4.2 0 7.6 2.6 7.6 5.8 0 1-.84 1.8-1.87 1.8H6.27c-1.03 0-1.87-.8-1.87-1.8 0-3.2 3.4-5.8 7.6-5.8z"/>',
+  grid:'<path d="M5 3.4h4.4A1.6 1.6 0 0 1 11 5v4.4a1.6 1.6 0 0 1-1.6 1.6H5a1.6 1.6 0 0 1-1.6-1.6V5A1.6 1.6 0 0 1 5 3.4zm9.6 0H19A1.6 1.6 0 0 1 20.6 5v4.4A1.6 1.6 0 0 1 19 11h-4.4a1.6 1.6 0 0 1-1.6-1.6V5a1.6 1.6 0 0 1 1.6-1.6zM5 13h4.4a1.6 1.6 0 0 1 1.6 1.6V19a1.6 1.6 0 0 1-1.6 1.6H5A1.6 1.6 0 0 1 3.4 19v-4.4A1.6 1.6 0 0 1 5 13zm9.6 0H19a1.6 1.6 0 0 1 1.6 1.6V19a1.6 1.6 0 0 1-1.6 1.6h-4.4a1.6 1.6 0 0 1-1.6-1.6v-4.4a1.6 1.6 0 0 1 1.6-1.6z"/>'
+};
+function svg(n){return '<svg viewBox="0 0 24 24">'+IC[n]+'</svg>'}
+
+/* ---------- 导航与全局 ---------- */
+const NAV=[
+ ["home","驾驶舱","gauge"],["models","模型机库","cube"],["kb","知识馆","book"],
+ ["agents","数字员工","bot"],["pipe","数据管道","flow"],["api","接口枢纽","plug"],
+ ["board","效能看板","chart"],["risk","风控中心","shield"],["cfg","全域配置","gear"]
+];
+const VNAMES={home:"驾驶舱",models:"模型机库",kb:"知识馆",agents:"数字员工",pipe:"数据管道",api:"接口枢纽",board:"效能看板",risk:"风控中心",cfg:"全域配置"};
+$("#dock-in").innerHTML=NAV.map(n=>'<button class="dk" data-w="'+n[0]+'">'+svg(n[2])+'<span class="lab">'+n[1]+'</span></button>').join("");
+function goto(w){
+  $$(".dk").forEach(x=>x.classList.toggle("on",x.dataset.w===w));
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  const v=$("#vw-"+w);if(v)v.classList.add("on");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$$(".dk").forEach(b=>b.onclick=()=>goto(b.dataset.w));
+let toastTimer=null;
+function toast(t){
+  const el=$("#toast");el.textContent=t;el.classList.add("on");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),2100);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-t]");
+  if(t&&t.dataset.t)toast(t.dataset.t);
+  const a=e.target.closest("[data-act]");
+  if(a&&a.dataset.act==="go-home")goto("home");
+});
+
+/* ---------- 数据 ---------- */
+const MODELS=[
+ {name:"Qwen2.5-72B-Instruct",ds:"通用对话 · 复杂推理主力",st:["g","已上线"],tone:"blue",ic:"spark",load:78,call:"18,420",lat:"1.8s"},
+ {name:"DeepSeek-R1-Distill-32B",ds:"深度推理 · 数学与逻辑",st:["g","已上线"],tone:"blue",ic:"spark",load:64,call:"9,865",lat:"3.2s"},
+ {name:"Qwen2.5-Coder-32B",ds:"代码生成 · 脚本助手",st:["g","已上线"],tone:"navy",ic:"doc",load:41,call:"5,214",lat:"1.5s"},
+ {name:"Yi-1.5-34B-Chat",ds:"长文本 · 论文审读",st:["g","已上线"],tone:"navy",ic:"doc",load:37,call:"3,982",lat:"2.1s"},
+ {name:"MiniCPM-V-2.6",ds:"图像理解 · 表单票据识别",st:["b","灰度中"],tone:"navy",ic:"search",load:22,call:"1,206",lat:"2.4s"},
+ {name:"Whisper-Large-V3",ds:"语音转写 · 会议录音",st:["g","已上线"],tone:"blue",ic:"mic",load:29,call:"2,761",lat:"0.9s"},
+ {name:"bce-embedding-large",ds:"向量检索 · 知识底座",st:["g","已上线"],tone:"blue",ic:"db",load:55,call:"41,338",lat:"0.2s"},
+ {name:"SD3-Medium",ds:"图像生成 · 宣传物料",st:["o","评测中"],tone:"navy",ic:"spark",load:8,call:"312",lat:"6.8s"}
+];
+const AGENTS=[
+ {name:"纪要速记",ds:"录音转写 · 自动生成会议纪要",ic:"mic",st:["g","在岗"],call:"412",kb:"会议纪要库",model:"Whisper-Large-V3"},
+ {name:"周报管家",ds:"每周五 17:00 汇总部门周报",ic:"clock",st:["g","在岗"],call:"289",kb:"人事制度库",model:"Yi-1.5-34B"},
+ {name:"问数参谋",ds:"自然语言查询校内业务数据",ic:"chart",st:["g","在岗"],call:"676",kb:"校史年鉴库",model:"Qwen2.5-72B"},
+ {name:"政策解读",ds:"制度文件问答 · 引用原文条款",ic:"book",st:["g","在岗"],call:"531",kb:"人事制度库",model:"Qwen2.5-72B"},
+ {name:"课酬核算",ds:"课时统计与绩效试算",ic:"cube",st:["b","试岗"],call:"94",kb:"财务报销库",model:"DeepSeek-R1-32B"},
+ {name:"访客接待",ds:"来访预约 · 通行证办理指引",ic:"user",st:["g","在岗"],call:"258",kb:"招生简章库",model:"Qwen2.5-72B"},
+ {name:"招考答疑",ds:"考生与家长报考咨询",ic:"spark",st:["g","在岗"],call:"1,927",kb:"招生简章库",model:"Qwen2.5-72B"},
+ {name:"论文格式审查",ds:"学位论文格式与引用检查",ic:"doc",st:["o","内测"],call:"57",kb:"校史年鉴库",model:"Yi-1.5-34B"}
+];
+const KBS=[
+ {name:"会议纪要库",n:"3,486",docs:412,up:"今日 09:12",st:["g","同步中"]},
+ {name:"财务报销库",n:"1,127",docs:168,up:"今日 08:40",st:["g","同步中"]},
+ {name:"人事制度库",n:"892",docs:96,up:"昨日 22:00",st:["g","同步中"]},
+ {name:"招生简章库",n:"458",docs:61,up:"09-28",st:["b","待更新"]},
+ {name:"校史年鉴库",n:"216",docs:34,up:"09-25",st:["n","已归档"]}
+];
+const KEYS=[
+ {app:"一网通办门户",key:"wo-live-8f3a",qps:"50",used:"62%",st:["g","正常"]},
+ {app:"图书馆座位系统",key:"wo-live-c27d",qps:"20",used:"31%",st:["g","正常"]},
+ {app:"财务报销助手 H5",key:"wo-live-91be",qps:"10",used:"87%",st:["o","临近限额"]},
+ {app:"迎新系统",key:"wo-live-55a0",qps:"30",used:"12%",st:["g","正常"]},
+ {app:"数据中心 BI",key:"wo-test-d94c",qps:"5",used:"4%",st:["n","测试"]}
+];
+const PIPETASKS=[
+ {src:"教务系统 · 排课数据",n:"12,842",st:["g","已完成"],t:"今日 06:00",f:"全量"},
+ {src:"OA · 会议纪要归档",n:"3,486",st:["g","已完成"],t:"今日 06:00",f:"增量 128"},
+ {src:"财务系统 · 报销制度",n:"1,127",st:["g","已完成"],t:"今日 06:10",f:"增量 12"},
+ {src:"人事系统 · 规章文件",n:"892",st:["g","已完成"],t:"昨日 22:00",f:"增量 9"},
+ {src:"招生办 · 简章与答问",n:"458",st:["b","进行中"],t:"今日 10:05",f:"全量"},
+ {src:"档案馆 · 年鉴扫描件",n:"216",st:["n","已排期"],t:"10-08 02:00",f:"全量"}
+];
+const RISKS=[
+ {lv:["r","高危"],tt:"越权访问拦截",ds:"外部 IP 尝试调用 wo-test 密钥访问财务数据，已自动阻断并通知管理员。",t:"今日 09:47"},
+ {lv:["o","中危"],tt:"敏感信息出境提醒",ds:"「招考答疑」会话中检测到身份证号，已脱敏后放行。",t:"今日 08:32"},
+ {lv:["b","提示"],tt:"限流触发",ds:"「财务报销助手 H5」密钥触发 QPS 限流 3 次，建议扩容配额。",t:"昨日 16:20"},
+ {lv:["b","提示"],tt:"弱密码整改",ds:"2 个子账号未开启双因子认证，已发送整改提醒。",t:"09-29"}
+];
+const MEMBERS=[
+ {n:"简宁",d:"信息中心",r:["b","系统管理员"],sso:"已开启",t:"09-01"},
+ {n:"牟云帆",d:"教务处",r:["g","业务管理员"],sso:"已开启",t:"09-03"},
+ {n:"应雪莉",d:"人事处",r:["g","业务管理员"],sso:"已开启",t:"09-05"},
+ {n:"匡一鸣",d:"财务处",r:["o","审计员"],sso:"未开启",t:"09-12"},
+ {n:"池雨潇",d:"学工处",r:["g","业务管理员"],sso:"已开启",t:"09-18"}
+];
+
+/* ---------- 图表 ---------- */
+function areaChart(data,labels,w,h,color){
+  const max=Math.max.apply(null,data)*1.18,step=(w-30)/(data.length-1);
+  const pts=data.map((v,i)=>[26+i*step,(h-24-(v/max)*(h-40)).toFixed(1)]);
+  const line=pts.map(p=>p.join(",")).join(" ");
+  const dots=pts.map((p,i)=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.4" fill="#fff" stroke="'+color+'" stroke-width="2.4"/>').join("");
+  const labs=labels.map((l,i)=>'<text x="'+(26+i*step)+'" y="'+(h-6)+'" font-size="9.5" fill="#8ba0b6" text-anchor="middle">'+l+'</text>').join("");
+  const grid=[0.25,0.5,0.75,1].map(g=>'<line x1="26" x2="'+(w-4)+'" y1="'+((h-24)-(h-40)*g).toFixed(1)+'" y2="'+((h-24)-(h-40)*g).toFixed(1)+'" stroke="#e2ecf9" stroke-dasharray="3 4"/>').join("");
+  return '<svg viewBox="0 0 '+w+' '+h+'" class="chart-wrap"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+color+'" stop-opacity=".32"/><stop offset="1" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+grid+
+    '<polygon points="26,'+(h-24)+' '+line+' '+(w-4)+','+(h-24)+'" fill="url(#ag)"/>'+
+    '<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>'+dots+labs+'</svg>';
+}
+function donut(pct,color){
+  const r=44,c=2*Math.PI*r;
+  return '<svg viewBox="0 0 120 120" style="width:118px;height:118px"><circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#e2ecf9" stroke-width="11"/><circle cx="60" cy="60" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+(c*pct/100).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 60 60)"/><text x="60" y="57" text-anchor="middle" font-size="21" font-weight="800" fill="#0a2540">'+pct+'%</text><text x="60" y="74" text-anchor="middle" font-size="9.5" fill="#8ba0b6">综合满意度</text></svg>';
+}
+const pill=p=>'<span class="pill '+p[0]+'">'+p[1]+'</span>';
+
+/* ---------- 九视图 ---------- */
+const V={};
+
+V.home=()=>`
+<div class="hero">
+  <div class="hg">上午好，简宁</div>
+  <div class="hs">10 月 5 日 星期一 · 信息中心 · 全平台运行平稳，2 项任务待处理</div>
+  <div class="hstats">
+    <div><b>99.98%</b><em>30 天可用率</em></div>
+    <div><b>1.9s</b><em>平均响应</em></div>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn solid" data-act="goto-agents">${svg("plus")}搭建数字员工</button>
+    <button class="hbtn" data-act="goto-board">${svg("chart")}查看效能看板</button>
+  </div>
+</div>
+<div class="grid4" style="margin-top:16px">
+  <div class="card kpi"><div class="r"><span class="chip-ic deep">${svg("chat")}</span><span class="ch sub">今日对话</span></div><div class="v">1,286</div><div class="d">较昨日 <b class="up">+12.4%</b> · 峰值 14:00</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("bot")}</span><span class="ch sub">在岗数字员工</span></div><div class="v">8<small>/ 9</small></div><div class="d">试岗 1 · 内测 1</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("book")}</span><span class="ch sub">知识条目</span></div><div class="v">6,179</div><div class="d">本周新增 <b class="up">+149</b></div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("plug")}</span><span class="ch sub">接口调用 24h</span></div><div class="v">48,203</div><div class="d">成功率 <b class="up">99.96%</b></div></div>
+</div>
+<div class="grid2" style="margin-top:16px">
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("chart")}</span><span class="t">近 7 日对话量</span><span class="sub">全平台</span><span class="more" data-act="goto-board">效能看板 ›</span></div>
+    ${areaChart([860,940,1120,1042,1206,1158,1286],["09-29","09-30","10-01","10-02","10-03","10-04","10-05"],560,190,"#1668ff")}
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("clock")}</span><span class="t">最近动态</span><span class="more" data-t="全部动态见风控中心与数据管道">全部 ›</span></div>
+    <div class="tl">
+      <div class="tli"><span class="tic" style="background:var(--sky-weak);color:var(--blue)">${svg("plug")}</span><div><div class="tt">匡一鸣为「财务报销助手 H5」<b>扩容接口配额</b></div><div class="tm">今日 10:12</div></div></div>
+      <div class="tli"><span class="tic" style="background:#e7f8f0;color:#067647">${svg("check")}</span><div><div class="tt">「政策解读」完成人事制度库<b>第 3 次增量同步</b></div><div class="tm">今日 08:40</div></div></div>
+      <div class="tli"><span class="tic" style="background:#fdf3e2;color:#b45309">${svg("cube")}</span><div><div class="tt">SD3-Medium 图像生成<b>评测通过 80%</b></div><div class="tm">昨日 18:26</div></div></div>
+      <div class="tli"><span class="tic" style="background:var(--sky-weak);color:var(--blue)">${svg("send")}</span><div><div class="tt">「周报管家」自动日报已<b>推送 42 个部门</b></div><div class="tm">周五 17:00</div></div></div>
+    </div>
+  </div>
+</div>`;
+
+V.models=()=>`
+<div class="crumb"><b>模型机库</b><span>统一接入 · 统一调度 · 统一计量</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">模型机库</span><span class="sub">8 个模型 · GPU 池 RTX 4090 × 16 · 4 节点</span><span style="margin-left:auto;display:flex;gap:10px"><button class="btn sm" data-t="支持 OpenAI 兼容协议与本地权重两种接入方式">接入方式</button><button class="btn sm pri" data-t="填写模型信息与算力需求，管理员审批后上架">${svg("plus")}搭载模型</button></span></div>
+<div class="mgrid">${MODELS.map(m=>`
+  <div class="card mcard" data-t="${m.name}：${m.ds} · 延迟 ${m.lat}">
+    <div class="hd"><span class="ic ${m.tone==="blue"?"blue":"navy"}">${svg(m.ic)}</span><div><div class="nm mono">${m.name}</div><div class="ds">${m.ds}</div></div></div>
+    <div class="ft"><span class="k">负载</span><span class="track" style="flex:1"><i style="width:${m.load}%"></i></span><span class="k num">${m.load}%</span></div>
+    <div class="ft" style="border-top:0;padding-top:0"><span class="k">24h 调用 <b class="num">${m.call}</b></span><span style="margin-left:auto">${pill(m.st)}</span></div>
+  </div>`).join("")}
+  <div class="card mcard solo" data-t="从模型仓库选择权重或填写在线服务地址">
+    ${svg("plus")}<b>搭载新模型</b><span style="font-size:11px;color:var(--ink3)">OpenAI 兼容 / 私有化权重</span>
+  </div>
+</div>
+<div class="grid2" style="margin-top:16px">
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("db")}</span><span class="t">GPU 池负载</span><span class="sub">RTX 4090 × 16 · 4 节点</span></div>
+    <div class="hbar">
+      <div class="hb"><div class="r"><span class="lb">节点 A</span><span class="tk"><i style="width:82%"></i></span><span class="vv">82%</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">节点 B</span><span class="tk"><i style="width:67%"></i></span><span class="vv">67%</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">节点 C</span><span class="tk"><i style="width:44%"></i></span><span class="vv">44%</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">节点 D</span><span class="tk"><i style="width:58%"></i></span><span class="vv">58%</span></div></div>
+    </div>
+    <div class="d" style="font-size:11px;color:var(--ink3);margin-top:12px">显存水位 71% · 温度正常 · 本月电费预估 ¥12,480</div>
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("spark")}</span><span class="t">调度策略</span><span class="more" data-t="策略变更需二次审批">编辑 ›</span></div>
+    <div class="hbar">
+      <div class="hb"><div class="r"><span class="lb">教学时段</span><span class="tk"><i style="width:88%"></i></span><span class="vv">优先</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">科研批量</span><span class="tk"><i style="width:56%"></i></span><span class="vv">夜间</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">图像生成</span><span class="tk"><i style="width:22%"></i></span><span class="vv">排队</span></div></div>
+    </div>
+    <div class="d" style="font-size:11px;color:var(--ink3);margin-top:12px">按业务优先级动态抢占 · 生成类任务自动降级至空闲节点</div>
+  </div>
+</div>`;
+
+V.kb=()=>`
+<div class="crumb"><b>知识馆</b><span>上传 · 清洗 · 向量化 · 一步入库</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">知识馆</span><span class="sub">5 个知识库 · 6,179 条 · 向量 1.28M</span><span style="margin-left:auto;display:flex;gap:10px"><button class="btn sm" data-t="支持批量导入与网页抓取两种方式">批量导入</button><button class="btn sm pri" data-t="上传doc/pdf/扫描件，自动切分与向量化">${svg("plus")}上传知识</button></span></div>
+<div class="mgrid kgrid">${KBS.map(k=>`
+  <div class="card mcard" data-t="${k.name}：${k.n} 条 · 最近更新 ${k.up}">
+    <div class="hd"><span class="ic blue">${svg("book")}</span><div><div class="nm">${k.name}</div><div class="ds">${k.docs} 份文档</div></div></div>
+    <div class="ft"><span class="k">条目 <b class="num">${k.n}</b></span><span style="margin-left:auto">${pill(k.st)}</span></div>
+  </div>`).join("")}
+</div>
+<div class="grid2" style="margin-top:16px">
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("flow")}</span><span class="t">入库流水线</span><span class="sub">自动执行 · 失败自动重试</span></div>
+    <div class="pipe" style="margin-bottom:4px">
+      <div class="pnode"><div class="pn"><i>1</i>格式解析</div><p>doc/pdf/扫描件 OCR 识别，保留标题层级与表格结构</p></div>
+      <div class="pnode"><div class="pn"><i>2</i>清洗脱敏</div><p>身份证号、银行卡号等 12 类敏感字段自动脱敏</p></div>
+      <div class="pnode"><div class="pn"><i>3</i>切分向量化</div><p>语义切分 512 token，bce-embedding 向量化入库存</p></div>
+      <div class="pnode"><div class="pn"><i>4</i>质检发布</div><p>抽检引用准确率，达标后自动发布至关联数字员工</p></div>
+    </div>
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("doc")}</span><span class="t">最近入库</span><span class="more" data-t="文档列表可在知识馆全量视图查看">全部 ›</span></div>
+    <table class="table">
+      <tr><th>文档</th><th>知识库</th><th>状态</th></tr>
+      <tr><td><div class="tmain">2026 级招生政策问答汇编</div><div class="tsub">09-28 · 46 条</div></td><td>招生简章库</td><td>${pill(["b","待质检"])}</td></tr>
+      <tr><td><div class="tmain">差旅费报销细则（修订版）</div><div class="tsub">今日 · 18 条</div></td><td>财务报销库</td><td>${pill(["g","已发布"])}</td></tr>
+      <tr><td><div class="tmain">校长办公会议纪要 第 14 期</div><div class="tsub">今日 · 7 条</div></td><td>会议纪要库</td><td>${pill(["g","已发布"])}</td></tr>
+      <tr><td><div class="tmain">教职工年度考核办法</div><div class="tsub">昨日 · 22 条</div></td><td>人事制度库</td><td>${pill(["g","已发布"])}</td></tr>
+    </table>
+  </div>
+</div>`;
+
+V.agents=()=>`
+<div class="crumb"><b>数字员工</b><span>像组建团队一样搭建 AI 员工</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">数字员工</span><span class="sub">在岗 6 · 试岗 1 · 内测 1</span><span style="margin-left:auto"><button class="btn sm pri" data-act="wiz-jump">${svg("plus")}搭建新员工</button></span></div>
+<div class="wiz" id="wiz"></div>
+<div class="mgrid" style="margin-top:16px;grid-template-columns:repeat(4,1fr)">${AGENTS.map(a=>`
+  <div class="card mcard" data-t="${a.name} · ${a.ds}">
+    <div class="hd"><span class="ic solidg">${svg(a.ic)}</span><div><div class="nm">${a.name}</div><div class="ds">${pill(a.st)}</div></div></div>
+    <p>${a.ds}</p>
+    <div class="ft"><span class="k">本月调用 <b class="num">${a.call}</b></span><span class="k" style="margin-left:auto">${a.model}</span></div>
+    <div class="ft" style="border-top:0;padding-top:0"><span class="k">知识库 · ${a.kb}</span><span class="more" style="margin-left:auto;font-size:11px" data-t="打开${a.name}的会话详情与评测记录">详情 ›</span></div>
+  </div>`).join("")}
+</div>`;
+
+V.pipe=()=>`
+<div class="crumb"><b>数据管道</b><span>业务系统 → 知识底座 · 定时同步</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">数据管道</span><span class="sub">6 条任务 · 今日成功 4 条</span><span style="margin-left:auto"><button class="btn sm pri" data-t="新建同步任务：选择源系统与同步频率">${svg("plus")}新建任务</button></span></div>
+<div class="card cpad">
+  <div class="pipe">
+    <div class="pnode"><div class="pn"><i>1</i>数据接入</div><p>对接 OA、教务、财务、人事、档案等 9 个业务系统，支持库表与接口两种方式</p></div>
+    <div class="pnode"><div class="pn"><i>2</i>清洗脱敏</div><p>字段映射、去重合并，12 类敏感字段自动脱敏留痕</p></div>
+    <div class="pnode"><div class="pn"><i>3</i>向量化</div><p>语义切分后调用 bce-embedding，增量更新向量索引</p></div>
+    <div class="pnode"><div class="pn"><i>4</i>发布</div><p>按知识库归档，自动通知关联数字员工热加载</p></div>
+  </div>
+  <table class="table">
+    <tr><th>任务</th><th>数据量</th><th>方式</th><th>最近执行</th><th>状态</th></tr>
+    ${PIPETASKS.map(t=>`<tr><td><div class="tmain">${t.src}</div></td><td class="num">${t.n}</td><td>${t.f}</td><td>${t.t}</td><td>${pill(t.st)}</td></tr>`).join("")}
+  </table>
+</div>
+<div class="grid3" style="margin-top:16px">
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("db")}</span><span class="ch sub">今日同步</span></div><div class="v">18,335<small>条</small></div><div class="d">失败重试 0 · 耗时 26 分钟</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("shield")}</span><span class="ch sub">脱敏字段</span></div><div class="v">1,942<small>处</small></div><div class="d">全部留痕，可追溯</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("clock")}</span><span class="ch sub">下次调度</span></div><div class="v">10-08<div style="font-size:12px;color:var(--ink3);font-weight:600">02:00</div></div><div class="d">档案馆年鉴扫描件全量</div></div>
+</div>`;
+
+V.api=()=>`
+<div class="crumb"><b>接口枢纽</b><span>OpenAI 兼容 · 一把密钥调全部能力</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">接口枢纽</span><span class="sub">5 把密钥 · 24h 调用 48,203 次</span><span style="margin-left:auto"><button class="btn sm pri" data-t="新密钥默认仅内网可用，可绑定 IP 白名单">${svg("plus")}创建密钥</button></span></div>
+<div class="grid2">
+  <div class="code">
+    <div class="chd"><span class="dots"><i></i><i></i><i></i></span>快速接入 · https://api.woplus.cn/v1<span class="copy" data-act="copy">复制代码</span></div>
+<pre style="margin:0;font-family:inherit">curl https://api.woplus.cn/v1/chat/completions \\
+  -H <span class="c1">"Authorization: Bearer wo-live-****"</span> \\
+  -H <span class="c1">"Content-Type: application/json"</span> \\
+  -d <span class="c1">'{
+    "model": "qwen2.5-72b",
+    "messages": [
+      {"role": "system", "content": "你是XX大学的AI助教"},
+      {"role": "user", "content": "解释一下学分绩点算法"}
+    ],
+    "stream": <span class="c3">true</span>
+  }'</span>
+
+<span class="c4"># 兼容 OpenAI SDK，改 base_url 即可切换</span>
+<span class="c4"># SSE 流式返回 · 首字延迟 0.6s · 自动故障转移</span></pre>
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("plug")}</span><span class="t">能力清单</span><span class="sub">全部随密钥开放</span></div>
+    <table class="table">
+      <tr><th>接口</th><th>用途</th><th>延迟</th></tr>
+      <tr><td class="tmain mono">/chat/completions</td><td>对话 · 流式</td><td class="num">0.6s 首字</td></tr>
+      <tr><td class="tmain mono">/embeddings</td><td>向量化</td><td class="num">38ms</td></tr>
+      <tr><td class="tmain mono">/audio/transcriptions</td><td>语音转写</td><td class="num">0.9s</td></tr>
+      <tr><td class="tmain mono">/images/generations</td><td>图像生成<span style="margin-left:6px">${pill(["o","灰度"])}</span></td><td class="num">6.8s</td></tr>
+      <tr><td class="tmain mono">/agents/{id}/invoke</td><td>数字员工调用</td><td class="num">1.2s</td></tr>
+    </table>
+  </div>
+</div>
+<div class="card cpad" style="margin-top:16px">
+  <div class="ch"><span class="chip-ic">${svg("copy")}</span><span class="t">密钥管理</span><span class="sub">密钥仅在创建时完整显示一次</span></div>
+  <table class="table">
+    <tr><th>绑定应用</th><th>密钥</th><th>限流</th><th>本月用量</th><th>状态</th><th></th></tr>
+    ${KEYS.map(k=>`<tr><td><div class="tmain">${k.app}</div></td><td class="mono" style="font-size:11.5px">${k.key}••••</td><td class="num">${k.qps} QPS</td><td><div style="display:flex;align-items:center;gap:8px"><span class="track" style="width:90px"><i style="width:${k.used}"></i></span><span class="num" style="font-size:11.5px">${k.used}</span></div></td><td>${pill(k.st)}</td><td><span class="more" style="cursor:pointer" data-t="编辑限流与 IP 白名单">配置 ›</span></td></tr>`).join("")}
+  </table>
+</div>`;
+
+V.board=()=>`
+<div class="crumb"><b>效能看板</b><span>用量 · 质量 · 满意度 一屏总览</span></div>
+<div class="tabs" id="btabs" style="margin-bottom:14px"><button class="on" data-b="use">用量分析</button><button data-b="quality">回答质量</button><button data-b="cost">成本分摊</button></div>
+<div id="bpane"></div>`;
+
+V.risk=()=>`
+<div class="crumb"><b>风控中心</b><span>事前拦截 · 事中脱敏 · 事后审计</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">风控中心</span><span class="sub">今日拦截 1 起 · 提示 3 起</span></div>
+<div class="grid4">
+  <div class="card kpi"><div class="r"><span class="chip-ic" style="background:#fee9e7;color:#b42318">${svg("warn")}</span><span class="ch sub">高危拦截</span></div><div class="v">1</div><div class="d">近 30 天累计 3 起</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic" style="background:#fdf3e2;color:#b45309">${svg("shield")}</span><span class="ch sub">脱敏处理</span></div><div class="v">1,942</div><div class="d">12 类敏感字段</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("check")}</span><span class="ch sub">审计覆盖率</span></div><div class="v">100%</div><div class="d">全量会话与接口留痕</div></div>
+  <div class="card kpi"><div class="r"><span class="chip-ic">${svg("clock")}</span><span class="ch sub">日志留存</span></div><div class="v">180<small>天</small></div><div class="d">满足等保三级要求</div></div>
+</div>
+<div class="grid2" style="margin-top:16px">
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("warn")}</span><span class="t">风控事件</span><span class="more" data-t="处理记录全量留痕可导出">全部 ›</span></div>
+    <table class="table">
+      <tr><th>级别</th><th>事件</th><th>时间</th></tr>
+      ${RISKS.map(r=>`<tr><td>${pill(r.lv)}</td><td><div class="tmain">${r.tt}</div><div class="tsub">${r.ds}</div></td><td style="white-space:nowrap">${r.t}</td></tr>`).join("")}
+    </table>
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("shield")}</span><span class="t">拦截类型分布</span><span class="sub">近 30 天</span></div>
+    <div class="hbar">
+      <div class="hb"><div class="r"><span class="lb">个人信息</span><span class="tk"><i style="width:88%"></i></span><span class="vv">842</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">越权请求</span><span class="tk"><i style="width:34%"></i></span><span class="vv">312</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">违规内容</span><span class="tk"><i style="width:22%"></i></span><span class="vv">207</span></div></div>
+      <div class="hb"><div class="r"><span class="lb">异常频率</span><span class="tk"><i style="width:15%"></i></span><span class="vv">138</span></div></div>
+    </div>
+    <div class="d" style="font-size:11px;color:var(--ink3);margin-top:14px">策略每周由「风控与合规」小组复核，变更需双人审批</div>
+  </div>
+</div>`;
+
+V.cfg=()=>`
+<div class="crumb"><b>全域配置</b><span>品牌 · 安全 · 成员 · 版本</span></div>
+<div class="ch"><span class="t" style="font-size:20px;font-weight:800">全域配置</span><span class="sub">改动即时生效并记录操作日志</span></div>
+<div class="grid2">
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic deep">${svg("spark")}</span><span class="t">品牌与域名</span></div>
+    <table class="table">
+      <tr><td style="width:110px" class="tmain">平台名称</td><td>喔PLUS AI中台</td></tr>
+      <tr><td class="tmain">接口域名</td><td class="mono" style="font-size:11.5px">api.woplus.cn</td></tr>
+      <tr><td class="tmain">统一认证</td><td>CAS 单点登录 · 已连通</td></tr>
+      <tr><td class="tmain">默认模型</td><td class="mono" style="font-size:11.5px">Qwen2.5-72B-Instruct</td></tr>
+      <tr><td class="tmain">版本</td><td><b class="num">v6.0.0</b> · 上次更新 09-26</td></tr>
+    </table>
+  </div>
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic">${svg("gear")}</span><span class="t">安全策略</span></div>
+    <div id="swlist"></div>
+  </div>
+</div>
+<div class="card cpad" style="margin-top:16px">
+  <div class="ch"><span class="chip-ic">${svg("user")}</span><span class="t">成员与角色</span><span class="sub">5 名成员 · 统一认证同步</span><span style="margin-left:auto"><button class="btn sm" data-t="从统一身份平台选择成员添加">${svg("plus")}添加成员</button></span></div>
+  <table class="table">
+    <tr><th>成员</th><th>部门</th><th>角色</th><th>双因子</th><th>加入时间</th></tr>
+    ${MEMBERS.map(m=>`<tr><td><div style="display:flex;align-items:center;gap:9px"><span class="chip-ic" style="width:30px;height:30px;border-radius:9px;font-size:12px;font-weight:700">${m.n[0]}</span><span class="tmain">${m.n}</span></div></td><td>${m.d}</td><td>${pill(m.r)}</td><td>${m.sso}</td><td>${m.t}</td></tr>`).join("")}
+  </table>
+</div>`;
+
+/* ---------- 数字员工搭建向导 ---------- */
+const WENG=[MODELS[0],MODELS[1],MODELS[3],MODELS[5]];
+const WCAPS=["纪要生成","知识检索","数据问答","流程审批","语音输入","图像识别","定时任务","人工转交"];
+const wstate={step:1,model:0,caps:new Set(["纪要生成","知识检索"]),name:"纪要速记 Pro",kb:"会议纪要库"};
+function renderWiz(){
+  const s=wstate.step;
+  let body="";
+  if(s===1){
+    body='<div class="ch" style="margin-bottom:10px"><span class="t" style="font-size:14px">选择驱动引擎</span><span class="sub">决定思考与生成能力</span></div>'+
+    '<div class="selgrid">'+WENG.map((m,i)=>'<div class="selopt'+(wstate.model===i?" on":"")+'" data-wm="'+i+'"><span class="ic">'+svg(m.ic)+'</span><div><b class="mono" style="font-size:12px">'+m.name+'</b><em>'+m.ds+'</em></div></div>').join("")+'</div>';
+  }else if(s===2){
+    body='<div class="ch" style="margin-bottom:10px"><span class="t" style="font-size:14px">勾选能力模块</span><span class="sub">可多选 · 随时增配</span></div>'+
+    '<div class="selgrid">'+WCAPS.map(c=>'<div class="selopt'+(wstate.caps.has(c)?" on":"")+'" data-wc="'+c+'"><span class="ic">'+svg("check")+'</span><div><b>'+c+'</b></div></div>').join("")+'</div>';
+  }else{
+    body='<div class="ch" style="margin-bottom:10px"><span class="t" style="font-size:14px">上岗信息</span><span class="sub">命名并绑定知识库</span></div>'+
+    '<div style="display:flex;flex-direction:column;gap:12px">'+
+    '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:6px">员工名称</div><input id="wname" value="'+wstate.name+'" style="width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;font-size:13px;font-family:inherit;font-weight:600;color:var(--ink)" data-t=""></div>'+
+    '<div><div style="font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:6px">绑定知识库</div><select id="wkb" style="width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;font-size:13px;font-family:inherit;font-weight:600;color:var(--ink);background:#fff">'+KBS.map(k=>'<option'+(k.name===wstate.kb?" selected":"")+'>'+k.name+'</option>').join("")+'</select></div>'+
+    '<div class="d" style="font-size:11px;color:var(--ink3)">发布后自动生成密钥与调用示例，可先在部门内试岗 7 天。</div></div>';
+  }
+  $("#wiz").innerHTML=`
+  <div class="card cpad">
+    <div class="ch"><span class="chip-ic deep">${svg("bot")}</span><span class="t">搭建新数字员工</span><span class="sub">三步上岗</span></div>
+    <div class="wsteps">
+      ${["选引擎","配能力","去上岗"].map((t,i)=>'<div class="wstep '+(s===i+1?"on":s>i+1?"done":"")+'"><i>'+(s>i+1?'<svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:#fff">'+IC.check+'</svg>':i+1)+"</i>"+t+"</div>").join("")}
+    </div>
+    ${body}
+    <div class="wfoot">
+      ${s>1?'<button class="btn" data-act="wprev">上一步</button>':""}
+      ${s<3?'<button class="btn pri" data-act="wnext">下一步'+svg("arrow")+"</button>":'<button class="btn pri" data-act="wpub">'+svg("check")+"发布上岗</button>"}
+      <span style="font-size:11px;color:var(--ink3)">当前配置自动保存草稿</span>
+    </div>
+  </div>
+  <div class="preview">
+    <div class="ch" style="justify-content:center;margin-bottom:2px"><span class="t" style="font-size:13px;color:var(--ink2)">实时预览</span></div>
+    <div class="pav">${svg("bot")}</div>
+    <b>${wstate.name}</b>
+    <div class="pv mono" style="font-size:10.5px;color:var(--ink3);margin-top:4px">${WENG[wstate.model].name}</div>
+    <div class="tags">${[...wstate.caps].map(c=>"<span>"+c+"</span>").join("")}<span>知识库 · ${wstate.kb}</span></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+      <span class="pill g">预览环境就绪</span><span class="pill b">预计 3 分钟完成发布</span>
+    </div>
+  </div>`;
+  $$("#wiz [data-wm]").forEach(el=>el.onclick=()=>{wstate.model=+el.dataset.wm;renderWiz()});
+  $$("#wiz [data-wc]").forEach(el=>el.onclick=()=>{
+    const c=el.dataset.wc;
+    wstate.caps.has(c)?wstate.caps.delete(c):wstate.caps.add(c);
+    renderWiz();
+  });
+  const nm=$("#wname");
+  if(nm){nm.oninput=()=>{wstate.name=nm.value||"未命名员工";const pv=$("#wiz .preview b");if(pv)pv.textContent=wstate.name}}
+  const kb=$("#wkb");
+  if(kb){kb.onchange=()=>{wstate.kb=kb.value;renderWiz()}}
+}
+
+/* ---------- 效能看板 ---------- */
+const BDEPT=[["教务处",92],["学工处",74],["人事处",58],["财务处",41],["信息中心",33],["图书馆",21]];
+function renderBoard(k){
+  const p=$("#bpane");
+  if(k==="use"){
+    p.innerHTML=`<div class="grid2">
+      <div class="card cpad"><div class="ch"><span class="chip-ic">${svg("chart")}</span><span class="t">对话量趋势</span><span class="sub">近 7 日</span></div>${areaChart([860,940,1120,1042,1206,1158,1286],["09-29","09-30","10-01","10-02","10-03","10-04","10-05"],560,200,"#1668ff")}</div>
+      <div class="card cpad"><div class="ch"><span class="chip-ic">${svg("user")}</span><span class="t">部门用量占比</span><span class="sub">本月</span></div>
+        <div class="hbar">${BDEPT.map(d=>'<div class="hb"><div class="r"><span class="lb">'+d[0]+'</span><span class="tk"><i style="width:'+d[1]+'%"></i></span><span class="vv">'+d[1]+'%</span></div></div>').join("")}</div>
+        <div class="d" style="font-size:11px;color:var(--ink3);margin-top:12px">教学相关场景占比 68%，暑期为科研批量任务高峰</div>
+      </div></div>
+      <div class="grid3" style="margin-top:16px">
+        <div class="card kpi"><div class="r"><span class="chip-ic">${svg("chat")}</span><span class="ch sub">本月对话</span></div><div class="v">31,204</div><div class="d">环比 <b class="up">+18.2%</b></div></div>
+        <div class="card kpi"><div class="r"><span class="chip-ic">${svg("bot")}</span><span class="ch sub">人均日使用</span></div><div class="v">4.7<small>次</small></div><div class="d">活跃师生 2,381 人</div></div>
+        <div class="card kpi"><div class="r"><span class="chip-ic">${svg("clock")}</span><span class="ch sub">平均会话时长</span></div><div class="v">6.4<small>分钟</small></div><div class="d">首字延迟 0.6s</div></div>
+      </div>`;
+  }else if(k==="quality"){
+    p.innerHTML=`<div class="grid3">
+      <div class="card cpad" style="display:flex;align-items:center;justify-content:center">${donut(97,"#1668ff")}</div>
+      <div class="card cpad" style="grid-column:span 2"><div class="ch"><span class="chip-ic">${svg("check")}</span><span class="t">质量指标</span><span class="sub">每周人工抽检 200 条</span></div>
+        <div class="hbar">
+          <div class="hb"><div class="r"><span class="lb">引用准确</span><span class="tk"><i style="width:97%"></i></span><span class="vv">97%</span></div></div>
+          <div class="hb"><div class="r"><span class="lb">任务完成</span><span class="tk"><i style="width:94%"></i></span><span class="vv">94%</span></div></div>
+          <div class="hb"><div class="r"><span class="lb">答案可用</span><span class="tk"><i style="width:98%"></i></span><span class="vv">98%</span></div></div>
+          <div class="hb"><div class="r"><span class="lb">内容合规</span><span class="tk"><i style="width:100%"></i></span><span class="vv">100%</span></div></div>
+        </div>
+        <div class="d" style="font-size:11px;color:var(--ink3);margin-top:14px">低分样本自动进入优化队列，由业务管理员标注后回流训练</div>
+      </div></div>`;
+  }else{
+    p.innerHTML=`<div class="card cpad">
+      <div class="ch"><span class="chip-ic">${svg("cube")}</span><span class="t">成本分摊</span><span class="sub">按部门 · 本月</span></div>
+      <table class="table"><tr><th>部门</th><th>Token 消耗</th><th>折算费用</th><th>占比</th></tr>
+      ${[["教务处","18.4M","¥1,102",34],["学工处","12.1M","¥726",22],["人事处","9.8M","¥588",18],["财务处","6.2M","¥372",12],["其他","7.6M","¥456",14]].map(r=>'<tr><td class="tmain">'+r[0]+'</td><td class="num">'+r[1]+'</td><td class="num">'+r[2]+'</td><td><div style="display:flex;align-items:center;gap:8px"><span class="track" style="width:120px"><i style="width:'+(r[3]*2.6)+'%"></i></span><span class="num" style="font-size:11.5px">'+r[3]+'%</span></div></td></tr>').join("")}
+      </table>
+      <div class="d" style="font-size:11px;color:var(--ink3);margin-top:12px">月度账单自动推送各部门管理员 · 校本模型推理按电费折算</div>
+    </div>`;
+  }
+}
+
+/* ---------- 挂载 ---------- */
+$("#shell").innerHTML=NAV.map(n=>'<div class="view" id="vw-'+n[0]+'">'+V[n[0]]()+"</div>").join("");
+goto("home");
+renderWiz();
+renderBoard("use");
+/* ---------- 开关 ---------- */
+const SWITCHES=[
+ ["会话审计水印","所有回答附带用户与时间水印，可追溯"],
+ ["敏感词双审","高危拦截策略变更需两名管理员会签"],
+ ["灰度发布","新版本先对信息中心内部开放 48 小时"],
+ ["外部接口访问","仅限校园网与 VPN 网段调用"]
+];
+$("#swlist").innerHTML=SWITCHES.map((s,i)=>'<div class="swrow"><div class="lb"><b>'+s[0]+'</b><p>'+s[1]+'</p></div><button class="sw'+(i!==3?" on":"")+'" data-t="'+(i!==3?"已关闭："+s[0]:"已开启："+s[0])+'"></button></div>').join("");
+
+$$("#btabs button").forEach(b=>b.onclick=()=>{
+  $$("#btabs button").forEach(x=>x.classList.toggle("on",x===b));
+  renderBoard(b.dataset.b);
+});
+$$(".sw").forEach(el=>el.onclick=()=>el.classList.toggle("on"));
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]");
+  if(!a)return;
+  const act=a.dataset.act;
+  if(act==="goto-agents"){goto("agents")}
+  if(act==="goto-board"){goto("board")}
+  if(act==="goto-apps"||act==="goto-msg"){}
+  if(act==="wiz-jump"){goto("agents");wstate.step=1;renderWiz();setTimeout(()=>{const w=$("#wiz");if(w)w.scrollIntoView({behavior:"smooth",block:"center"})},60)}
+  if(act==="wnext"&&wstate.step<3){wstate.step++;renderWiz()}
+  if(act==="wprev"&&wstate.step>1){wstate.step--;renderWiz()}
+  if(act==="wpub"){toast("「"+wstate.name+"」已发布上岗 · 试岗期 7 天，密钥已发送至你的企业微信")}
+  if(act==="copy"){toast("接入示例已复制到剪贴板")}
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>憬悟 · 大模型平台</title>
+<style>
+:root{
+  --bg:#f5f5f7;--card:#ffffff;--ink:#1d1d1f;--ink2:#6e6e73;--ink3:#a1a1a6;
+  --blue:#0071e3;--blue-deep:#0058b8;--blue-wash:rgba(0,113,227,.08);
+  --green:#34a853;--red:#e8443a;--orange:#f0a028;--purple:#7d5be9;
+  --line:rgba(0,0,0,.09);--line2:rgba(0,0,0,.05);
+  --r-lg:18px;--r-md:12px;--r-sm:8px;
+  --sh-card:0 1px 3px rgba(0,0,0,.04),0 6px 18px rgba(0,0,0,.05);
+  --sh-pop:0 4px 14px rgba(0,0,0,.12),0 20px 50px rgba(0,0,0,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;min-height:100vh}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;font-size:inherit}
+input,select{font-family:inherit;font-size:inherit;color:inherit}
+::selection{background:rgba(0,113,227,.18)}
+h1,h2,h3{font-weight:700;letter-spacing:-.01em}
+.mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+/* ===== 毛玻璃吸顶导航 ===== */
+.topnav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid rgba(0,0,0,.1)}
+.topnav-in{max-width:1240px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:6px}
+.logo{display:flex;align-items:center;gap:9px;margin-right:20px;flex:none}
+.logo .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(145deg,#3d9bff,var(--blue));display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,113,227,.35)}
+.logo .mark svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo .t{font-size:16.5px;font-weight:650;letter-spacing:-.02em;white-space:nowrap}
+.mainnav{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.mainnav::-webkit-scrollbar{display:none}
+.mn{position:relative;padding:7px 13px;font-size:13.5px;font-weight:500;color:var(--ink2);border-radius:9px;white-space:nowrap;transition:color .15s}
+.mn:hover{color:var(--ink)}
+.mn.on{color:var(--ink);font-weight:600}
+.mn.on::after{content:"";position:absolute;left:13px;right:13px;bottom:-11px;height:2.5px;border-radius:2px;background:var(--blue)}
+.navr{display:flex;align-items:center;gap:12px;flex:none;margin-left:6px}
+.nsearch{display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.05);border-radius:9px;padding:6px 11px;width:180px;transition:width .2s,background .2s}
+.nsearch:focus-within{width:230px;background:rgba(0,0,0,.08)}
+.nsearch svg{width:13px;height:13px;stroke:var(--ink3);fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.nsearch input{border:none;background:none;outline:none;width:100%;font-size:13px}
+.nsearch input::placeholder{color:var(--ink3)}
+.nico{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s}
+.nico:hover{background:rgba(0,0,0,.06)}
+.nico svg{width:17px;height:17px;stroke:var(--ink2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nico .dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid #fff}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#c56cf0,#5f6bff);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex:none}
+
+/* ===== 主区 ===== */
+.shell{max-width:1240px;margin:0 auto;padding:30px 24px 60px}
+.vhead{margin:6px 0 24px}
+.vhead h1{font-size:29px;letter-spacing:-.025em}
+.vhead p{color:var(--ink2);font-size:14px;margin-top:6px}
+.vhead .row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:980px;font-size:13.5px;font-weight:500;transition:all .18s;white-space:nowrap}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-p{background:var(--blue);color:#fff}
+.btn-p:hover{background:var(--blue-deep)}
+.btn-o{background:#fff;color:var(--ink);box-shadow:var(--sh-card)}
+.btn-o:hover{background:rgba(0,0,0,.03)}
+.btn-s{padding:5px 12px;font-size:12.5px;border-radius:980px;background:rgba(0,113,227,.09);color:var(--blue);font-weight:550}
+.btn-s:hover{background:rgba(0,113,227,.16)}
+
+/* 卡片 */
+.card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-card);padding:22px}
+.card .chead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.card .chead h3{font-size:16px;letter-spacing:-.015em}
+.card .chead .more{font-size:12.5px;color:var(--blue);font-weight:500}
+.card .chead .more:hover{text-decoration:underline}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-card);padding:19px 20px;position:relative;overflow:hidden}
+.kpi .lb{font-size:12.5px;color:var(--ink2);font-weight:500}
+.kpi .v{font-size:27px;font-weight:700;letter-spacing:-.03em;margin-top:5px;font-variant-numeric:tabular-nums}
+.kpi .sub{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink3);margin-top:6px}
+.kpi .sub .up{color:var(--green);font-weight:600}
+.kpi .sub .dn{color:var(--red);font-weight:600}
+.kpi .ico{position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--blue-wash)}
+.kpi .ico svg{width:17px;height:17px;stroke:var(--blue);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.kpi .bar{position:absolute;left:0;top:0;bottom:0;width:3.5px}
+
+/* 布局格 */
+.g2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:18px}
+.g2e{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+
+/* 表格（苹果风：无竖线、轻斑马纹、粗表头字） */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:var(--ink2);font-size:12px;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:.5px solid var(--line2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{transition:background .12s}
+.tbl tbody tr:hover{background:rgba(0,0,0,.022)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* iOS 分段控件 */
+.seg{display:inline-flex;background:rgba(0,0,0,.06);border-radius:9px;padding:2px;gap:1px}
+.seg button{padding:5px 13px;font-size:12.5px;font-weight:500;color:var(--ink2);border-radius:7px;transition:all .15s;white-space:nowrap}
+.seg button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+
+/* iOS 开关 */
+.sw{position:relative;width:40px;height:24px;border-radius:980px;background:rgba(0,0,0,.16);transition:background .2s;flex:none;cursor:pointer}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.sw.on{background:var(--green)}
+.sw.on::after{transform:translateX(16px)}
+
+/* 药丸标签 */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2.5px 10px;border-radius:980px;font-size:11.5px;font-weight:550;white-space:nowrap}
+.pill.b{background:var(--blue-wash);color:var(--blue)}
+.pill.g{background:rgba(52,168,83,.1);color:#247a3d}
+.pill.r{background:rgba(232,68,58,.09);color:#c13028}
+.pill.o{background:rgba(240,160,40,.12);color:#b06e0a}
+.pill.n{background:rgba(0,0,0,.055);color:var(--ink2)}
+.pill.v{background:rgba(125,91,233,.1);color:#5f3fd4}
+.pill .idot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* 进度条 */
+.prog{height:6px;border-radius:980px;background:rgba(0,0,0,.07);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:980px;background:var(--blue);transition:width .3s}
+
+/* 页签（下划线式，非胶囊） */
+.tabs{display:flex;gap:26px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 2px;font-size:13.5px;font-weight:500;color:var(--ink2);position:relative;white-space:nowrap;transition:color .15s}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--ink);font-weight:600}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;border-radius:2px;background:var(--ink)}
+
+/* 视图切换 */
+.view{display:none}
+.view.on{display:block;animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* toast（底部居中胶囊，iOS 通知风） */
+#toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);background:rgba(29,29,31,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#fff;padding:11px 22px;border-radius:980px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:all .28s;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,.3);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 通用工具类 */
+.rowb{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mut{color:var(--ink2)}
+.sm{font-size:12.5px}
+.hr{height:1px;background:var(--line2);margin:14px 0}
+
+.appgrid{grid-template-columns:repeat(3,1fr);gap:12px}
+.appgrid>div{border:.5px solid var(--line2);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:11px;transition:all .2s;cursor:pointer;min-width:0}
+.appgrid>div:hover{box-shadow:var(--sh-card);transform:translateY(-2px)}
+.appgrid .ttl{display:flex;gap:12px;align-items:center;min-width:0}
+.appgrid .ttl>div{min-width:0;flex:1}
+.appgrid .ttl .nm{font-weight:650;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appgrid .ttl .dp{display:flex;justify-content:space-between;gap:8px}
+.appgrid .ttl .dp .dnm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appgrid .desc{white-space:normal}
+
+/* 响应式 */
+@media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}.g2,.g2e{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}.nsearch{display:none}.appgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.kpis,.g3,.g4{grid-template-columns:1fr}.appgrid{grid-template-columns:1fr}.shell{padding:20px 16px 50px}.vhead h1{font-size:24px}.navr .nico:not(.av-wrap){display:none}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-in">
+    <a class="logo" href="javascript:void(0)">
+      <span class="mark"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M3 12h3M18 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg></span>
+      <span class="t">憬悟</span>
+    </a>
+    <div class="mainnav" id="mainnav">
+      <a class="mn on" data-w="home">工作台</a>
+      <a class="mn" data-w="models">模型广场</a>
+      <a class="mn" data-w="brain">知识中枢</a>
+      <a class="mn" data-w="build">场景编排</a>
+      <a class="mn" data-w="apps">应用集市</a>
+      <a class="mn" data-w="dev">开发者中心</a>
+      <a class="mn" data-w="observe">观测告警</a>
+      <a class="mn" data-w="guard">安全护栏</a>
+      <a class="mn" data-w="admin">组织与配置</a>
+    </div>
+    <div class="navr">
+      <div class="nsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="搜索功能、模型、应用"></div>
+      <button class="nico" id="bell" title="通知"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg><i class="dot"></i></button>
+      <span class="nico av-wrap" title="账号"><span class="avatar">沈</span></span>
+    </div>
+  </div>
+</nav>
+
+<div class="shell">
+<div class="view on" id="vw-home"></div>
+<div class="view" id="vw-models"></div>
+<div class="view" id="vw-brain"></div>
+<div class="view" id="vw-build"></div>
+<div class="view" id="vw-apps"></div>
+<div class="view" id="vw-dev"></div>
+<div class="view" id="vw-observe"></div>
+<div class="view" id="vw-guard"></div>
+<div class="view" id="vw-admin"></div>
+</div>
+
+<div id="toast"><span id="toastmsg"></span></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+
+/* ===== 导航引擎 ===== */
+const VNAMES={home:"工作台",models:"模型广场",brain:"知识中枢",build:"场景编排",apps:"应用集市",dev:"开发者中心",observe:"观测告警",guard:"安全护栏",admin:"组织与配置"};
+function goto(w){
+  $$(".mn").forEach(x=>x.classList.toggle("on",x.dataset.w===w));
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#vw-"+w).classList.add("on");
+  window.scrollTo({top:0,behavior:"instant"});
+}
+$$(".mn").forEach(n=>n.onclick=()=>goto(n.dataset.w));
+const toast=m=>{const t=$("#toast");$("#toastmsg").textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)};
+document.addEventListener("click",e=>{const t=e.target.closest("[data-t]");if(t)toast(t.dataset.t)});
+$$("[data-goto]").forEach(b=>b.addEventListener("click",()=>goto(b.dataset.goto)));
+$$(".tabs").forEach(tb=>{
+  const panes=tb.parentElement.querySelectorAll(":scope > .tpane");
+  tb.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    tb.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+    panes.forEach((p,i)=>p.classList.toggle("on",i===[...tb.children].indexOf(t)));
+  });
+});
+$$(".sw").forEach(s=>s.onclick=()=>{s.classList.toggle("on");if(s.dataset.t)toast(s.dataset.t)});
+$$(".seg").forEach(sg=>sg.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  sg.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  if(b.dataset.t)toast(b.dataset.t);
+}));
+
+/* ===== SVG 图标库 ===== */
+const ICONS={
+  bolt:'<path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5z"/>',
+  brain:'<path d="M9.5 3A2.5 2.5 0 0 0 7 5.5c-1.8.3-3 1.7-3 3.5 0 .9.3 1.7.9 2.3-.6.6-.9 1.4-.9 2.2 0 1.9 1.6 3.5 3.5 3.5h.1A2.5 2.5 0 0 0 12 19V5.5A2.5 2.5 0 0 0 9.5 3z"/><path d="M14.5 3A2.5 2.5 0 0 1 17 5.5c1.8.3 3 1.7 3 3.5 0 .9-.3 1.7-.9 2.3.6.6.9 1.4.9 2.2 0 1.9-1.6 3.5-3.5 3.5h-.1A2.5 2.5 0 0 1 12 19"/>',
+  cube:'<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/>',
+  shield:'<path d="M12 2 4 5.5V11c0 5 3.4 8.6 8 11 4.6-2.4 8-6 8-11V5.5z"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 15.2c2.3.2 4 1.6 4.5 4"/>',
+  doc:'<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4M9 12h6M9 16h6"/>',
+  key:'<circle cx="8" cy="15" r="4.5"/><path d="m11.5 11.5 8-8M17 4l3 3M14.5 6.5l3 3"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  spark:'<path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/><path d="M19 15l.9 3.1L23 19l-3.1.9L19 23l-.9-3.1L15 19l3.1-.9z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  alert:'<path d="M12 3 2 20h20z"/><path d="M12 9.5v4.5M12 17.2v.1"/>',
+  flow:'<rect x="3" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="16" width="7" height="5" rx="1.5"/><path d="M6.5 8v5a3 3 0 0 0 3 3H14"/>',
+  db:'<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  api:'<path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2.5"/>',
+  book:'<path d="M4 4a2 2 0 0 1 2-2h14v18H6a2 2 0 0 0-2 2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>',
+  send:'<path d="m3 11 18-8-8 18-2.5-7.5z"/><path d="M10.5 13.5 21 3"/>',
+  pulse:'<path d="M3 12h4l2.5-7 4 14 2.5-7h5"/>',
+  lock:'<rect x="5" y="10" width="14" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>'
+};
+const icon=(k,cls="")=>`<svg viewBox="0 0 24 24" class="${cls}">${ICONS[k]||ICONS.doc}</svg>`;
+
+/* ===== 工作台 ===== */
+$("#vw-home").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>下午好，沈知行</h1>
+  <p>平台今日已服务全校 <b class="mono" style="color:var(--ink)">18,642</b> 次智能请求 · 一切运行正常</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="快速创建：从模板或空白场景开始">${icon("spark")}快速创建</button>
+  <button class="btn btn-p" data-goto="build">${icon("flow")}进入编排</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("pulse")}</span>
+    <div class="lb">今日调用</div><div class="v">18,642</div><div class="sub"><span class="up">+12.4%</span>较昨日</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.users}</svg></span>
+    <div class="lb">活跃师生</div><div class="v">6,381</div><div class="sub"><span class="up">+3.1%</span>近7日均值</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.cube}</svg></span>
+    <div class="lb">在线场景</div><div class="v">36</div><div class="sub">知识类 14 · 流程类 22</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.clock}</svg></span>
+    <div class="lb">平均响应</div><div class="v">1.24<small style="font-size:14px;font-weight:500"> s</small></div><div class="sub"><span class="up">-0.18s</span>较上周</div></div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="chead"><h3>近 14 日调用量</h3><div class="seg"><button class="on">按日</button><button data-t="已切换为按周统计口径">按周</button><button data-t="已切换为按月统计口径">按月</button></div></div>
+    <div id="h-chart" style="height:210px"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>场景活跃榜</h3><a class="more" data-goto="apps">查看全部</a></div>
+    <div id="h-rank"></div>
+  </div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>待办事项</h3><span class="pill n">4 项</span></div>
+    <div id="h-todo"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>系统状态</h3><span class="pill g"><i class="idot"></i>全部正常</span></div>
+    <div id="h-health"></div>
+  </div>
+</div>`;
+
+/* 趋势图（手绘 SVG 柱状） */
+(function(){
+  const data=[1082,1240,1180,1355,1290,1420,1568,1510,1688,1622,1790,1735,1846,1921];
+  const max=2000,W=640,H=210,P=26;
+  $("#h-chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%">${data.map((v,i)=>{
+    const bw=(W-P*2)/data.length-8,x=P+i*((W-P*2)/data.length)+4,bh=(v/max)*(H-46),y=H-26-bh;
+    const wk=i>=data.length-7;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3.5" fill="${wk?"var(--blue)":"rgba(0,113,227,.22)"}"/>`+
+    (i%2===0?`<text x="${(x+bw/2).toFixed(1)}" y="${H-8}" font-size="10" fill="var(--ink3)" text-anchor="middle">${i===data.length-1?"今天":(data.length-i)+"天前"}</text>`:"");
+  }).join("")}</svg>`;
+})();
+
+/* 活跃榜 */
+const RANK=[["迎新百事通",4821,"b"],["公文格式校对",4107,"b"],["实验室安全答题",3856,"v"],["宿舍调宿申请指引",2974,"n"],["奖助学金材料预审",2688,"n"],["毕业生档案去向查询",2341,"n"]];
+$("#h-rank").innerHTML=RANK.map((r,i)=>`
+<div class="rowb" style="padding:9px 0;${i<RANK.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="display:flex;align-items:center;gap:10px;min-width:0">
+    <span class="mono" style="width:18px;font-size:12px;color:${i<3?"var(--blue)":"var(--ink3)"};font-weight:600">${i+1}</span>
+    <span style="font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r[0]}</span>
+    ${i===0?'<span class="pill o">热</span>':""}
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex:none">
+    <div class="prog" style="width:80px"><i style="width:${(r[1]/RANK[0][1]*100).toFixed(0)}%"></i></div>
+    <span class="mono sm mut" style="width:44px;text-align:right">${r[1].toLocaleString()}</span>
+  </div>
+</div>`).join("");
+
+/* 待办 */
+const TODO=[["待审批","药学院提交的「实验指导书问答」场景发布申请","r","今日 17:20 截止"],["知识更新","学生手册 2026 版收录后需重新分段与向量化","b","建议今日完成"],["模型评测","Qwen3-14B 本地化部署通过冒烟测试，待签署上线单","o","明日"],["配额提醒","开发者门户「求是科研」应用 API 配额已用 87%","n","3 日内"]];
+$("#h-todo").innerHTML=TODO.map((t,i)=>`
+<div class="rowb" style="padding:10px 0;${i<TODO.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="display:flex;gap:10px;align-items:flex-start;min-width:0">
+    <span class="pill ${t[2]}" style="margin-top:2px">${t[0]}</span>
+    <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t[1]}</span>
+  </div>
+  <span class="sm mut" style="flex:none">${t[3]}</span>
+</div>`).join("")+`<button class="btn btn-s" style="margin-top:12px" data-t="已进入待办清单">处理全部</button>`;
+
+/* 系统状态 */
+const HEALTH=[["推理集群","3/3 节点 · GPU 负载 61%","g"],["向量数据库","2 副本 · 同步延迟 0.4s","g"],["API 网关","错误率 0.02% · P99 890ms","g"],["证书状态","TLS 证书剩余 214 天","g"],["备份任务","最近成功 09-30 03:00","g"]];
+$("#h-health").innerHTML=HEALTH.map((h,i)=>`
+<div class="rowb" style="padding:10px 0;${i<HEALTH.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <span style="font-size:13px;font-weight:550">${h[0]}</span>
+  <div style="display:flex;align-items:center;gap:7px"><span class="sm mut">${h[1]}</span><span class="pill ${h[2]}"><i class="idot"></i></span></div>
+</div>`).join("");
+
+/* ===== 模型广场 ===== */
+const MODELS=[
+  ["qwen3-32b","通义千问","Qwen3-32B","通用对话 · 长文本","本地集群","http://172.20.8.31:8101/v1","启用",48210,0.86,1.05,8,32],
+  ["deepseek-v3","深度求索","DeepSeek-V3","推理 · 代码","本地集群","http://172.20.8.32:8101/v1","启用",39477,0.79,1.32,8,64],
+  ["glm-4-plus","智谱AI","GLM-4-Plus","通用对话","本地集群","http://172.20.8.33:8101/v1","启用",21908,0.91,1.18,8,128],
+  ["qwen3-14b","通义千问","Qwen3-14B","轻量任务 · 高并发","本地集群","http://172.20.8.34:8101/v1","灰度",8620,0.84,0.42,4,32],
+  ["bge-m3","BAAI","BGE-M3","文本向量化","本地集群","http://172.20.8.35:9001/v1","启用",128400,0.99,0.02,4,8],
+  ["qwen2.5-coder","通义千问","Qwen2.5-Coder-14B","代码生成","本地集群","http://172.20.8.36:8101/v1","启用",5183,0.88,0.51,4,32],
+  ["huaTuo-llama","华佗GPT","HuatuoGPT-II-13B","医学 · 校医院知识","本地集群","http://172.20.8.37:8101/v1","启用",2931,0.83,0.64,4,16],
+  ["step-2-mini","阶跃星辰","Step-2-16B","多模态识别","云端通道","https://gw.jingwu.cn/step/v1","启用",4102,0.87,0.95,8,16]
+];
+$("#vw-models").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>模型广场</h1>
+  <p>接入与管理平台可用的大模型 · 本地部署与云端通道统一纳管</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="健康检查：8 个模型端点全部可达">${icon("pulse")}连通性检测</button>
+  <button class="btn btn-p" data-t="接入向导：OpenAI 兼容 / 私有权重 / 云端通道">${icon("cube")}接入模型</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("cube")}</span>
+    <div class="lb">纳管模型</div><div class="v">8</div><div class="sub">本地 7 · 云端 1</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.pulse}</svg></span>
+    <div class="lb">本日推理次数</div><div class="v">258.8<small style="font-size:14px;font-weight:500"> K</small></div><div class="sub"><span class="up">+9.6%</span>较昨日</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.chart}</svg></span>
+    <div class="lb">GPU 使用率</div><div class="v">61%</div><div class="sub">峰值 84% · 22:00</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.clock}</svg></span>
+    <div class="lb">Token 日均消耗</div><div class="v">3.2<small style="font-size:14px;font-weight:500"> 亿</small></div><div class="sub">预算内 · 余 41%</div></div>
+</div>
+
+<div class="card">
+  <div class="chead"><h3>模型列表</h3>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="seg" id="mfilter"><button class="on">全部</button><button data-t="已筛选：本地部署模型">本地部署</button><button data-t="已筛选：云端通道模型">云端通道</button><button data-t="已筛选：灰度中模型">灰度中</button></div>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="tbl" style="min-width:900px"><thead><tr>
+    <th>模型 / 厂商</th><th>能力标签</th><th>接入方式</th><th class="num">本日调用</th><th class="num">满意度</th><th class="num">P95 延迟</th><th>状态</th><th></th>
+  </tr></thead><tbody id="m-tb"></tbody></table></div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>调用分布（近 7 日）</h3><a class="more" data-goto="observe">观测详情</a></div>
+    <div id="m-dist"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>路由策略</h3><button class="btn btn-s" data-t="路由策略已保存：按场景权重 + 成本上限 + 降级链">保存策略</button></div>
+    <div id="m-route"></div>
+  </div>
+</div>`;
+
+$("#m-tb").innerHTML=MODELS.map(m=>`
+<tr>
+  <td><div style="display:flex;align-items:center;gap:11px">
+    <span style="width:34px;height:34px;border-radius:10px;background:var(--blue-wash);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--blue);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.cube}</svg></span>
+    <div><div style="font-weight:600" class="mono" style="font-size:13px">${m[2]}</div><div class="sm mut">${m[1]}</div></div>
+  </div></td>
+  <td><span class="pill n">${m[3]}</span></td>
+  <td><div class="sm"><div style="font-weight:550">${m[4]}</div><div class="mut mono" style="font-size:11px">${m[5]}</div></div></td>
+  <td class="num mono">${m[7].toLocaleString()}</td>
+  <td class="num mono">${m[8]}</td>
+  <td class="num mono">${m[9]}s</td>
+  <td><span class="pill ${m[6]==="启用"?"g":m[6]==="灰度"?"o":"n"}"><i class="idot"></i>${m[6]}</span></td>
+  <td><button class="btn btn-s" data-t="「${m[2]}」详情：上下文 ${m[11]}K · 并发 ${m[10]} · 日志采样 1%">详情</button></td>
+</tr>`).join("");
+
+/* 调用分布横向条 */
+const DIST=[["Qwen3-32B",34,"var(--blue)"],["DeepSeek-V3",27,"rgba(0,113,227,.62)"],["GLM-4-Plus",15,"rgba(0,113,227,.42)"],["BGE-M3",12,"rgba(125,91,233,.75)"],["其他",12,"rgba(0,0,0,.18)"]];
+$("#m-dist").innerHTML=DIST.map(d=>`
+<div style="margin-bottom:13px">
+  <div class="rowb sm" style="margin-bottom:5px"><span style="font-weight:550">${d[0]}</span><span class="mono mut">${d[1]}%</span></div>
+  <div class="prog" style="height:8px"><i style="width:${d[1]}%;background:${d[2]}"></i></div>
+</div>`).join("")+`<div class="hr"></div><div class="rowb sm"><span class="mut">降级触发（7 日）</span><span class="mono" style="font-weight:600">23 次 · 均自动恢复</span></div>`;
+
+/* 路由策略 */
+$("#m-route").innerHTML=`
+<div class="rowb" style="padding:10px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">成本优先路由</div><div class="sm mut">优先低单价模型，质量阈值 0.8</div></div>
+  <span class="sw on" data-t="成本优先路由已开启"></span></div>
+<div class="rowb" style="padding:10px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">夜间批处理降速</div><div class="sm mut">23:00–07:00 离线任务半速执行</div></div>
+  <span class="sw on" data-t="夜间降速已开启"></span></div>
+<div class="rowb" style="padding:10px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">故障自动切换</div><div class="sm mut">主模型超时 3 次切备用链</div></div>
+  <span class="sw on" data-t="故障自动切换已开启"></span></div>
+<div class="rowb" style="padding:10px 0">
+  <div><div style="font-weight:550;font-size:13px">新模型灰度引流</div><div class="sm mut">上线 7 日内引流 5% 验证</div></div>
+  <span class="sw" data-t="灰度引流已关闭"></span></div>`;
+
+/* ===== 知识中枢 ===== */
+const KBS=[
+  ["学生事务知识库","student-affairs","覆盖奖助贷、住宿、学籍等办事口径","教务处 · 学工部",1420,"3 小时前","已发布","b",98],
+  ["教学规范知识库","teaching-standards","培养方案、课程大纲、考试管理规程","教务处",860,"昨日 18:40","已发布","b",97],
+  ["科研制度知识库","research-policy","项目申报、经费、成果转化办法","科研处",655,"2 日前","已发布","b",96],
+  ["网络安全知识库","info-security","等级保护、数据分类分级、应急预案","信息化办公室",312,"5 日前","已发布","v",94],
+  ["校园生活知识库","campus-life","食堂、场馆、交通、医疗指南","后勤保障部",486,"1 小时前","向量化中","o",91],
+  ["招标采购知识库","procurement","采购流程、合同模板、验收规范","招标采购中心",203,"上周","已发布","v",93]
+];
+$("#vw-brain").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>知识中枢</h1>
+  <p>校级知识资产的采集、加工与检索 · 为场景提供可信知识供给</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="检索测试台：输入问题验证召回片段">${icon("eye")}检索测试</button>
+  <button class="btn btn-p" data-t="新建知识库：上传文档 / 接入业务库 / 爬取站点">${icon("db")}新建知识库</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("db")}</span>
+    <div class="lb">知识库</div><div class="v">6</div><div class="sub">3 个部门共建</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.doc}</svg></span>
+    <div class="lb">文档片段</div><div class="v">3,936</div><div class="sub"><span class="up">+128</span>本周新增</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.bolt}</svg></span>
+    <div class="lb">今日检索</div><div class="v">12,407</div><div class="sub">命中率 94.2%</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.clock}</svg></span>
+    <div class="lb">平均检索耗时</div><div class="v">86<small style="font-size:14px;font-weight:500"> ms</small></div><div class="sub">P99 240ms</div></div>
+</div>
+
+<div class="card">
+  <div class="tabs"><button class="tab on">知识库列表</button><button class="tab" data-t="加工流水线：解析 → 清洗 → 分段 → 向量化，共 4 个阶段 12 条规则">加工流水线</button><button class="tab" data-t="权限说明：按部门 + 角色双维授权，片段级脱敏后入库">权限体系</button></div>
+  <div class="tpane on">
+    <div style="overflow-x:auto">
+    <table class="tbl" style="min-width:920px"><thead><tr>
+      <th>知识库</th><th>覆盖范围</th><th>归属部门</th><th class="num">文档数</th><th>最近更新</th><th>健康度</th><th>状态</th><th></th>
+    </tr></thead><tbody id="kb-tb"></tbody></table></div>
+  </div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>今日热门检索</h3><span class="seg"><button class="on">实时</button><button data-t="已切换：近 7 日热门检索">近 7 日</button></span></div>
+    <div id="kb-hot"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>数据接入源</h3><button class="btn btn-s" data-t="添加接入源：SFTP / 对象存储 / Webhook / 数据库">添加</button></div>
+    <div id="kb-src"></div>
+  </div>
+</div>`;
+
+$("#kb-tb").innerHTML=KBS.map(k=>`
+<tr>
+  <td><div style="display:flex;align-items:center;gap:11px">
+    <span style="width:34px;height:34px;border-radius:10px;background:${k[7]==="b"?"var(--blue-wash)":"rgba(125,91,233,.09)"};display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:${k[7]==="b"?"var(--blue)":"var(--purple)"};fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.db}</svg></span>
+    <div><div style="font-weight:600">${k[0]}</div><div class="mut mono" style="font-size:11px">${k[1]}</div></div>
+  </div></td>
+  <td class="sm" style="max-width:220px">${k[2]}</td>
+  <td class="sm">${k[3]}</td>
+  <td class="num mono">${k[4]}</td>
+  <td class="sm mut">${k[5]}</td>
+  <td><div style="display:flex;align-items:center;gap:8px"><div class="prog" style="width:64px"><i style="width:${k[8]}%"></i></div><span class="mono sm">${k[8]}</span></div></td>
+  <td><span class="pill ${k[6]==="已发布"?"g":"o"}"><i class="idot"></i>${k[6]}</span></td>
+  <td><button class="btn btn-s" data-t="进入「${k[0]}」：片段浏览 / 版本对比 / 增量同步">管理</button></td>
+</tr>`).join("");
+
+/* 热门检索 */
+const KHOT=[["奖学金评定标准是什么时候出",842],["宿舍空调怎么报修",706],["重修课怎么报名",655],["四六级准考证丢了怎么办",512],["毕业论文查重用哪个系统",487]];
+$("#kb-hot").innerHTML=KHOT.map((q,i)=>`
+<div class="rowb" style="padding:9px 0;${i<KHOT.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="display:flex;gap:10px;align-items:center;min-width:0">
+    <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;stroke-linecap:round;flex:none">${ICONS.send}</svg>
+    <span class="sm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${q[0]}</span>
+  </div>
+  <span class="mono sm mut" style="flex:none">${q[1]} 次</span>
+</div>`).join("");
+
+/* 接入源 */
+const KSRC=[["学校OA公文库","SFTP 定时同步 · 每日 02:00","g","正常"],["教务系统","数据库订阅 · 增量捕获","g","正常"],["图书馆指南站","站点爬取 · 每周一","g","正常"],["后勤工单系统","Webhook 推送","o","限流中"]];
+$("#kb-src").innerHTML=KSRC.map((s,i)=>`
+<div class="rowb" style="padding:10px 0;${i<KSRC.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="display:flex;gap:10px;align-items:center">
+    <span style="width:30px;height:30px;border-radius:9px;background:rgba(0,0,0,.045);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--ink2);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.api}</svg></span>
+    <div><div style="font-weight:550;font-size:13px">${s[0]}</div><div class="sm mut">${s[1]}</div></div>
+  </div>
+  <span class="pill ${s[2]}"><i class="idot"></i>${s[3]}</span>
+</div>`).join("");
+
+/* ===== 场景编排（卡片流式，与前两套画布范式区隔） ===== */
+const FLOW_STEPS=[
+  ["开始","触发方式：学生提问 / 定时任务 / API 调用","spark","b"],
+  ["意图识别","Qwen3-32B · 置信度阈值 0.75，低于则转人工","brain","v"],
+  ["知识检索","学生事务知识库 · TopK=5 · 重排序","db","b"],
+  ["条件分支","命中政策片段？是 → 引用回答；否 → 引导办结","flow","o"],
+  ["引用回答","逐条标注来源文档与条款号","doc","g"],
+  ["工单创建","未命中时自动建后勤工单并推送进度","send","n"]
+];
+$("#vw-build").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>场景编排</h1>
+  <p>以步骤卡片描述智能场景的执行流程 · 当前编辑：迎新百事通 v3</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="版本历史：v1 → v3，每次发布自动留存快照">${icon("clock")}版本</button>
+  <button class="btn btn-o" data-t="试运行：12 条测试用例，分支覆盖率 100%">${icon("pulse")}试运行</button>
+  <button class="btn btn-p" data-t="发布申请已提交：等待管理员审批（平均 2 小时）">${icon("bolt")}发布</button>
+</div></div></div>
+
+<div class="g2">
+  <div class="card">
+    <div class="chead"><h3>流程步骤</h3><button class="btn btn-s" data-t="插入步骤：模型节点 / 检索节点 / 判断 / 人工 / 外部 API">+ 插入步骤</button></div>
+    <div id="b-flow"></div>
+  </div>
+  <div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="chead"><h3>步骤详情</h3><span class="pill b">知识检索</span></div>
+      <div id="b-prop"></div>
+    </div>
+    <div class="card">
+      <div class="chead"><h3>最近试运行</h3><a class="more" data-t="完整试运行报告：12/12 通过，平均耗时 2.8s">报告</a></div>
+      <div id="b-test"></div>
+    </div>
+  </div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>我的场景</h3><button class="btn btn-s" data-t="新建场景：空白 / 从模板复制">新建</button></div>
+    <div id="b-mine"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>场景模板库</h3><a class="more" data-t="模板库共 18 个官方模板，覆盖 6 类校园场景">全部模板</a></div>
+    <div id="b-tpl"></div>
+  </div>
+</div>`;
+
+/* 流程步骤（纵向时间线） */
+$("#b-flow").innerHTML=FLOW_STEPS.map((s,i)=>`
+<div style="display:flex;gap:14px;${i<FLOW_STEPS.length-1?"padding-bottom:16px":""}">
+  <div style="display:flex;flex-direction:column;align-items:center;flex:none">
+    <span style="width:36px;height:36px;border-radius:11px;background:${s[3]==="b"?"var(--blue-wash)":s[3]==="v"?"rgba(125,91,233,.09)":s[3]==="o"?"rgba(240,160,40,.12)":s[3]==="g"?"rgba(52,168,83,.1)":"rgba(0,0,0,.05)"};display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:${s[3]==="b"?"var(--blue)":s[3]==="v"?"var(--purple)":s[3]==="o"?"var(--orange)":s[3]==="g"?"var(--green)":"var(--ink2)"};fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS[s[2]]}</svg>
+    </span>
+    ${i<FLOW_STEPS.length-1?'<span style="flex:1;width:2px;background:var(--line);margin:4px 0;border-radius:2px"></span>':""}
+  </div>
+  <div style="flex:1;min-width:0;padding-top:5px;${i<FLOW_STEPS.length-1?"padding-bottom:0":""}">
+    <div class="rowb"><span style="font-weight:600">${i+1}. ${s[0]}</span>
+      <span style="display:flex;gap:6px">
+        <button class="btn btn-s" style="padding:3px 10px;font-size:11.5px" data-t="已选中「${s[0]}」步骤，右侧查看参数">选中</button>
+        ${i===2?'<span class="pill g">当前</span>':""}
+      </span>
+    </div>
+    <div class="sm mut" style="margin-top:3px">${s[1]}</div>
+  </div>
+</div>`).join("");
+
+/* 步骤详情 */
+$("#b-prop").innerHTML=`
+<div style="display:flex;flex-direction:column;gap:12px">
+  <div><div class="sm mut" style="margin-bottom:5px">检索范围</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill b">学生事务知识库</span><span class="pill b">校园生活知识库</span></div></div>
+  <div><div class="sm mut" style="margin-bottom:5px">召回参数</div>
+    <div class="rowb sm"><span>相似度阈值</span><span class="mono" style="font-weight:600">0.68</span></div>
+    <div class="prog" style="margin-top:5px"><i style="width:68%"></i></div>
+    <div class="rowb sm" style="margin-top:10px"><span>返回片段 TopK</span><span class="mono" style="font-weight:600">5</span></div>
+    <div class="prog" style="margin-top:5px"><i style="width:50%"></i></div></div>
+  <div><div class="sm mut" style="margin-bottom:5px">重排序模型</div>
+    <div class="rowb"><span class="sm" style="font-weight:550">BGE-Reranker（本地）</span><span class="pill g">启用</span></div></div>
+</div>`;
+
+/* 试运行 */
+const BTEST=[["奖学金等级评定问题","通过","g","1.9s"],["跨校区宿舍调换问题","通过","g","2.4s"],["模糊提问「饭卡坏了」","通过","g","2.8s"],["超纲提问（校外政策）","拒答并转人工","o","1.2s"]];
+$("#b-test").innerHTML=BTEST.map((t,i)=>`
+<div class="rowb" style="padding:9px 0;${i<BTEST.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <span class="sm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t[0]}</span>
+  <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="pill ${t[2]}">${t[1]}</span><span class="mono sm mut">${t[3]}</span></div>
+</div>`).join("");
+
+/* 我的场景 */
+const MINE=[["迎新百事通","学工部 · 已发布","g",4821],["公文格式校对","校长办 · 已发布","g",4107],["实验室安全答题","设备处 · 已发布","g",3856],["实验指导书问答","药学院 · 待审批","r",0]];
+$("#b-mine").innerHTML=MINE.map((m,i)=>`
+<div class="rowb" style="padding:10px 0;${i<MINE.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="min-width:0"><div style="font-weight:600;font-size:13px">${m[0]}</div><div class="sm mut">${m[1]}</div></div>
+  <div style="display:flex;align-items:center;gap:10px;flex:none">
+    ${m[3]?`<span class="mono sm mut">${m[3].toLocaleString()}/日</span>`:""}
+    <span class="pill ${m[2]}">${m[3]?"运行中":"审批中"}</span>
+  </div>
+</div>`).join("");
+
+/* 模板库 */
+const TPLS=[["政策咨询型","检索引用 + 拒答兜底 + 人工转接","b"],["流程办理型","表单预填 + 进度查询 + 消息推送","v"],["内容生成型","初稿生成 + 规范校对 + 敏感词过滤","g"],["数据分析型","NL2SQL + 图表生成 + 结论摘要","o"]];
+$("#b-tpl").innerHTML=TPLS.map((t,i)=>`
+<div class="rowb" style="padding:10px 0;${i<TPLS.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div><div style="font-weight:600;font-size:13px">${t[0]}</div><div class="sm mut">${t[1]}</div></div>
+  <button class="btn btn-s" data-t="从「${t[0]}」模板创建新场景">使用</button>
+</div>`).join("");
+
+/* ===== 应用集市 ===== */
+const APPS=[
+  ["迎新百事通","新生一站式问答，报到、缴费、选宿全流程指引","学工部","教育学习","4.9","12.4K",1],
+  ["公文格式校对","红头文件格式自动核查，错误定位到句","校长办公室","行政办公","4.8","8.2K",1],
+  ["实验室安全答题","安全准入考试智能出题与错题讲解","设备与实验室管理处","教育学习","4.7","6.8K",1],
+  ["宿舍调宿申请指引","调宿条件判断、材料清单、进度跟踪","后勤保障部","生活服务","4.8","5.1K",1],
+  ["奖助学金材料预审","家庭经济困难认定材料完整性预检","学生资助中心","教育学习","4.9","4.6K",1],
+  ["毕业生档案去向查询","档案转递地址智能确认与回执跟踪","招生就业处","就业服务","4.6","4.2K",1],
+  ["课程评教智能摘要","开放性评语自动聚类提炼改进建议","教务处","行政办公","4.5","3.9K",1],
+  ["求是科研助手","项目申报要点解析与文献综述初稿","科研处","科研服务","4.8","3.5K",1],
+  ["校园导览数字人","招办直播间虚拟讲解员，语音交互","招生办公室","招生宣传","4.7","2.8K",1]
+];
+$("#vw-apps").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>应用集市</h1>
+  <p>全校师生可用的智能应用 · 统一身份认证，一次登录全校通用</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="应用上架申请：需通过安全评审与内容审核">${icon("spark")}提交应用</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("spark")}</span>
+    <div class="lb">在线应用</div><div class="v">9</div><div class="sub">覆盖 7 个业务部门</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.users}</svg></span>
+    <div class="lb">本月活跃用户</div><div class="v">14,208</div><div class="sub">占在校师生 78%</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.chart}</svg></span>
+    <div class="lb">平均评分</div><div class="v">4.75</div><div class="sub">评价数 3,210</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.bolt}</svg></span>
+    <div class="lb">本月调用量</div><div class="v">52.1<small style="font-size:14px;font-weight:500"> 万</small></div><div class="sub"><span class="up">+18%</span>环比上月</div></div>
+</div>
+
+<div class="card" style="margin-bottom:18px">
+  <div class="chead"><h3>精选应用</h3><div class="seg"><button class="on">全部</button><button data-t="已筛选：教育学习类应用">教育学习</button><button data-t="已筛选：行政办公类应用">行政办公</button><button data-t="已筛选：生活服务类应用">生活服务</button><button data-t="已筛选：就业服务类应用">就业服务</button></div></div>
+  <div class="g3 appgrid" style="margin:0" id="app-grid"></div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>新上架</h3><a class="more" data-t="应用上架流程：安全评审 → 内容审核 → 试运行 → 正式发布">上架规范</a></div>
+    <div id="app-new"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>用户评价精选</h3><span class="pill n">审核后展示</span></div>
+    <div id="app-rev"></div>
+  </div>
+</div>`;
+
+/* 应用网格（App Store 风） */
+$("#app-grid").innerHTML=APPS.slice(0,6).map((a,i)=>`
+<div data-t="打开「${a[0]}」：${a[1]}">
+  <div class="ttl">
+    <span style="width:46px;height:46px;border-radius:11.5px;flex:none;background:linear-gradient(145deg,hsl(${i*42+205} 80% 62%),hsl(${i*42+228} 78% 52%));display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.13)">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">${ICONS.spark}</svg>
+    </span>
+    <div>
+      <div class="nm">${a[0]}</div>
+      <div class="dp sm mut"><span class="dnm">${a[3]}</span><span style="flex:none">${a[2]}</span></div>
+    </div>
+  </div>
+  <div class="sm desc" style="color:var(--ink2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px">${a[1]}</div>
+  <div class="rowb">
+    <div style="display:flex;align-items:center;gap:5px;min-width:0">
+      <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--orange);stroke:none;flex:none"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.2l-6.2 3.7 1.6-7L2 9.2l7.1-.6z"/></svg>
+      <span class="mono sm" style="font-weight:600">${a[4]}</span>
+      <span class="sm mut" style="white-space:nowrap">· ${a[5]}</span>
+    </div>
+    <button class="btn btn-s" style="padding:4px 14px;font-weight:600;flex:none">打开</button>
+  </div>
+</div>`).join("");
+
+/* 新上架 */
+$("#app-new").innerHTML=APPS.slice(6).map((a,i)=>`
+<div class="rowb" style="padding:11px 0;${i<2?"border-bottom:.5px solid var(--line2)":""}">
+  <div style="display:flex;gap:12px;align-items:center;min-width:0">
+    <span style="width:38px;height:38px;border-radius:9.5px;flex:none;background:linear-gradient(145deg,hsl(${(i+6)*42+205} 80% 62%),hsl(${(i+6)*42+228} 78% 52%));display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">${ICONS.spark}</svg></span>
+    <div style="min-width:0"><div style="font-weight:600;font-size:13px">${a[0]}</div><div class="sm mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a[1]}</div></div>
+  </div>
+  <span class="pill n" style="flex:none">${a[5]} 次使用</span>
+</div>`).join("")+`<div class="hr"></div><div class="sm mut">每周三审核上架 · 平均周期 3 个工作日</div>`;
+
+/* 评价精选 */
+const REVIEWS=[
+  ["翁老师 · 教务处","公文格式校对","红头文件的字体字号错误一眼就能定位，校对时间省了一大半。"],
+  ["郎同学 · 2024级","迎新百事通","报到流程问什么都知道，还会主动提醒我缺的材料，很贴心。"],
+  ["裴老师 · 科研处","求是科研助手","申报书要点拆解得很清楚，结合校内政策给出的建议很实用。"]
+];
+$("#app-rev").innerHTML=REVIEWS.map((r,i)=>`
+<div style="padding:11px 0;${i<REVIEWS.length-1?"border-bottom:.5px solid var(--line2)":""}">
+  <div class="rowb" style="margin-bottom:5px">
+    <span class="sm" style="font-weight:600">${r[1]}</span>
+    <span class="sm mut">${r[0]}</span>
+  </div>
+  <div class="sm" style="color:var(--ink2)">${r[2]}</div>
+</div>`).join("");
+
+/* ===== 开发者中心 ===== */
+const KEYS=[
+  ["sk-jw-7f3a...c21e","求是科研助手（科研处）","线上","2027-03-14",184620,50,"g"],
+  ["sk-jw-9b0d...8a4f","校园导览数字人（招办）","线上","2026-12-02",51208,20,"g"],
+  ["sk-jw-4c88...e9d2","实验室安全答题（设备处）","线上","2026-11-20",41296,20,"g"],
+  ["sk-jw-2e1f...77b3","课程评教摘要（教务处）","测试","2026-10-30",1207,5,"o"],
+  ["sk-jw-6a55...0b9c","宿舍调宿指引（后勤）","已吊销","2026-08-15",0,0,"n"]
+];
+$("#vw-dev").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>开发者中心</h1>
+  <p>面向校内开发团队的 OpenAI 兼容接口 · 密钥、配额与用量统一管理</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="接口文档：docs.jingwu.cn · 含 Python / Java / cURL 示例">${icon("book")}接口文档</button>
+  <button class="btn btn-p" data-t="密钥已创建：仅本次展示完整明文，请立即妥善保存">${icon("key")}创建密钥</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("key")}</span>
+    <div class="lb">活跃密钥</div><div class="v">4</div><div class="sub">3 线上 · 1 测试</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.api}</svg></span>
+    <div class="lb">本月 API 调用</div><div class="v">27.8<small style="font-size:14px;font-weight:500"> 万</small></div><div class="sub"><span class="up">+11%</span>环比</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.users}</svg></span>
+    <div class="lb">接入团队</div><div class="v">5</div><div class="sub">覆盖 4 个部门</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.alert}</svg></span>
+    <div class="lb">本月限流次数</div><div class="v">37</div><div class="sub">全部来自测试密钥</div></div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="chead"><h3>接入代码示例</h3><div class="seg"><button class="on">Python</button><button data-t="Java 示例：OkHttp + SSE 流式">Java</button><button data-t="cURL 示例：一行命令快速验证">cURL</button></div></div>
+    <div style="background:#1d1d1f;border-radius:var(--r-md);padding:18px;overflow-x:auto">
+      <pre class="mono" style="font-size:12px;line-height:1.75;color:#e8e8ed"><span style="color:#7d8799"># 惯例：OpenAI 兼容协议，改 base_url 即可迁移</span>
+<span style="color:#ff7ab2">from</span> openai <span style="color:#ff7ab2">import</span> OpenAI
+
+client = OpenAI(
+    api_key=<span style="color:#a8e05f">"sk-jw-..."</span>,
+    base_url=<span style="color:#a8e05f">"https://api.jingwu.cn/v1"</span>
+)
+
+resp = client.chat.completions.create(
+    model=<span style="color:#a8e05f">"qwen3-32b"</span>,
+    messages=[{<span style="color:#a8e05f">"role"</span>: <span style="color:#a8e05f">"user"</span>,
+               <span style="color:#a8e05f">"content"</span>: <span style="color:#a8e05f">"奖学金评定标准"</span>}],
+    stream=<span style="color:#82c4ff">True</span>
+)</pre>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>错误码规范</h3><a class="more" data-t="完整错误码表：28 个标准错误码及排查建议">全部</a></div>
+    <div id="d-errs"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="chead"><h3>密钥管理</h3><span class="sm mut">用量单位：万次</span></div>
+  <div style="overflow-x:auto">
+  <table class="tbl" style="min-width:880px"><thead><tr>
+    <th>密钥</th><th>绑定应用</th><th>状态</th><th>有效期至</th><th class="num">本月调用</th><th class="num">QPS 上限</th><th></th>
+  </tr></thead><tbody id="d-keys"></tbody></table></div>
+</div>`;
+
+$("#d-errs").innerHTML=[
+  ["401 未授权","密钥错误或已吊销","r"],
+  ["403 权限不足","该模型未对密钥开放","o"],
+  ["429 触发限流","超出 QPS 或日配额","o"],
+  ["503 上游不可用","模型实例健康检查失败","r"],
+  ["5xx 网关异常","请携带 trace-id 联系平台方","n"]
+].map((e,i)=>`
+<div class="rowb" style="padding:10px 0;${i<4?"border-bottom:.5px solid var(--line2)":""}">
+  <span class="mono sm" style="font-weight:600">${e[0]}</span>
+  <span class="pill ${e[2]}">${e[1]}</span>
+</div>`).join("");
+
+$("#d-keys").innerHTML=KEYS.map(k=>`
+<tr>
+  <td class="mono sm" style="font-weight:600">${k[0]}</td>
+  <td class="sm">${k[1]}</td>
+  <td><span class="pill ${k[6]}"><i class="idot"></i>${k[2]}</span></td>
+  <td class="sm mono mut">${k[3]}</td>
+  <td class="num mono">${k[4].toLocaleString()}</td>
+  <td class="num mono">${k[5]}</td>
+  <td style="white-space:nowrap">
+    ${k[2]==="已吊销"?'<span class="sm mut">—</span>':`<button class="btn btn-s" data-t="已生成「${k[1]}」用量报表（本月）">用量</button> <button class="btn btn-s" data-t="确认吊销「${k[1]}」密钥？该操作不可恢复" style="background:rgba(232,68,58,.08);color:var(--red)">吊销</button>`}
+  </td>
+</tr>`).join("");
+
+/* ===== 观测告警 ===== */
+$("#vw-observe").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>观测告警</h1>
+  <p>全链路调用追踪、性能分析与异常告警 · 数据保留 90 天</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="巡检报告：14 项检查全部通过，已归档">${icon("shield")}健康巡检</button>
+  <button class="btn btn-p" data-t="告警规则配置：阈值、静默期、值班组共 12 条规则">${icon("alert")}告警规则</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("pulse")}</span>
+    <div class="lb">今日请求</div><div class="v">18,642</div><div class="sub"><span class="up">+12.4%</span>较昨日</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.shield}</svg></span>
+    <div class="lb">成功率</div><div class="v">99.82%</div><div class="sub">失败 34 次 · 已重试</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.clock}</svg></span>
+    <div class="lb">P95 延迟</div><div class="v">1.86<small style="font-size:14px;font-weight:500"> s</small></div><div class="sub"><span class="up">-0.22s</span>较上周</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--red)"></span><span class="ico" style="background:rgba(232,68,58,.08)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--red);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.alert}</svg></span>
+    <div class="lb">活跃告警</div><div class="v">1</div><div class="sub">昨日 3 · 已闭环 2</div></div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="chead"><h3>请求量与错误率</h3><div class="seg"><button class="on">24 小时</button><button data-t="已切换：近 7 日视角">7 日</button><button data-t="已切换：近 30 日视角">30 日</button></div></div>
+    <div id="o-chart"></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>活跃告警</h3><span class="pill r"><i class="idot"></i>1 条待处理</span></div>
+    <div id="o-alerts"></div>
+  </div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>慢请求 Top 5</h3><a class="more" data-t="链路追踪：任意请求可展开 9 级 span 明细">追踪明细</a></div>
+    <div style="overflow-x:auto">
+    <table class="tbl"><thead><tr><th>应用 / 场景</th><th>耗时</th><th>瓶颈环节</th></tr></thead><tbody id="o-slow"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>各部门用量（本月）</h3><a class="more" data-goto="admin">配额管理</a></div>
+    <div id="o-dept"></div>
+  </div>
+</div>`;
+
+/* 观测图：24h 面积 + 错误点 */
+(function(){
+  const N=24,req=[320,280,240,200,180,210,340,520,760,980,1240,1410,1520,1480,1390,1460,1580,1620,1540,1310,1080,860,620,430];
+  const W=640,H=210,L=40,R=10,T=14,B=26,max=1700;
+  const X=i=>L+i*(W-L-R)/(N-1),Y=v=>T+(H-T-B)*(1-v/max);
+  const line=req.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join("");
+  const area=line+`L${X(N-1)},${H-B}L${L},${H-B}Z`;
+  const errPts=[[9,210],[14,1120],[19,1440]];
+  $("#o-chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:210px">
+    ${[0,0.5,1].map(f=>`<line x1="${L}" x2="${W-R}" y1="${Y(max*f)}" y2="${Y(max*f)}" stroke="rgba(0,0,0,.06)" stroke-width="1"/><text x="${L-6}" y="${Y(max*f)+3.5}" font-size="9.5" fill="var(--ink3)" text-anchor="end">${Math.round(max*f)}</text>`).join("")}
+    ${[0,6,12,18,23].map(h=>`<text x="${X(h)}" y="${H-8}" font-size="9.5" fill="var(--ink3)" text-anchor="middle">${h}:00</text>`).join("")}
+    <path d="${area}" fill="rgba(0,113,227,.1)"/>
+    <path d="${line}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
+    ${errPts.map(p=>`<circle cx="${X(p[0])}" cy="${Y(req[p[0]])-10}" r="4" fill="var(--red)" opacity=".85"/>`).join("")}
+  </svg>
+  <div class="rowb sm" style="margin-top:10px"><span class="mut">— 请求量</span><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span>错误请求（3 次，均已自动重试成功）</span></div>`;
+})();
+
+/* 告警 */
+$("#o-alerts").innerHTML=`
+<div style="border:.5px solid rgba(232,68,58,.25);background:rgba(232,68,58,.04);border-radius:var(--r-md);padding:14px 16px;margin-bottom:12px">
+  <div class="rowb" style="margin-bottom:6px">
+    <span style="font-weight:650;font-size:13px;color:var(--red)">${icon("alert","")} 知识检索延迟超阈值</span>
+    <span class="pill r">P2 · 持续 26 分钟</span>
+  </div>
+  <div class="sm mut" style="line-height:1.7">校园生活知识库向量索引重建期间检索 P95 达 1.9s（阈值 1.5s）。预计重建完成后自动恢复，已通知值班群。</div>
+  <div style="display:flex;gap:8px;margin-top:11px">
+    <button class="btn btn-s" data-t="已派单：通知平台值班工程师跟进">派单</button>
+    <button class="btn btn-s" data-t="已静默至索引重建完成">静默</button>
+  </div>
+</div>
+<div style="padding:10px 0;border-bottom:.5px solid var(--line2)" class="rowb">
+  <div><div style="font-weight:550;font-size:13px">Token 消耗速率异常</div><div class="sm mut">昨日 20:10 触发 · 死循环调用已熔断</div></div>
+  <span class="pill g">已闭环</span></div>
+<div style="padding:10px 0" class="rowb">
+  <div><div style="font-weight:550;font-size:13px">证书即将到期提醒</div><div class="sm mut">09-28 触发 · TLS 证书已自动续期</div></div>
+  <span class="pill g">已闭环</span></div>`;
+
+/* 慢请求 */
+$("#o-slow").innerHTML=[
+  ["求是科研助手 · 文献综述","8.4s","长文本生成 · 建议切换流式","o"],
+  ["迎新百事通 · 多轮追问","3.2s","意图识别二次调用","o"],
+  ["课程评教摘要 · 全院聚合","2.9s","批处理队列排队","g"],
+  ["公文格式校对 · 长文","2.6s","分段并已达上限","g"],
+  ["实验室安全答题 · 出卷","2.2s","正常范围","g"]
+].map(s=>`
+<tr><td class="sm" style="font-weight:550">${s[0]}</td><td class="mono sm" style="font-weight:600">${s[1]}</td><td><span class="pill ${s[3]}">${s[2]}</span></td></tr>`).join("");
+
+/* 部门用量 */
+$("#o-dept").innerHTML=[
+  ["教务处",42,"var(--blue)"],["学工部",26,"rgba(0,113,227,.62)"],["科研处",14,"rgba(0,113,227,.42)"],["后勤保障部",10,"rgba(125,91,233,.75)"],["其他部门",8,"rgba(0,0,0,.18)"]
+].map(d=>`
+<div style="margin-bottom:13px">
+  <div class="rowb sm" style="margin-bottom:5px"><span style="font-weight:550">${d[0]}</span><span class="mono mut">${d[1]}%</span></div>
+  <div class="prog" style="height:8px"><i style="width:${d[1]}%;background:${d[2]}"></i></div>
+</div>`).join("")+`<div class="hr"></div><div class="rowb sm"><span class="mut">环比上月</span><span class="mono" style="font-weight:600;color:var(--green)">+15.2%</span></div>`;
+
+/* ===== 安全护栏 ===== */
+$("#vw-guard").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>安全护栏</h1>
+  <p>内容安全、数据保护与合规审计 · 等保三级标准建设</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="合规报告（2026 Q3）：等保三级 21 项指标全部达标">${icon("shield")}合规报告</button>
+  <button class="btn btn-p" data-t="护栏策略编辑：输入输出双向 6 类检测规则">${icon("lock")}策略配置</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.shield}</svg></span>
+    <div class="lb">本月拦截风险请求</div><div class="v">1,284</div><div class="sub">敏感词 87% · 注入 13%</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("lock")}</span>
+    <div class="lb">脱敏规则</div><div class="v">24</div><div class="sub">身份证 / 手机号 / 成绩等</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.doc}</svg></span>
+    <div class="lb">审计日志</div><div class="v">42.6<small style="font-size:14px;font-weight:500"> 万条</small></div><div class="sub">留存 180 天 · 不可篡改</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.eye}</svg></span>
+    <div class="lb">数据分级覆盖</div><div class="v">100%</div><div class="sub">3 级 · 4 级数据专区存储</div></div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="chead"><h3>护栏策略矩阵</h3><span class="pill g"><i class="idot"></i>双向检测已启用</span></div>
+    <div style="overflow-x:auto">
+    <table class="tbl" style="min-width:520px"><thead><tr><th>风险类型</th><th>输入侧</th><th>输出侧</th><th>处置</th></tr></thead><tbody>
+      ${[["提示词注入","拦截","—","拒绝并记录",1],["敏感词 / 违规内容","检测","拦截","替换 + 告警",1],["个人隐私泄露","脱敏","脱敏","掩码输出",1],["幻觉风险","—","引用核验","无据拒答",1],["越权访问","拦截","—","返回 403",1],["学术不端","检测","—","劝导提示",0]].map(r=>`
+      <tr><td style="font-weight:550">${r[0]}</td>
+        <td>${r[1]==="—"?'<span class="sm mut">—</span>':`<span class="sw ${r[4]?"on":""}" style="transform:scale(.8)" data-t="${r[0]}输入侧护栏${r[4]?"已关闭":"已开启"}"></span>`}</td>
+        <td>${r[2]==="—"?'<span class="sm mut">—</span>':`<span class="sw ${r[4]?"on":""}" style="transform:scale(.8)" data-t="${r[0]}输出侧护栏${r[4]?"已关闭":"已开启"}"></span>`}</td>
+        <td class="sm mut">${r[3]}</td></tr>`).join("")}
+    </tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>近期拦截样例</h3><a class="more" data-t="拦截明细：可按风险类型、应用、时间筛选">全部</a></div>
+    <div id="gd-block"></div>
+  </div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="chead"><h3>审计日志</h3><a class="more" data-t="审计检索：支持操作人、时间、动作、对象四维筛选">检索日志</a></div>
+    <div style="overflow-x:auto">
+    <table class="tbl"><thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>对象</th></tr></thead><tbody id="gd-log"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>数据出境与留存</h3><span class="pill b">校内私有化</span></div>
+    <div id="gd-data"></div>
+  </div>
+</div>`;
+
+$("#gd-block").innerHTML=[
+  ["09-30 11:42","提示词注入","求是科研助手","要求忽略系统指令输出内部配置","r"],
+  ["09-30 10:18","隐私泄露","课程评教摘要","输出内容含学生手机号，已掩码","o"],
+  ["09-30 09:55","敏感内容","匿名会话","涉政敏感词命中 3 处，已拦截","r"],
+  ["09-29 22:31","提示词注入","迎新百事通","构造特殊分隔符尝试越权","r"]
+].map((b,i)=>`
+<div style="padding:11px 0;${i<3?"border-bottom:.5px solid var(--line2)":""}">
+  <div class="rowb" style="margin-bottom:4px">
+    <div style="display:flex;gap:8px;align-items:center"><span class="pill ${b[4]}">${b[1]}</span><span class="sm" style="font-weight:550">${b[2]}</span></div>
+    <span class="sm mono mut">${b[0]}</span>
+  </div>
+  <div class="sm mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b[3]}</div>
+</div>`).join("");
+
+$("#gd-log").innerHTML=[
+  ["09-30 11:20","沈知行","修改护栏策略","学术不端检测阈值"],
+  ["09-30 10:02","翁静仪","导出审计报表","2026-09 月度"],
+  ["09-30 09:47","郎书航","吊销密钥","sk-jw-6a55…"],
+  ["09-29 18:33","裴文瀚","发布场景","实验室安全答题 v5"],
+  ["09-29 16:10","沈知行","新增脱敏规则","一卡通卡号"]
+].map(l=>`
+<tr><td class="sm mono mut" style="white-space:nowrap">${l[0]}</td><td class="sm" style="font-weight:550">${l[1]}</td><td class="sm">${l[2]}</td><td class="sm mut">${l[3]}</td></tr>`).join("");
+
+$("#gd-data").innerHTML=`
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">模型推理数据</div><div class="sm mut">全部在校内 GPU 集群完成</div></div><span class="pill g">不出校</span></div>
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">云端通道数据</div><div class="sm mut">仅非敏感公开知识，且经脱敏网关</div></div><span class="pill o">受控</span></div>
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">对话记录留存</div><div class="sm mut">180 天后自动物理删除</div></div><span class="pill g">合规</span></div>
+<div class="rowb" style="padding:11px 0">
+  <div><div style="font-weight:550;font-size:13px">第三方组件清单</div><div class="sm mut">34 个组件均通过漏洞扫描</div></div><span class="pill g">通过</span></div>`;
+
+/* ===== 组织与配置 ===== */
+$("#vw-admin").innerHTML=`
+<div class="vhead"><div class="row"><div>
+  <h1>组织与配置</h1>
+  <p>部门、角色与平台级参数管理 · 与学校统一身份认证对接</p>
+</div><div style="display:flex;gap:10px">
+  <button class="btn btn-o" data-t="已同步：今日 06:00 从主数据平台拉取组织与人员变更">${icon("users")}同步组织</button>
+  <button class="btn btn-p" data-t="邀请新成员：支持批量导入与统一身份认证关联">${icon("spark")}邀请成员</button>
+</div></div></div>
+
+<div class="kpis">
+  <div class="kpi"><span class="bar" style="background:var(--blue)"></span><span class="ico">${icon("users")}</span>
+    <div class="lb">平台成员</div><div class="v">318</div><div class="sub">管理员 12 · 开发者 46</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--green)"></span><span class="ico" style="background:rgba(52,168,83,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.shield}</svg></span>
+    <div class="lb">接入部门</div><div class="v">14</div><div class="sub">覆盖全部教学单位</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--purple)"></span><span class="ico" style="background:rgba(125,91,233,.09)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--purple);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.gear}</svg></span>
+    <div class="lb">自定义角色</div><div class="v">6</div><div class="sub">含二级单位运营角色</div></div>
+  <div class="kpi"><span class="bar" style="background:var(--orange)"></span><span class="ico" style="background:rgba(240,160,40,.1)"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--orange);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${ICONS.clock}</svg></span>
+    <div class="lb">最近同步</div><div class="v" style="font-size:20px">今日 06:00</div><div class="sub">成功 · 变更 12 条</div></div>
+</div>
+
+<div class="g2e">
+  <div class="card">
+    <div class="tabs"><button class="tab on">成员管理</button><button class="tab" data-t="角色权限：6 个内置角色 + 自定义角色矩阵">角色权限</button><button class="tab" data-t="单点登录：CAS / OAuth2 双协议，8 个对接系统">单点登录</button></div>
+    <div class="tpane on">
+      <div style="overflow-x:auto">
+      <table class="tbl"><thead><tr><th>成员</th><th>部门</th><th>角色</th><th>最近活跃</th></tr></thead><tbody id="a-mem"></tbody></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chead"><h3>平台参数</h3><button class="btn btn-s" data-t="参数变更需双管理员确认，已生成操作工单">保存</button></div>
+    <div id="a-cfg"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="chead"><h3>配额与预算</h3><a class="more" data-goto="observe">用量观测</a></div>
+  <div style="overflow-x:auto">
+  <table class="tbl" style="min-width:760px"><thead><tr><th>部门</th><th>本月用量</th><th>月度配额</th><th>超限策略</th></tr></thead><tbody id="a-quota"></tbody></table></div>
+</div>`;
+
+$("#a-mem").innerHTML=[
+  ["沈知行","信息化办公室","平台管理员","今天 14:20","v"],
+  ["翁静仪","教务处","部门运营","今天 11:35","b"],
+  ["郎书航","科研处","开发者","昨天 19:02","b"],
+  ["裴文瀚","设备与实验室管理处","部门运营","09-28 10:14","b"],
+  ["贺雨澄","学生资助中心","部门运营","今天 09:26","b"]
+].map(m=>`
+<tr>
+  <td><div style="display:flex;align-items:center;gap:10px">
+    <span style="width:28px;height:28px;border-radius:50%;background:${m[4]==="v"?"linear-gradient(145deg,#7d5be9,#5f6bff)":"linear-gradient(145deg,#c56cf0,#5f6bff)"};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none">${m[0][0]}</span>
+    <span style="font-weight:550">${m[0]}</span>
+  </div></td>
+  <td class="sm">${m[1]}</td>
+  <td><span class="pill ${m[4]}">${m[2]}</span></td>
+  <td class="sm mut">${m[3]}</td>
+</tr>`).join("");
+
+$("#a-cfg").innerHTML=`
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">新场景发布需审批</div><div class="sm mut">关闭后直接上线（不推荐）</div></div>
+  <span class="sw on" data-t="发布审批已开启"></span></div>
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">师生统一认证登录</div><div class="sm mut">对接学校 CAS，扫码即登录</div></div>
+  <span class="sw on" data-t="统一认证已开启"></span></div>
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">夜间维护窗口</div><div class="sm mut">23:30–24:00 暂停低优先级任务</div></div>
+  <span class="sw on" data-t="夜间维护窗口已开启"></span></div>
+<div class="rowb" style="padding:11px 0;border-bottom:.5px solid var(--line2)">
+  <div><div style="font-weight:550;font-size:13px">允许二级单位自建知识库</div><div class="sm mut">需部门负责人二次确认</div></div>
+  <span class="sw on" data-t="二级单位自建知识库已开启"></span></div>
+<div class="rowb" style="padding:11px 0">
+  <div><div style="font-weight:550;font-size:13px">对话内容用于质量优化</div><div class="sm mut">脱敏后采样 1%，可全局关闭</div></div>
+  <span class="sw" data-t="质量优化采样已关闭"></span></div>`;
+
+$("#a-quota").innerHTML=[
+  ["教务处","11.7 万 / 14 万","83%","b","超限降速"],
+  ["学工部","7.2 万 / 14 万","51%","g","超限降速"],
+  ["科研处","3.9 万 / 7 万","55%","g","超限排队"],
+  ["后勤保障部","2.8 万 / 7 万","40%","g","超限排队"],
+  ["招标采购中心","0.6 万 / 3.5 万","17%","g","超限拒绝"]
+].map(q=>`
+<tr>
+  <td style="font-weight:550">${q[0]}</td>
+  <td class="mono sm">${q[1]}</td>
+  <td><div style="display:flex;align-items:center;gap:8px"><div class="prog" style="width:90px"><i style="width:${parseInt(q[2])}%;${q[3]==="b"?"background:var(--orange)":""}"></i></div><span class="mono sm ${q[3]==="b"?"":"mut"}" style="${q[3]==="b"?"color:var(--orange);font-weight:600":""}">${q[2]}</span></div></td>
+  <td><span class="pill n">${q[4]}</span></td>
+</tr>`).join("");
+
+/* 通知铃铛 */
+$("#bell").onclick=e=>{e.stopPropagation();toast("3 条未读：1 条告警待处理 · 1 条审批待办 · 1 条配额提醒")};
+</script>
+</body>
+</html>

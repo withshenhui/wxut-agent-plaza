@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云枢 AI 中台</title>
+<style>
+:root{
+  --bg:#f5f6f8;--surface:#fff;--sidebar:#101423;--sidebar-h:#1b2234;
+  --text:#1a1d27;--text2:#5b6472;--text3:#98a1b0;
+  --border:#e7e9ee;--line:#f0f2f5;
+  --primary:#4f46e5;--primary-h:#4338ca;--primary-weak:#eef0fe;
+  --green:#0e9f6e;--green-weak:#e5f6ef;--amber:#b45309;--amber-weak:#fdf3e2;
+  --red:#dc2626;--red-weak:#fdeaea;--sl-text:#8b93a7;
+  --radius:10px;--shadow:0 1px 2px rgba(16,24,40,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,"Inter","PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;min-width:0;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+input,select{font:inherit;color:inherit}
+
+/* ===== 侧栏 ===== */
+.side{position:fixed;left:0;top:0;bottom:0;width:228px;background:var(--sidebar);display:flex;flex-direction:column;z-index:50}
+.logo{display:flex;align-items:center;gap:11px;padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.logo .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 55%,#a855f7 100%);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 2px 10px rgba(124,108,243,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+.logo .mark svg{width:19px;height:19px}
+.logo .t1{color:#fff;font-size:16px;font-weight:700;letter-spacing:.02em;line-height:1.25}
+.logo .t1 .lite{font-weight:500;color:#c3c9d8;margin-left:3px;letter-spacing:.02em}
+.logo .t2{color:#6b7691;font-size:8.5px;letter-spacing:.18em;margin-top:3px;font-weight:500;white-space:nowrap}
+.nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 12px 12px}
+.nav::-webkit-scrollbar{width:0}
+.sec{font-size:10.5px;letter-spacing:.14em;color:#525d78;margin:16px 12px 5px;font-weight:600}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 10px;margin:1px 0;border-radius:8px;color:var(--sl-text);font-size:13.5px;cursor:pointer;transition:.14s;user-select:none;white-space:nowrap}
+.ni svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ni:hover{background:var(--sidebar-h);color:#d3d9e4}
+.ni.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(79,70,229,.35)}
+.side-foot{display:none}
+.ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none}
+.side-foot .n{color:#e6e9f0;font-size:13px;font-weight:550}
+.side-foot .r{color:#5f6b85;font-size:11px}
+
+/* ===== 顶栏 ===== */
+.top{position:sticky;top:0;z-index:40;height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;margin-left:228px}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);white-space:nowrap}
+.crumb b{color:var(--text);font-weight:600}
+.crumb .sep{color:#c8cdd6}
+.gsr{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;width:250px;color:var(--text3)}
+.gsr svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.gsr input{border:0;background:none;outline:0;flex:1;font-size:13px;min-width:0}
+.gsr kbd{font-size:10px;border:1px solid var(--border);border-radius:4px;padding:1px 5px;background:#fff;color:var(--text3);font-family:inherit}
+.icbtn{position:relative;width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;color:var(--text2);flex:none}
+.icbtn:hover{background:var(--bg)}
+.icbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icbtn .dot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid #fff}
+
+/* ===== 主区 ===== */
+.main{margin-left:228px;padding:24px 24px 40px;max-width:1440px;min-width:0}
+.view{display:none}.view.on{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.ph h1{font-size:21px;font-weight:650;letter-spacing:.2px}
+.ph .sub{color:var(--text2);font-size:13px;margin-top:3px}
+.ph .sub .ok{color:var(--green);font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 15px;font-size:13px;font-weight:500;border:1px solid var(--border);background:#fff;color:var(--text2);transition:.15s;white-space:nowrap}
+.btn:hover{border-color:#cfd4dd;color:var(--text);background:var(--bg)}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.btn.pri{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(79,70,229,.3)}
+.btn.pri:hover{background:var(--primary-h);border-color:var(--primary-h)}
+.btn.sm{padding:4px 10px;font-size:12px;border-radius:6px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line);gap:12px;row-gap:10px;flex-wrap:wrap}
+.card-h .chips{row-gap:8px}
+.wf-bar .lg{margin-top:2px}
+.card-h .t{font-size:14.5px;font-weight:600}
+.card-h .more{font-size:12.5px;color:var(--text3);cursor:pointer}
+.card-h .more:hover{color:var(--primary)}
+.bdg{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:450;white-space:nowrap}
+.bdg::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.bdg.ok{background:var(--green-weak);color:var(--green)}
+.bdg.warn{background:var(--amber-weak);color:var(--amber)}
+.bdg.err{background:var(--red-weak);color:var(--red)}
+.bdg.off{background:#eef0f3;color:var(--text3)}
+.bdg.info{background:var(--primary-weak);color:var(--primary)}
+
+/* 关键修复：表格滚动包装，杜绝窄屏溢出错乱 */
+.tbl-wrap{overflow-x:auto}
+.tbl-wrap::-webkit-scrollbar{height:6px}
+.tbl-wrap::-webkit-scrollbar-thumb{background:#d3d8e0;border-radius:99px}
+.tbl{width:100%;border-collapse:collapse;min-width:640px}
+.tbl th{font-size:12px;color:var(--text3);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border);font-weight:500;background:#fafbfc;white-space:nowrap}
+.tbl td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{transition:.12s}
+.tbl tbody tr:hover{background:#fafbfd}
+.tbl .num{font-variant-numeric:tabular-nums}
+.cell-main{font-weight:550;color:var(--text)}
+.cell-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.miniava{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12.5px;color:var(--text2);cursor:pointer;transition:.14s;white-space:nowrap}
+.chip:hover{border-color:#c9cfd9}
+.chip.on{background:var(--primary-weak);border-color:#c7cdfb;color:var(--primary);font-weight:550}
+.search-in{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:7px 12px;background:#fff;width:220px;color:var(--text3)}
+.search-in svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.search-in input{border:0;outline:0;flex:1;font-size:13px;background:none;min-width:0}
+.empty{padding:46px 20px;text-align:center;color:var(--text3);font-size:13px}
+/* ===== 概览 ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{padding:16px 18px;min-width:0}
+.stat .lab{font-size:12.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px;gap:8px}
+.stat .val{font-size:26px;font-weight:680;letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat .val small{font-size:13px;color:var(--text3);font-weight:400;margin-left:2px}
+.stat .spark{width:92px;height:34px;flex:none}
+.hgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 18px}
+.hcell{border:1px solid var(--line);border-radius:9px;padding:11px 13px;min-width:0}
+.hcell .hl{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--text3);white-space:nowrap}
+.hcell .hv{font-size:15px;font-weight:650;margin-top:5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcell .hv small{font-size:11px;color:var(--text3);font-weight:400}
+.hcell.ok{border-color:#c6ebdb;background:linear-gradient(180deg,#f4fcf8,#fff)}
+.hcell.warn{border-color:#f3ddb6;background:linear-gradient(180deg,#fffdf6,#fff)}
+.todo{display:flex;align-items:center;gap:11px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:0}
+.todo .ti{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.todo .tc{min-width:0;flex:1}
+.todo .tc b{font-size:13px;font-weight:550;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.todo .tc span{font-size:11.5px;color:var(--text3)}
+.qk{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 18px}
+.qk a{display:flex;flex-direction:column;align-items:flex-start;gap:8px;border:1px solid var(--line);border-radius:9px;padding:12px 13px;cursor:pointer;transition:.14s;min-width:0}
+.qk a:hover{border-color:var(--primary);background:var(--primary-weak)}
+.qk .qi{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.qk b{font-size:12.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.qk span{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;margin-top:8px;flex-wrap:wrap}
+.delta.up{color:var(--green)}.delta.dn{color:var(--red)}
+.delta .base{color:var(--text3);margin-left:5px}
+.grid2{display:grid;grid-template-columns:1.9fr 1fr;gap:16px;margin-top:16px;min-width:0;align-items:start}
+.grid2>*{min-width:0}
+.grid2b{display:grid;grid-template-columns:1fr 1.6fr;gap:16px;margin-top:16px;min-width:0;align-items:start}
+.grid2b>*{min-width:0}
+/* 等高行：stretch + 内容弹性吸收，任意视口底部对齐 */
+.grid2.eq,.grid2b.eq{align-items:stretch}
+.eq .card{display:flex;flex-direction:column}
+.eq .chart-wrap{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.eq .chart-wrap>svg{flex:0 0 auto}
+.eq .tbl-wrap{flex:1 1 auto}
+.eq .tbl{height:100%}
+.eq .rank{flex:1 1 auto;display:flex;flex-direction:column}
+.eq .rank .ri{flex:1 0 auto}
+.eq .hgrid{flex:1 1 auto}
+.eq .hcell{display:flex;flex-direction:column;justify-content:center}
+.eq .todo{flex:1 0 auto}
+.eq .bars-v{flex:1 1 auto;height:auto;min-height:150px}
+.eq .hbar{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly}
+.eq .chat{flex:1 1 auto;max-height:none;justify-content:flex-end}
+.eq .vflow{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly}
+.eq .kv2{flex:1 1 auto}
+.eq .kv2 .k{display:flex;flex-direction:column;justify-content:center}
+.eq .form{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly}
+.eq .stack{display:flex;flex-direction:column;gap:16px}
+.eq .stack>.card{flex:1 1 auto}
+.ithumb{display:inline-flex;width:13px;height:13px;vertical-align:-2.5px;margin-right:3px;flex:none}
+.ithumb svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chart-wrap{padding:8px 14px 14px;overflow-x:auto}
+.chart-foot{display:flex;gap:20px;flex-wrap:wrap;padding:10px 18px 16px;border-top:1px dashed var(--line);font-size:12px;color:var(--text3)}
+.chart-foot b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.chart-foot .up{color:var(--green);font-weight:600}
+.mixbar{display:flex;height:26px;border-radius:7px;overflow:hidden;font-size:10.5px;color:#fff;white-space:nowrap}
+.mixbar i{display:flex;align-items:center;justify-content:center;font-style:normal;overflow:hidden}
+.mix-mk{display:flex;gap:14px 18px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:var(--text3)}
+.mix-mk b{font-weight:500;color:var(--text2)}
+.mix-mk .sq{display:inline-block;width:8px;height:8px;border-radius:2.5px;margin-right:5px;vertical-align:0}
+.chart-tabs{display:flex;gap:4px}
+.ctab{padding:4px 11px;font-size:12px;border-radius:6px;color:var(--text3);cursor:pointer}
+.ctab.on{background:var(--primary-weak);color:var(--primary);font-weight:550}
+.legend{padding:4px 18px 16px}
+.legend .li{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12.5px;color:var(--text2)}
+.legend .sw{width:9px;height:9px;border-radius:3px;flex:none}
+.legend .pv{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--text);font-weight:550}
+.rank{padding:6px 18px 14px}
+.rank .ri{display:flex;align-items:center;gap:12px;padding:9px 0;min-width:0}
+.rank .ri+.ri{border-top:1px solid var(--line)}
+.rank .no{width:20px;height:20px;border-radius:6px;background:var(--bg);color:var(--text3);font-size:11px;font-weight:650;display:flex;align-items:center;justify-content:center;flex:none}
+.rank .ri:nth-child(1) .no{background:var(--primary-weak);color:var(--primary)}
+.rank .nm{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .rv{margin-left:auto;font-size:12.5px;color:var(--text2);font-variant-numeric:tabular-nums;flex:none;text-align:right}
+.rank .rv em{font-style:normal;display:block;font-size:10.5px;font-weight:600}
+.rank .rv em.u2{color:var(--green)}
+.rank .rv em.d2{color:var(--red)}
+.rank .bar{height:5px;border-radius:99px;background:var(--bg);flex:1;max-width:220px;min-width:40px;overflow:hidden}
+.rank .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+.bars-v{display:flex;align-items:flex-end;gap:6px;height:150px;padding:6px 18px 0;overflow-x:auto}
+.bars-v .b{flex:1;min-width:14px;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars-v .b i{width:100%;max-width:26px;border-radius:5px 5px 2px 2px;background:#c7cdfb;min-height:3px}
+.bars-v .b i.hot{background:linear-gradient(180deg,#6366f1,#4f46e5)}
+.bars-v .b em{font-style:normal;font-size:10px;color:var(--text3)}
+.hbar{padding:8px 18px 16px}
+.hbar .hi{display:grid;grid-template-columns:96px 1fr 60px;align-items:center;gap:12px;padding:7px 0;font-size:12.5px;min-width:0}
+.hbar .hi .nm{color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .hi .tr{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}
+.hbar .hi .tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4f46e5,#8b5cf6)}
+.hbar .hi .pv{text-align:right;font-variant-numeric:tabular-nums;color:var(--text);font-weight:550}
+
+/* ===== 视图内页签 ===== */
+.vtabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
+.vtab{padding:9px 16px;font-size:13.5px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.14s;display:flex;align-items:center;gap:7px}
+.vtab:hover{color:var(--text)}
+.vtab.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.vtab .cnt{font-size:11px;background:var(--bg);border-radius:99px;padding:0 7px;color:var(--text3)}
+.vtab.on .cnt{background:var(--primary-weak);color:var(--primary)}
+.vpane{display:none}.vpane.on{display:block;animation:fade .2s}
+
+/* ===== 知识库卡片（重排修复） ===== */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.kb{padding:18px;display:flex;flex-direction:column;min-width:0}
+.kb .kbt{display:flex;align-items:center;gap:12px;min-width:0}
+.kb .ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.kb .tt{min-width:0;flex:1}
+.kb h3{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kb .en{font-size:11.5px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kb .desc{font-size:12.5px;color:var(--text2);margin:12px 0 14px;line-height:1.7;min-height:38px}
+.kb .nums{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.kb .nums b{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kb .nums span{display:block;font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap}
+.kb .prog{margin-top:12px}
+.kb .prog .pt{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text3);margin-bottom:5px}
+.kb .prog .pb{height:5px;border-radius:99px;background:var(--bg);overflow:hidden}
+.kb .prog .pb i{display:block;height:100%;background:var(--primary);border-radius:99px;transition:width .4s}
+.kb .fbt{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:11.5px;color:var(--text3);gap:8px;flex-wrap:wrap}
+.kb .fbt .lk{color:var(--primary);cursor:pointer;white-space:nowrap}
+
+/* ===== 检索测试 ===== */
+.rt-head{display:flex;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.rt-input{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.rt-input svg{width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:1.8;stroke-linecap:round;flex:none}
+.rt-input input{border:0;outline:0;flex:1;font-size:13px;min-width:0;background:none}
+.hit{padding:13px 18px;border-bottom:1px solid var(--line)}
+.hit:last-child{border-bottom:0}
+.hit .h1r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hit .sc{font-size:11px;font-weight:650;color:var(--primary);background:var(--primary-weak);border-radius:6px;padding:2px 8px;font-variant-numeric:tabular-nums;flex:none}
+.hit .sc.re{color:var(--green);background:var(--green-weak)}
+.hit .src{font-size:12px;color:var(--text2);font-weight:550;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hit .up{font-size:10.5px;color:var(--green);flex:none}
+.hit .up.dn2{color:var(--red)}
+.hit p{font-size:12.5px;color:var(--text2);margin-top:6px;line-height:1.7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 18px}
+.ab .col h4{font-size:12.5px;color:var(--text2);font-weight:600;margin-bottom:10px}
+.ab .kv{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.ab .kv b{font-variant-numeric:tabular-nums;font-weight:550}
+.ab .win{color:var(--green);font-size:11.5px;margin-top:10px}
+
+/* ===== 数据工场 ===== */
+.src-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;padding:16px 18px}
+.dsc{border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0}
+.dsc .r1{display:flex;align-items:center;gap:10px}
+.dsc .ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.dsc b{font-size:13.5px}
+.dsc .m{font-size:11.5px;color:var(--text3);margin-top:2px}
+.dsc .s{margin-top:10px;font-size:11.5px;color:var(--text2);display:flex;justify-content:space-between;align-items:center}
+.pipe{display:flex;align-items:center;gap:0;padding:18px;overflow-x:auto}
+.pstep{flex:1;min-width:120px;text-align:center;position:relative}
+.pstep .bub{width:44px;height:44px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--bg);border:2px solid var(--border);position:relative;z-index:2;color:#98a1b0;padding:11px}
+.pstep .bub svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pstep .bub .ic{width:100%;height:100%;padding:0;display:flex}
+.pstep.done .bub{border-color:var(--green);background:var(--green-weak);color:var(--green)}
+.pstep.run .bub{border-color:var(--primary);background:var(--primary-weak);color:var(--primary);box-shadow:0 0 0 4px var(--primary-weak);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px var(--primary-weak)}50%{box-shadow:0 0 0 8px rgba(79,70,229,.12)}}
+.pstep::after{content:"";position:absolute;top:22px;left:calc(50% + 24px);width:calc(100% - 48px);height:2px;background:var(--border);z-index:1}
+.pstep:last-child::after{display:none}
+.pstep.done::after{background:var(--green)}
+.pstep .nm{font-size:12.5px;font-weight:550;margin-top:8px}
+.pstep .dt{font-size:11px;color:var(--text3);margin-top:1px;white-space:nowrap}
+.anno-row{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.anno-row:last-child{border-bottom:0}
+.anno-row .sw{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+.anno-row .ttl{min-width:160px;flex:1}
+.anno-row .ttl b{font-size:13px;font-weight:550}
+.anno-row .ttl span{display:block;font-size:11px;color:var(--text3)}
+.pbar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden;min-width:90px;flex:1;max-width:180px}
+.pbar i{display:block;height:100%;border-radius:99px;background:var(--primary)}
+.pbar i.g{background:var(--green)}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px}
+
+/* ===== 工作流画布（引擎式布局） ===== */
+.wf-shell{display:flex;border-top:1px solid var(--line)}
+.wf-pal{width:150px;flex:none;border-right:1px solid var(--line);padding:8px 8px 12px;overflow-y:auto;background:#fcfdff}
+.wf-pal .pg{font-size:9.5px;color:var(--text3);font-weight:700;letter-spacing:1px;margin:10px 6px 4px}
+.wf-pal .pi{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:8px;font-size:12px;color:var(--text2);cursor:grab;border:1px dashed transparent}
+.wf-pal .pi:hover{background:#fff;border-color:var(--primary-weak);color:var(--primary);box-shadow:0 1px 5px rgba(79,70,229,.08)}
+.wf-pal .pi:active{cursor:grabbing}
+.wf-pal .ic2{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:5px}
+.wf-pal .ic2 svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wf-viewport{position:relative;flex:1;min-width:0}
+.wf-cv{height:478px;overflow:auto;background:#fbfcfe;background-image:radial-gradient(circle,#d9dee9 1px,transparent 1px);background-size:22px 22px}
+.wf svg.links{display:block;position:absolute;left:0;top:0;pointer-events:none}
+.node{position:absolute;width:150px;border-radius:10px;border:1.5px solid var(--border);background:#fff;padding:10px 12px;box-shadow:var(--shadow);transition:.15s;z-index:2}
+.node:hover{border-color:var(--primary);box-shadow:0 4px 16px rgba(79,70,229,.12)}
+.node .hd{display:flex;align-items:center;gap:8px}
+.node .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none;padding:5px}
+.node .ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.int .r .ic{width:22px;height:22px;color:var(--primary);flex:none}
+.node b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .sub{font-size:10.5px;color:var(--text3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node.model .ic{background:var(--primary-weak)}
+.node.kb2 .ic{background:#e0f2f7}
+.node.tool .ic{background:var(--amber-weak)}
+.node.cond .ic{background:var(--green-weak)}
+.node.start,.node.end{background:var(--bg)}
+.pmt{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fafbfd;font-family:var(--mono,"SF Mono",monospace)}
+.pmt{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px;color:var(--text2);line-height:1.8}
+.wf{width:1020px;min-width:1020px;transform-origin:0 0}
+.node .tag{position:absolute;top:-9px;right:8px;font-size:9.5px;padding:0 6px;border-radius:99px;background:#fff;border:1px solid var(--border);color:var(--text3);line-height:16px;white-space:nowrap}
+.node.run{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-weak)}
+.node .ms{font-size:10px;color:var(--primary);margin-top:4px;font-variant-numeric:tabular-nums}
+.links .lab{font-size:10px;fill:#98a1b0}
+.wf-tools{position:absolute;left:12px;top:12px;z-index:20;display:flex;gap:4px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow);padding:4px}
+.wf-tools button{width:26px;height:26px;border:none;background:none;border-radius:6px;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:5px}
+.wf-tools button svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wf-tools button:hover{background:var(--primary-weak);color:var(--primary)}
+.wf-tools .zval{font-size:11px;color:var(--text2);min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+.wf-tools .sep{width:1px;height:15px;background:var(--line);margin:0 3px}
+.wf-mini{position:absolute;right:12px;bottom:12px;z-index:20;width:166px;height:88px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow);overflow:hidden}
+.wf-mini .cap{position:absolute;left:7px;top:5px;font-size:9px;color:var(--text3);letter-spacing:.6px;z-index:1}
+.wf-mini .mn{position:absolute;border-radius:2px;background:#c7cdf8}
+.wf-mini .mn.run{background:var(--primary)}
+.wf-status{display:flex;align-items:center;gap:8px;padding:8px 18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text3);flex-wrap:wrap}
+.wf-status .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
+.wf-insp{position:absolute;right:12px;top:12px;z-index:21;width:238px;background:#fff;border:1px solid var(--border);border-radius:11px;box-shadow:0 10px 30px rgba(15,23,42,.15);padding:13px 15px;display:none}
+.wf-insp.show{display:block;animation:inspIn .18s ease}
+@keyframes inspIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.wf-insp .ih{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+.wf-insp .ih .ic{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:6px}
+.wf-insp .ih .ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wf-insp h5{font-size:13px;font-weight:650;margin:0}
+.wf-insp .ity{font-size:10px;color:var(--text3)}
+.wf-insp .ir{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.wf-insp .ir:last-of-type{border-bottom:none}
+.wf-insp .ir span{color:var(--text3);flex:none}
+.wf-insp .ir b{font-weight:550;color:var(--text);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.links .flow{stroke-dasharray:7 5;animation:wfmove .85s linear infinite}
+@keyframes wfmove{to{stroke-dashoffset:-12}}
+.links .lab{font-size:10px;fill:#64748b;font-weight:600;paint-order:stroke;stroke:#fbfcfe;stroke-width:4px}
+.node.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-weak)}
+.chat{display:flex;flex-direction:column;gap:12px;max-height:300px;overflow-y:auto;padding:14px 16px}
+.chat .m{max-width:86%;padding:9px 13px;border-radius:12px;font-size:12.5px;line-height:1.7}
+.chat .m.u{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.chat .m.a{align-self:flex-start;background:#f4f5f8;color:var(--text);border-bottom-left-radius:4px}
+.chat .m .ref{display:block;margin-top:7px;padding-top:6px;border-top:1px dashed #d9dce3;font-size:10.5px;color:var(--text3);background:none}
+.chat .step{align-self:flex-start;display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text3);padding:2px 0}
+.chat .step b{color:var(--primary);font-weight:550}
+.chat .typing{display:inline-flex;gap:4px;align-items:center}
+.chat .typing i{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:tp 1s infinite}
+.chat .typing i:nth-child(2){animation-delay:.15s}
+.chat .typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+.trstep{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.trstep:last-child{border-bottom:0}
+.trstep .no{width:22px;height:22px;border-radius:50%;background:var(--primary-weak);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:650;flex:none;padding:5px}
+.trstep .no svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.trstep .nm{min-width:0;flex:1}
+.trstep .nm b{font-weight:550}
+.trstep .nm span{display:block;font-size:11px;color:var(--text3);margin-top:1px}
+.trstep .t{font-variant-numeric:tabular-nums;color:var(--text2);white-space:nowrap;font-size:12px}
+.trstep .t b{color:var(--text);font-weight:600}
+
+/* ===== 模板卡 / 集成状态 ===== */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px 18px}
+.tpl{border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0}
+.tpl .em{font-size:26px}
+.tpl h4{font-size:14px;font-weight:600;margin-top:10px}
+.tpl p{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.7}
+.tpl .use{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:11.5px;color:var(--text3)}
+.tpl .use b{color:var(--text);font-weight:550}
+.int-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 18px}
+.int{border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0}
+.int .r{display:flex;align-items:center;gap:10px}
+.int b{font-size:13.5px}
+.int p{font-size:12px;color:var(--text2);margin-top:8px;line-height:1.6}
+
+/* ===== 设置 / 通知 / toast ===== */
+.form{padding:20px 22px;max-width:640px}
+.frow{display:flex;align-items:flex-start;gap:16px;padding:14px 0}
+.frow+.frow{border-top:1px solid var(--line)}
+.frow>label{width:150px;flex:none;font-size:13.5px;font-weight:550;padding-top:6px}
+.frow .hint{font-size:12px;color:var(--text3);margin-top:4px}
+.frow input[type=text],.frow select{width:100%;max-width:320px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;outline:0;background:#fff}
+.frow input:focus,.frow select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-weak)}
+.tg{display:inline-block;position:relative;width:40px;height:22px;flex:none;cursor:pointer;margin-top:4px;vertical-align:top}
+.tg input{opacity:0;position:absolute}
+.tg i{position:absolute;inset:0;border-radius:99px;background:#d7dbe2;transition:.2s}
+.tg i::after{content:"";position:absolute;top:2.5px;left:2.5px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:.2s}
+.tg input:checked+i{background:var(--primary)}
+.tg input:checked+i::after{left:20.5px}
+.bell-wrap{position:relative}
+.drop{position:absolute;right:0;top:42px;width:300px;max-width:80vw;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(16,24,40,.12);padding:6px;display:none;z-index:60}
+.drop.open{display:block}
+.drop .dh{padding:9px 12px;font-size:12.5px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.drop .dh span{color:var(--primary);font-weight:450;cursor:pointer;font-size:12px}
+.drop .di{display:flex;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer}
+.drop .di:hover{background:var(--bg)}
+.drop .di .b2{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none}
+.drop .di .t{font-size:12.5px;line-height:1.5}
+.drop .di .s{font-size:11px;color:var(--text3);margin-top:2px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translate(-50%,90px);background:#111827;color:#fff;font-size:13px;padding:11px 22px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:.3s cubic-bezier(.2,.9,.3,1);z-index:200;display:flex;align-items:center;gap:9px;opacity:0}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast svg{width:15px;height:15px;stroke:#34d399;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.foot{margin-top:28px;text-align:center;font-size:12px;color:var(--text3)}
+.foot b{font-weight:550;color:var(--text2)}
+.copyable{display:inline-flex;align-items:center;gap:8px}
+.copyable button{border:0;background:none;color:var(--text3);display:flex;padding:2px}
+.copyable button:hover{color:var(--primary)}
+.copyable svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kv2{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:16px 18px}
+.kv2 .k{border:1px solid var(--border);border-radius:10px;padding:13px 15px;min-width:0}
+.kv2 .k .l{font-size:11.5px;color:var(--text3)}
+.kv2 .k .v{font-size:17px;font-weight:650;margin-top:3px;font-variant-numeric:tabular-nums}
+.kv2 .k .v small{font-size:11px;color:var(--text3);font-weight:400}
+.ic{display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icbox{width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:7px}
+.icbox svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ti{width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:7px}
+.ti svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.qi{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:6px}
+.qi svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.sw{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:6.5px}
+.sw svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.kb .ico{display:flex;align-items:center;justify-content:center;padding:8px}
+.kb .ico svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.em{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:8px}
+.em svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* ===== 智能体悬浮球 ===== */
+.fab-wrap{position:fixed;right:24px;bottom:24px;z-index:120;display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.fab-panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 36px rgba(16,20,35,.16);width:248px;overflow:hidden;transform-origin:bottom right;opacity:0;transform:translateY(10px) scale(.96);pointer-events:none;transition:.16s ease}
+.fab-wrap.open .fab-panel{opacity:1;transform:none;pointer-events:auto}
+.fab-head{display:flex;align-items:center;gap:10px;padding:13px 14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.fab-head .fb-ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.16);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.fab-head .fb-ic svg{width:100%;height:100%;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fab-head b{font-size:13px;font-weight:600}
+.fab-head span{display:block;font-size:11px;opacity:.82}
+.fab-links{padding:6px}
+.fab-link{display:flex;align-items:center;gap:10px;width:100%;padding:10px 10px;border:0;background:none;cursor:pointer;border-radius:9px;font:inherit;color:var(--text);text-align:left;transition:.12s}
+.fab-link:hover{background:var(--primary-weak)}
+.fab-link .fl-ic{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.fab-link .fl-ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fab-link b{display:block;font-size:12.5px;font-weight:550}
+.fab-link span{display:block;font-size:11px;color:var(--text3)}
+.fab-btn{width:54px;height:54px;border-radius:50%;border:0;cursor:pointer;position:relative;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(79,70,229,.42);transition:.18s}
+.fab-btn:hover{transform:translateY(-2px)}
+.fab-btn svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-linecap:round;stroke-linejoin:round;position:absolute;transition:.18s}
+.fab-btn .fab-x{stroke-width:2;opacity:0;transform:rotate(-45deg)}
+.fab-wrap.open .fab-btn .fab-x{opacity:1;transform:rotate(0)}
+.fab-wrap.open .fab-btn .fab-plus{opacity:0;transform:scale(.8)}
+.fab-ping{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(124,58,237,.5);animation:fabPing 2.2s ease-out infinite}
+@keyframes fabPing{0%{transform:scale(1);opacity:.7}70%{transform:scale(1.55);opacity:0}100%{opacity:0}}
+
+/* ===== 多端集成预览 ===== */
+.pv-mask{position:fixed;inset:0;z-index:200;background:rgba(16,20,35,.6);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.18s ease}
+.pv-mask.open{opacity:1;pointer-events:auto}
+.pv-modal{background:var(--surface);border-radius:18px;box-shadow:0 24px 70px rgba(16,20,35,.35);width:min(1080px,96vw);max-height:93vh;display:flex;flex-direction:column;overflow:hidden;transform:translateY(12px) scale(.98);transition:.18s ease}
+.pv-mask.open .pv-modal{transform:none}
+.pv-head{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.pv-head b{font-size:15px}
+.pv-head small{display:block;font-size:12px;color:var(--text3)}
+.pv-ic{width:38px;height:38px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;flex:none;color:#fff}
+.pv-ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pv-close{width:32px;height:32px;border:0;border-radius:9px;background:var(--bg);color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:.12s}
+.pv-close:hover{background:var(--line);color:var(--text)}
+.pv-close svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pv-body{display:none;align-items:stretch;gap:0;overflow:auto;padding:20px}
+.pv-body.on{display:flex}
+.pv-stage{background:linear-gradient(180deg,#eef0f6,#e7eaf3);border:1px solid var(--line);border-radius:14px;padding:26px 30px;display:flex;align-items:center;justify-content:center;min-height:440px;flex:1}
+.pv-stage.pv-desktop{min-height:420px;padding:22px}
+.pv-note{width:280px;flex:none;padding:6px 6px 6px 24px;display:flex;flex-direction:column;gap:11px}
+.pv-note b{font-size:14px}
+.pv-note p{font-size:12.5px;color:var(--text2);line-height:1.75}
+.pv-kv{display:flex;flex-direction:column;gap:4px;padding-top:10px;border-top:1px dashed var(--line)}
+.pv-kv span{font-size:11px;color:var(--text3)}
+.pv-kv b{font-size:12.5px;font-weight:550;color:var(--text)}
+/* 手机框（企业微信工作台） */
+.phone{width:320px;background:#11141f;border-radius:30px;padding:9px;box-shadow:0 22px 48px rgba(16,20,35,.4)}
+.ph-bar{height:8px;background:#11141f;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:7px}
+.ph-bar i{width:80px;height:5px;border-radius:99px;background:#343b4d}
+.ph-app{background:#eef1f5;border-radius:22px;overflow:hidden;font-family:inherit}
+.ph-wechat-top{display:flex;align-items:center;gap:9px;padding:11px 13px;background:#dee0ff}
+.ph-wxlogo{width:26px;height:26px;border-radius:7px;background:#07c160;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex:none}
+.ph-wxname{font-size:12.5px;color:#1a1d27;font-weight:600}
+.ph-wxsub{font-size:9.5px;color:#8a8fa0}
+.ph-hello{padding:12px 14px 6px;font-size:11.5px;color:#6b7080}
+.ph-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 12px}
+.ph-act{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;color:var(--text2);cursor:pointer}
+.ph-act span{width:42px;height:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:#fff;box-shadow:0 1px 0 rgba(16,20,35,.05)}
+.ph-act span svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ph-wx-grid-title{font-size:11px;color:#7a8090;padding:8px 14px 56px}
+.ph-tabbar{display:flex;border-top:1px solid #e2e5ea;background:#fff}
+.ph-tabbar span{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 10px;font-size:10px;color:#8a8fa0;cursor:pointer}
+.ph-tabbar span.on{color:#07c160}
+.ph-tabbar span svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* 门户框（融合门户 + 浏览器外壳） */
+.pt-browser{width:680px;max-width:100%;background:#e9ebef;border-radius:12px;box-shadow:0 18px 44px rgba(16,20,35,.28);overflow:hidden;font-family:inherit}
+.pt-browser-top{display:flex;align-items:center;gap:10px;padding:9px 12px 28px;background:#e9ebef}
+.pt-dots{display:flex;gap:5px}
+.pt-dots i{width:10px;height:10px;border-radius:50%;display:block}
+.pt-addr{flex:1;background:#fff;border-radius:8px;padding:5px 12px;font-size:11px;color:#5a6070;display:flex;align-items:center;gap:8px;max-width:460px}
+.pt-addr svg{width:13px;height:13px;fill:none;stroke:#9aa1b0;stroke-width:1.8}
+.portal{background:#f4f5f9;font-family:inherit;border-top:2px solid #eef0f6}
+.pt-nav{display:flex;align-items:center;gap:16px;padding:12px 20px;background:#101423;color:#dfe4ee}
+.pt-logo{font-weight:600;font-size:13.5px;color:#fff}
+.pt-logo small{display:block;font-size:10px;color:#9aa4b6;font-weight:400}
+.pt-links{display:flex;gap:16px;flex:1}
+.pt-links i{font-style:normal;font-size:12px;color:#9aa4b6;cursor:pointer;padding-bottom:3px}
+.pt-links i.on{color:#fff;border-bottom:2px solid #4f46e5}
+.pt-user{font-size:11px;color:#9aa4b6}
+.pt-banner{padding:22px 24px 16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.pt-chip{display:inline-block;font-size:10.5px;background:rgba(255,255,255,.18);padding:2px 10px;border-radius:99px;margin-bottom:8px}
+.pt-banner h3{font-size:19px;margin:0}
+.pt-banner p{font-size:12px;margin:6px 0 0;opacity:.85}
+.pt-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 24px}
+.pt-tool{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11.5px;color:var(--text2);background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 4px;cursor:pointer}
+.pt-tool span{width:44px;height:44px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center}
+.pt-tool span svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pt-chat{padding:6px 24px 22px;display:flex;flex-direction:column;gap:10px}
+.pt-msg{display:flex;gap:9px;align-items:flex-start;max-width:86%}
+.pt-msg.me{align-self:flex-end;flex-direction:row-reverse}
+.pt-ava{width:28px;height:28px;border-radius:9px;background:var(--primary);color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-weight:600}
+.pt-ava.u{background:#64748b}
+.pt-msg p{margin:0;background:#fff;border:1px solid var(--line);border-radius:11px;border-top-left-radius:4px;padding:9px 12px;font-size:12px;line-height:1.65;color:var(--text)}
+.pt-msg.me p{background:var(--primary-weak);border-color:transparent}
+.pt-quick{display:flex;gap:8px;margin:6px 0 2px 38px}
+.pt-quick span{font-size:11.5px;color:var(--primary);cursor:pointer;border:1px solid var(--primary);border-radius:99px;padding:4px 12px}
+@media (max-width:720px){.pv-body{flex-direction:column}.pv-note{width:auto;padding:14px 2px 4px}.pv-stage.pv-desktop{overflow:auto}.phone{width:260px}.pt-browser{width:100%}.pt-tools{grid-template-columns:repeat(2,1fr)}}@media (max-width:1200px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid2b,.ab,.int-grid{grid-template-columns:1fr}.hgrid{grid-template-columns:repeat(2,1fr)}.qk{grid-template-columns:repeat(2,1fr)}.grid2[style*="1.35fr"]{grid-template-columns:1fr!important}}
+@media (max-width:900px){
+  .side{width:60px}.side .logo .t1,.side .logo .t2,.side .ni span,.sec,.side-foot .info{display:none}
+  .side .logo{justify-content:center;padding:18px 0 14px}.side .ni{justify-content:center;padding:10px 0}
+  .side-foot{justify-content:center;padding:12px 0}
+  .top,.main{margin-left:60px}.top{padding:0 12px;gap:10px}
+  .main{padding:18px 14px 32px}
+  #help,.crumb .sep,.crumb span:first-child{display:none}
+  .gsr{width:auto;flex:1;min-width:90px}.gsr kbd{display:none}.ph h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="logo">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18H7a4.5 4.5 0 0 1-.9-8.9 5.5 5.5 0 0 1 10.8-1.2A4 4 0 0 1 17.5 18z"/><circle cx="12" cy="13" r="1.6" fill="#fff" stroke="none"/><path d="M12 14.6v3.4M12 13l6.5-4.6M12 13 5.5 8.4" opacity=".75"/></svg></div>
+    <div><div class="t1">云枢<span class="lite">AI 中台</span></div><div class="t2">CLOUDPIVOT PLATFORM</div></div>
+  </div>
+  <nav class="nav">
+    <div class="sec">工作区</div>
+    <div class="ni active" data-v="dash"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>平台概览</span></div>
+    <div class="sec">模型能力</div>
+    <div class="ni" data-v="models"><svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span>模型服务广场</span></div>
+    <div class="sec">知识与数据</div>
+    <div class="ni" data-v="kb"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg><span>知识库中心</span></div>
+    <div class="ni" data-v="factory"><svg viewBox="0 0 24 24"><path d="M2 20h20V9l-6 4V9l-6 4V6l-8 5v9z"/><path d="M6 20v-4M12 20v-3M18 20v-5"/></svg><span>AI 数据工场</span></div>
+    <div class="sec">智能体</div>
+    <div class="ni" data-v="studio"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.3 7.8 10.5 15M15.7 7.8 13.5 15"/></svg><span>开发运维平台</span></div>
+    <div class="ni" data-v="plaza"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 14h.01M15 14h.01M9 17.5h6"/><circle cx="12" cy="3" r="1"/></svg><span>智能体广场运营</span></div>
+    <div class="sec">平台运维</div>
+    <div class="ni" data-v="api"><svg viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><circle cx="16.5" cy="8.5" r="4.5"/><path d="M11 12l2-2"/></svg><span>API 网关</span></div>
+    <div class="ni" data-v="ana"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>运营分析</span></div>
+    <div class="ni" data-v="audit"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>审计日志</span></div>
+    <div class="ni" data-v="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>系统设置</span></div>
+  </nav>
+</aside>
+
+<header class="top">
+  <div class="crumb"><span>云枢平台</span><span class="sep">/</span><b id="crumb">平台概览</b></div>
+  <div class="gsr">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input placeholder="搜索模型、智能体、文档…"><kbd>⌘K</kbd>
+  </div>
+  <div class="bell-wrap">
+    <button class="icbtn" id="bell"><span class="dot"></span><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+    <div class="drop" id="drop">
+      <div class="dh">通知 (3)<span>全部已读</span></div>
+      <div class="di"><span class="b2" style="background:var(--red)"></span><div><div class="t">云端 API（Kimi）调用失败率超 2%</div><div class="s">10 分钟前 · 告警</div></div></div>
+      <div class="di"><span class="b2" style="background:var(--primary)"></span><div><div class="t">「材料速填助手」智能体已通过审核并发布</div><div class="s">1 小时前 · 审批</div></div></div>
+      <div class="di"><span class="b2" style="background:var(--green)"></span><div><div class="t">知识库「学生手册 2026 版」索引完成</div><div class="s">3 小时前 · 知识库中心</div></div></div>
+    </div>
+  </div>
+  <button class="icbtn" id="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+  <div class="ava" style="width:32px;height:32px;font-size:12px">王</div>
+</header>
+<main class="main">
+<!-- 平台概览 -->
+<section class="view on" id="v-dash">
+  <div class="ph">
+    <div><h1>下午好，郑海峰</h1><div class="sub">今日已处理 <b style="color:var(--text)">128,430</b> 次调用 · <span class="ok">●</span> 全部服务运行正常</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" data-t="运营周报（09-14 至 09-21）已生成"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>导出报表</button>
+      <button class="btn pri" data-goto="studio"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建智能体</button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-left:3px solid var(--primary)">
+    <span class="bdg info">平台动态</span>
+    <span style="font-size:12.5px;color:var(--text2)">材料速填助手 v5 明日 02:00 全量发布 · Qwen3-Reranker-8B 计划 09-22 22:00 例行维护（预计 15 分钟，期间自动切换备用实例）</span>
+    <span class="lk" style="margin-left:auto;font-size:12px" data-t="平台动态与历史维护记录：可按时间与影响范围筛选">全部动态 ›</span>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-h"><span class="t">快捷操作</span><span class="more" data-t="常用工作入口 · 一触即达">自定义 ›</span></div>
+    <div class="qk">
+      <a data-goto="studio"><span class="qi" style="background:var(--primary-weak);color:var(--primary)" data-icon="workflow"></span><b>编排新智能体</b><span>画布编排 · 调试即所见</span></a>
+      <a data-goto="kb"><span class="qi" style="background:#e0f2f7;color:#0e7490" data-icon="books"></span><b>上传知识文档</b><span>自动切片 · 向量化入库</span></a>
+      <a data-goto="factory"><span class="qi" style="background:var(--green-weak);color:var(--green)" data-icon="tag"></span><b>进入标注工作台</b><span>模型辅助 · 多人协同</span></a>
+      <a data-goto="api"><span class="qi" style="background:var(--amber-weak);color:var(--amber)" data-icon="key"></span><b>生成 API 密钥</b><span>权限控制 · 用量配额</span></a>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="card stat"><div class="lab">今日 API 调用</div><div class="row"><div class="val" id="s-calls">0</div><svg class="spark" id="sp1"></svg></div><div class="delta up">▲ 12.4%<span class="base">较昨日</span></div></div>
+    <div class="card stat"><div class="lab">Token 消耗</div><div class="row"><div class="val" id="s-token">0<small>M</small></div><svg class="spark" id="sp2"></svg></div><div class="delta up">▲ 8.2%<span class="base">较昨日</span></div></div>
+    <div class="card stat"><div class="lab">活跃用户</div><div class="row"><div class="val" id="s-users">0</div><svg class="spark" id="sp3"></svg></div><div class="delta up">▲ 3.1%<span class="base">较上周同日</span></div></div>
+    <div class="card stat"><div class="lab">在线模型</div><div class="row"><div class="val">11<small>/ 12</small></div><svg class="spark" id="sp4"></svg></div><div class="delta dn">▼ 1 个维护中<span class="base">Qwen3-Reranker-8B</span></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="hgrid" style="padding:12px 18px;border:0">
+      <div class="hcell"><div class="hl"><span>累计调用总量</span><span class="bdg off">本学期</span></div><div class="hv">486.2<small> 万次</small></div></div>
+      <div class="hcell"><div class="hl"><span>已发布智能体</span><span class="bdg info">▲ 5 / 本周</span></div><div class="hv">46<small> 个 · 7 分类</small></div></div>
+      <div class="hcell"><div class="hl"><span>知识库文档</span><span class="bdg ok">RAG 在线</span></div><div class="hv">12,804<small> 篇 · 22.4 万切片</small></div></div>
+      <div class="hcell"><div class="hl"><span>覆盖学院 / 部门</span><span class="bdg ok">全域</span></div><div class="hv">24<small> 个单位</small></div></div>
+    </div>
+  </div>
+  <div class="grid2 eq">
+    <div class="card">
+      <div class="card-h"><span class="t">调用趋势</span><div class="chart-tabs"><span class="ctab on" data-ct="d7">近 7 天</span><span class="ctab" data-ct="d30">近 30 天</span></div></div>
+      <div class="chart-wrap"><svg id="trend" width="100%" height="168" viewBox="0 0 640 168" preserveAspectRatio="none"></svg></div>
+      <div class="chart-foot" id="trend-foot"></div>
+      <div style="padding:0 18px 16px">
+        <div style="font-size:11.5px;color:var(--text3);margin-bottom:8px">调用构成 · 本期</div>
+        <div id="trend-mix"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">模型调用占比</span><span class="more" data-goto="models">查看全部 ›</span></div>
+      <div class="chart-wrap" style="padding-top:10px;padding-bottom:4px;min-height:172px"><svg id="donut" viewBox="0 0 190 190" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:176px"></svg></div>
+      <div class="legend" id="legend" style="padding:2px 18px 14px"></div>
+    </div>
+  </div>
+  <div class="grid2b eq">
+    <div class="card">
+      <div class="card-h"><span class="t">热门智能体 TOP5</span><span class="more" data-goto="plaza">全部 ›</span></div>
+      <div class="rank" id="rank"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">最近调用</span><span class="more" data-goto="api">调用日志 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>时间</th><th>智能体</th><th>模型</th><th style="text-align:right">耗时</th><th>状态</th></tr></thead><tbody id="recent"></tbody></table></div>
+    </div>
+  </div>
+  <div class="grid2 eq" style="grid-template-columns:1.35fr 1fr">
+    <div class="card">
+      <div class="card-h"><span class="t">系统健康</span><span class="bdg ok">混合云 · 全链路正常</span></div>
+      <div class="hgrid">
+        <div class="hcell ok"><div class="hl"><span>API 网关</span><span class="bdg ok">99.98%</span></div><div class="hv">QPS 86<small> · P99 210ms</small></div></div>
+        <div class="hcell ok"><div class="hl"><span>模型推理集群</span><span class="bdg ok">11/12</span></div><div class="hv">GPU 62%<small> · 双节点</small></div></div>
+        <div class="hcell warn"><div class="hl"><span>向量库 Milvus</span><span class="bdg warn">1 维护</span></div><div class="hv">检索 46ms<small> · 副本同步</small></div></div>
+        <div class="hcell ok"><div class="hl"><span>云端弹性算力</span><span class="bdg info">待命</span></div><div class="hv">0 实例<small> · 按需扩容</small></div></div>
+      </div>
+      <div class="hgrid" style="border-top:1px solid var(--line)">
+        <div class="hcell"><div class="hl"><span>今日错误率</span></div><div class="hv">0.08%<small> &lt; 0.2% 基线</small></div></div>
+        <div class="hcell"><div class="hl"><span>并发用户峰值</span></div><div class="hv">1,036<small> · 14:00</small></div></div>
+        <div class="hcell"><div class="hl"><span>知识库检索 P95</span></div><div class="hv">168ms<small> · Rerank 后</small></div></div>
+        <div class="hcell"><div class="hl"><span>数据同步延迟</span></div><div class="hv">2.1s<small> · 数据中台</small></div></div>
+      </div>
+      <div class="hgrid" style="border-top:1px solid var(--line)">
+        <div class="hcell"><div class="hl"><span>备份任务</span><span class="bdg ok">正常</span></div><div class="hv">02:30<small> · 全量成功</small></div></div>
+        <div class="hcell"><div class="hl"><span>消息队列</span><span class="bdg ok">积压 0</span></div><div class="hv">0.4s<small> · 消费延迟</small></div></div>
+        <div class="hcell"><div class="hl"><span>SSL 证书</span><span class="bdg info">自动续期</span></div><div class="hv">89 天<small> · 到期窗口</small></div></div>
+        <div class="hcell"><div class="hl"><span>本周发布</span><span class="bdg ok">0 回滚</span></div><div class="hv">3 次<small> · 灰度 + 全量</small></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">待办事项</span><span class="bdg warn">4 项待处理</span></div>
+      <div class="todo"><div class="ti" style="background:var(--amber-weak);color:var(--amber)" data-icon="moon"></div><div class="tc"><b>材料速填助手 v5 灰度观察期第 2 天</b><span>无异常 · 明日 02:00 自动全量发布</span></div><button class="btn sm" data-t="查看灰度监控大盘：错误率、耗时、用户反馈对比">查看</button></div>
+      <div class="todo"><div class="ti" style="background:var(--primary-weak);color:var(--primary)" data-icon="chat"></div><div class="tc"><b>312 条待确认问答对</b><span>文档抽取题对 · 知识工场人工确认</span></div><button class="btn sm" data-goto="factory">去处理</button></div>
+      <div class="todo"><div class="ti" style="background:var(--red-weak);color:var(--red)" data-icon="warn"></div><div class="tc"><b>Qwen3-Reranker-8B 失败率 2.31%</b><span>超过 2% 阈值 · 建议切换备用实例</span></div><button class="btn sm" data-goto="models">去处理</button></div>
+      <div class="todo"><div class="ti" style="background:var(--green-weak);color:var(--green)" data-icon="chart"></div><div class="tc"><b>学途规划推荐评测待复核</b><span>通过率 86.2% · 11 条失败用例</span></div><button class="btn sm" data-goto="studio">去处理</button></div>
+      <div class="todo"><div class="ti" style="background:#e0f2f7;color:#0e7490" data-icon="refresh"></div><div class="tc"><b>每日自动巡检已完成</b><span>09-21 06:00 · 14 项检查全部通过 · 报告已归档</span></div><button class="btn sm" data-t="巡检报告：索引一致性 / 备份可用性 / 证书有效期 / 配额水位等 14 项全部通过">报告</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 模型服务广场 -->
+<section class="view" id="v-models">
+  <div class="ph">
+    <div><h1>模型服务广场</h1><div class="sub">通用与垂类模型统一纳管 · 本地推理集群内网运行 · 敏感场景数据不出校</div></div>
+    <button class="btn pri" data-t="请填写模型接入表单 · 支持 OpenAI 兼容协议 / Ollama / 云端 API"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>接入新模型</button>
+  </div>
+  <div class="vtabs" id="m-vtabs">
+    <div class="vtab on" data-p="list">模型列表<span class="cnt">12</span></div>
+    <div class="vtab" data-p="route">路由策略<span class="cnt">4</span></div>
+    <div class="vtab" data-p="health">健康检查<span class="cnt">5</span></div>
+  </div>
+  <div class="vpane on" id="p-list">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">推理集群资源水位</span><span class="bdg ok">node-a / node-b 双节点热备</span><div class="more" data-goto="set">阈值配置 ›</div></div>
+      <div class="hgrid">
+        <div class="hcell ok"><div class="hl"><span>GPU 利用率 · node-a</span><span class="bdg ok">A800 ×2</span></div><div class="hv">61%<small> · 峰值 88%（14:00）</small></div><div class="pbar" style="margin-top:8px"><i class="g" style="width:61%"></i></div></div>
+        <div class="hcell ok"><div class="hl"><span>GPU 利用率 · node-b</span><span class="bdg ok">A800 ×2</span></div><div class="hv">54%<small> · 峰值 79%（14:20）</small></div><div class="pbar" style="margin-top:8px"><i class="g" style="width:54%"></i></div></div>
+        <div class="hcell warn"><div class="hl"><span>显存占用</span><span class="bdg warn">偏高</span></div><div class="hv">132 / 160 GB<small> · KV-Cache 74GB</small></div><div class="pbar" style="margin-top:8px"><i style="width:83%;background:var(--amber)"></i></div></div>
+        <div class="hcell"><div class="hl"><span>请求队列深度</span><span class="bdg info">正常</span></div><div class="hv">7<small> · P99 排队 40ms</small></div><div class="pbar" style="margin-top:8px"><i class="g" style="width:23%"></i></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">
+        <div class="chips" id="m-tabs">
+          <span class="chip on" data-k="all">全部</span>
+          <span class="chip" data-k="general">通用大模型</span>
+          <span class="chip" data-k="vertical">垂类模型</span>
+          <span class="chip" data-k="embed">嵌入 / 重排</span>
+        </div>
+        <div class="search-in"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="m-q" placeholder="搜索模型名称 / 提供商"></div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>模型</th><th>类型</th><th>上下文</th><th>输入单价</th><th style="min-width:150px">近 7 日调用量</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody id="m-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+  <div class="vpane" id="p-route">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">模型路由策略</span><span class="bdg ok">自动故障切换已开启</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>策略名称</th><th>匹配条件</th><th>主模型</th><th>备用模型</th><th>切换规则</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">对话类应用</td><td style="color:var(--text2)">应用类型 = 对话助手</td><td>DeepSeek-V4-Flash</td><td>Qwen3.8-Flash</td><td style="color:var(--text2)">失败率 &gt; 1% 自动切换</td><td><span class="bdg ok">生效中</span></td></tr>
+          <tr><td class="cell-main">检索增强应用</td><td style="color:var(--text2)">应用类型 = 知识问答</td><td>Qwen3.8-Flash</td><td>DeepSeek-V4-Flash</td><td style="color:var(--text2)">失败率 &gt; 1% 自动切换</td><td><span class="bdg ok">生效中</span></td></tr>
+          <tr><td class="cell-main">成本优先</td><td style="color:var(--text2)">应用类型 = 批量处理</td><td>Qwen3.8-Flash · 量化实例</td><td>Qwen3.8-27B · 校本微调版</td><td style="color:var(--text2)">按成本动态选择</td><td><span class="bdg ok">生效中</span></td></tr>
+          <tr><td class="cell-main">高性能推理</td><td style="color:var(--text2)">应用类型 = 复杂推理</td><td>Kimi-K3 · 深度思考</td><td>DeepSeek-V4-Pro</td><td style="color:var(--text2)">超时 30s 自动切换</td><td><span class="bdg ok">生效中</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">供应商接入</span><span class="more" data-t="支持多供应商统一接入与自动故障切换">说明 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>供应商</th><th>接入方式</th><th style="text-align:right">可用模型</th><th>延迟</th><th>健康状态</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">本地 vLLM 集群</td><td style="color:var(--text2)">校内私有云 · 2×A800</td><td class="num" style="text-align:right">9</td><td class="num">42ms</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">Ollama 本地</td><td style="color:var(--text2)">校内服务器 · 嵌入 / 重排</td><td class="num" style="text-align:right">2</td><td class="num">18ms</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">云端 API（智谱 GLM）</td><td style="color:var(--text2)">公有云 · 弹性算力</td><td class="num" style="text-align:right">4</td><td class="num">120ms</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">云端 API（月之暗面 Kimi）</td><td style="color:var(--text2)">公有云 · 弹性算力</td><td class="num" style="text-align:right">3</td><td class="num">156ms</td><td><span class="bdg warn">延迟波动</span></td></tr>
+          <tr><td class="cell-main">云端 API（DeepSeek 官方）</td><td style="color:var(--text2)">公有云 · 弹性算力</td><td class="num" style="text-align:right">2</td><td class="num">98ms</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">讯飞语音服务</td><td style="color:var(--text2)">第三方 · 语音能力</td><td class="num" style="text-align:right">1</td><td class="num">88ms</td><td><span class="bdg ok">正常</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+  <div class="vpane" id="p-health">
+    <div class="kv2" style="padding:18px">
+      <div class="k"><div class="l">健康探测间隔</div><div class="v">15<small> 秒</small></div></div>
+      <div class="k"><div class="l">本周故障切换次数</div><div class="v">2<small> 次</small></div></div>
+      <div class="k"><div class="l">当前异常端点</div><div class="v" style="color:var(--amber)">1<small> 个</small></div></div>
+      <div class="k"><div class="l">平均恢复时间</div><div class="v">8.4<small> 秒</small></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">端点健康状态</span><span class="more" data-t="连续失败 3 次将触发自动切换">切换规则 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>端点</th><th style="text-align:right">QPS</th><th style="text-align:right">错误率</th><th style="text-align:right">P95 响应</th><th>健康</th><th>最近探测</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">vllm://node-a/DeepSeek-V4-Flash</td><td class="num" style="text-align:right">86</td><td class="num" style="text-align:right">0.21%</td><td class="num" style="text-align:right">1.9s</td><td><span class="bdg ok">健康</span></td><td style="color:var(--text3)">12 秒前</td></tr>
+          <tr><td class="cell-main">vllm://node-a/Qwen3.8-Flash</td><td class="num" style="text-align:right">64</td><td class="num" style="text-align:right">0.24%</td><td class="num" style="text-align:right">1.4s</td><td><span class="bdg ok">健康</span></td><td style="color:var(--text3)">9 秒前</td></tr>
+          <tr><td class="cell-main">vllm://node-b/Llama-4-Scout</td><td class="num" style="text-align:right">31</td><td class="num" style="text-align:right">0.18%</td><td class="num" style="text-align:right">2.2s</td><td><span class="bdg ok">健康</span></td><td style="color:var(--text3)">11 秒前</td></tr>
+          <tr><td class="cell-main">ollama://svc-2/Qwen3-Embedding-8B</td><td class="num" style="text-align:right">128</td><td class="num" style="text-align:right">0.05%</td><td class="num" style="text-align:right">96ms</td><td><span class="bdg ok">健康</span></td><td style="color:var(--text3)">8 秒前</td></tr>
+          <tr><td class="cell-main">ollama://svc-2/Qwen3-Reranker-8B</td><td class="num" style="text-align:right">44</td><td class="num" style="text-align:right">2.31%</td><td class="num" style="text-align:right">480ms</td><td><span class="bdg warn">维护中</span></td><td style="color:var(--text3)">14 秒前</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><span class="t">近期切换与自愈事件</span><span class="more" data-goto="audit">全部事件 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>时间</th><th>事件</th><th>触发条件</th><th>动作</th><th>恢复耗时</th></tr></thead>
+        <tbody>
+          <tr><td class="num" style="color:var(--text2)">09-20 14:32</td><td class="cell-main">Qwen3-Reranker-8B 错误率超阈</td><td style="color:var(--text2)">连续失败 3 次 · 错误率 2.3%</td><td><span class="bdg warn">切换备用实例</span></td><td class="num">6.8s</td></tr>
+          <tr><td class="num" style="color:var(--text2)">09-18 09:11</td><td class="cell-main">云端 API（Kimi）延迟抖动</td><td style="color:var(--text2)">P95 &gt; 3s 持续 1 分钟</td><td><span class="bdg info">流量回切本地</span></td><td class="num">9.2s</td></tr>
+          <tr><td class="num" style="color:var(--text2)">09-15 02:00</td><td class="cell-main">node-b 例行维护完成</td><td style="color:var(--text2)">计划内 · 周期任务</td><td><span class="bdg ok">恢复双节点</span></td><td class="num">—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+<!-- 知识库中心 -->
+<section class="view" id="v-kb">
+  <div class="ph">
+    <div><h1>知识库中心</h1><div class="sub">校内全域知识资产统一沉淀 · 向量化治理与可信检索 · 支撑各智能体有据可答</div></div>
+    <button class="btn pri" data-t="新建知识库：上传文档后自动切片与向量化"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建知识库</button>
+  </div>
+  <div class="vtabs" id="kb-vtabs">
+    <div class="vtab on" data-p="klist">知识库列表<span class="cnt">6</span></div>
+    <div class="vtab" data-p="kcfg">RAG 检索配置</div>
+    <div class="vtab" data-p="keval">检索效果评估</div>
+  </div>
+  <div class="vpane on" id="p-klist">
+    <div class="kgrid" id="kbs"></div>
+    <div class="grid2 eq" style="margin-top:16px">
+      <div class="card">
+        <div class="card-h"><span class="t">知识治理体检 · 本周</span><span class="bdg ok">整体健康度 92</span></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>治理项</th><th style="text-align:right">检出</th><th>影响</th><th style="text-align:right">处理</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-main">过期内容 · 制度已修订</td><td class="num" style="text-align:right">37 篇</td><td style="color:var(--text2)">引用旧版条款作答，需人工替换</td><td style="text-align:right"><span class="bdg warn">待处理 12</span></td></tr>
+            <tr><td class="cell-main">孤儿切片 · 无来源文档</td><td class="num" style="text-align:right">412 条</td><td style="color:var(--text2)">源文档已删除，索引未清理</td><td style="text-align:right"><span class="bdg ok">已清理</span></td></tr>
+            <tr><td class="cell-main">重复内容 · 跨库收录</td><td class="num" style="text-align:right">96 篇</td><td style="color:var(--text2)">学生手册与制度库重复收录</td><td style="text-align:right"><span class="bdg info">合并中</span></td></tr>
+            <tr><td class="cell-main">敏感词命中 · 待复核</td><td class="num" style="text-align:right">8 篇</td><td style="color:var(--text2)">涉及个人信息，建议脱敏后保留</td><td style="text-align:right"><span class="bdg warn">待处理 8</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">索引与同步任务</span><span class="bdg info">队列 3 · 实时</span></div>
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>任务</th><th>目标库</th><th>进度</th><th>预计完成</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-main">增量向量化</td><td style="color:var(--text2)">学生手册</td><td><div class="pbar" style="min-width:110px"><i class="g" style="width:63%"></i></div></td><td style="color:var(--text3)">约 4 分钟</td></tr>
+            <tr><td class="cell-main">全量重建索引</td><td style="color:var(--text2)">实训设备手册</td><td><div class="pbar" style="min-width:110px"><i class="g" style="width:31%"></i></div></td><td style="color:var(--text3)">约 18 分钟</td></tr>
+            <tr><td class="cell-main">重复内容合并</td><td style="color:var(--text2)">制度库 ↔ 学生手册</td><td><div class="pbar" style="min-width:110px"><i class="g" style="width:85%"></i></div></td><td style="color:var(--text3)">约 1 分钟</td></tr>
+          </tbody>
+        </table></div>
+        <div style="padding:12px 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">索引任务在工作队列串行执行，优先级：增量同步 &gt; 重建 &gt; 治理批处理；执行期间检索服务不受影响（双索引热切换）。</div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-kcfg">
+    <div class="grid2 eq">
+      <div class="card">
+        <div class="card-h"><span class="t">检索链路配置</span><span class="bdg ok">已启用混合召回</span></div>
+        <div class="form" style="max-width:none">
+          <div class="frow"><label>向量检索</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">语义向量召回，嵌入模型 Qwen3-Embedding-8B</div></div></div>
+          <div class="frow"><label>关键词检索</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">BM25 关键词召回，与向量召回并行执行</div></div></div>
+          <div class="frow"><label>融合排序（RRF）</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">倒数排序融合，合并两路召回结果</div></div></div>
+          <div class="frow"><label>重排序（Rerank）</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">Qwen3-Reranker-8B 精排，显著提升首条命中率</div></div></div>
+          <div class="frow"><label>召回数量 Top-K</label><div><select><option>10</option><option selected>20</option><option>50</option></select><div class="hint">进入重排序的候选片段数量</div></div></div>
+          <div class="frow"><label>相似度阈值</label><div><select><option>0.35</option><option selected>0.55</option><option>0.75</option></select><div class="hint">低于阈值的片段将被过滤</div></div></div>
+          <div class="frow"><label></label><div><button class="btn pri" data-t="检索配置已保存并即时生效">保存配置</button></div></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="card-h"><span class="t">增量同步</span><span class="bdg info">对接 OA / 门户</span></div>
+          <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+            <tbody>
+              <tr><td class="cell-main">OA 公文系统</td><td style="text-align:right"><span class="bdg ok">已连接</span></td></tr>
+              <tr><td class="cell-main">学校门户站点</td><td style="text-align:right"><span class="bdg ok">已连接</span></td></tr>
+              <tr><td class="cell-main">图书馆座位系统</td><td style="text-align:right"><span class="bdg ok">已连接</span></td></tr>
+              <tr><td class="cell-main">教务系统文档库</td><td style="text-align:right"><span class="bdg warn">待授权</span></td></tr>
+            </tbody>
+          </table></div>
+          <div style="padding:12px 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">监听文档更新事件，自动增量同步并重新向量化，无需全量重建索引。</div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="t">智能知识加工</span><span class="bdg ok">已开启</span></div>
+          <div style="padding:16px 18px;font-size:13px;color:var(--text2);line-height:2">
+            上传文档后系统自动完成：<br>
+            ① 生成文档摘要<br>
+            ② 抽取潜在问答题对（供人工确认后加入知识库）<br>
+            ③ 智能切片（保持语义完整）并向量化入库<br>
+            ④ 敏感信息识别，命中片段标记后进入人工复核
+          </div>
+          <div style="padding:0 18px 16px;margin-top:auto"><button class="btn sm" data-t="待确认问答题对：312 条，进入知识工场审核">查看待确认题对 (312)</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-keval">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">检索测试 · 规章制度库</span><span class="more" data-t="支持 A/B 对比检索参数对效果的影响">说明 ›</span></div>
+      <div class="rt-head">
+        <div class="rt-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="rt-q" value="学生休学的最长年限是多少？"></div>
+        <button class="btn pri" id="rt-run"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>运行测试</button>
+      </div>
+      <div id="rt-res" style="min-height:80px"><div class="empty">输入查询问题，点击「运行测试」查看召回片段与相似度得分</div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">A/B 参数对比 · 上次测试</span><span class="more" data-t="A/B 测试报告已导出">导出报告 ›</span></div>
+      <div class="ab">
+        <div class="col">
+          <h4>方案 A · 相似度阈值 0.35 / Top-K 10</h4>
+          <div class="kv"><span>召回片段数</span><b>10</b></div>
+          <div class="kv"><span>重排后首条相关</span><b>是</b></div>
+          <div class="kv"><span>平均检索耗时</span><b>126ms</b></div>
+          <div class="kv"><span>答案准确率（标注集）</span><b>82.4%</b></div>
+        </div>
+        <div class="col">
+          <h4>方案 B · 相似度阈值 0.55 / Top-K 20（当前）</h4>
+          <div class="kv"><span>召回片段数</span><b>20</b></div>
+          <div class="kv"><span>重排后首条相关</span><b>是</b></div>
+          <div class="kv"><span>平均检索耗时</span><b>168ms</b></div>
+          <div class="kv"><span>答案准确率（标注集）</span><b>93.1%</b></div>
+          <div class="win">✓ 综合最优 · 已设为默认参数</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- AI 数据工场 -->
+<section class="view" id="v-factory">
+  <div class="ph">
+    <div><h1>AI 数据工场</h1><div class="sub">从原始数据到高质量训练语料 · 为模型微调与知识库建设供给可信数据</div></div>
+    <button class="btn pri" data-t="新建数据加工任务：选择数据源与清洗策略"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建任务</button>
+  </div>
+  <div class="vtabs" id="f-vtabs">
+    <div class="vtab on" data-p="fsrc">数据接入与清洗<span class="cnt">运行中 1</span></div>
+    <div class="vtab" data-p="fanno">标注与对齐<span class="cnt">4</span></div>
+    <div class="vtab" data-p="fds">数据集版本<span class="cnt">6</span></div>
+  </div>
+  <div class="vpane on" id="p-fsrc">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">数据源接入</span><span class="more" data-t="支持本地文件、数据库、数据中心消息队列多来源接入">接入说明 ›</span></div>
+      <div class="src-grid" id="srcs"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">清洗流水线 · 制度文件全量清洗（进行中）</span><span class="bdg info">已处理 68%</span></div>
+      <div class="pipe">
+        <div class="pstep done"><div class="bub" data-icon="inbox"></div><div class="nm">数据汇聚</div><div class="dt">8,214 篇 · 完成</div></div>
+        <div class="pstep done"><div class="bub" data-icon="refresh"></div><div class="nm">去重</div><div class="dt">清除 1,862 篇重复</div></div>
+        <div class="pstep done"><div class="bub" data-icon="ruler"></div><div class="nm">格式标准化</div><div class="dt">PDF/DOC → 结构化文本</div></div>
+        <div class="pstep run"><div class="bub" data-icon="shield"></div><div class="nm">敏感信息过滤</div><div class="dt">已拦截 217 处 · 进行中</div></div>
+        <div class="pstep"><div class="bub" data-icon="tag"></div><div class="nm">领域分类打标</div><div class="dt">等待中</div></div>
+        <div class="pstep"><div class="bub" data-icon="outbox"></div><div class="nm">输出待标注集</div><div class="dt">等待中</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><span class="t">清洗任务记录</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>任务名称</th><th>数据源</th><th>处理量</th><th>去重</th><th>敏感拦截</th><th>状态</th><th>完成时间</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">教务文档批量清洗</td><td style="color:var(--text2)">本地文件 · 2.4GB</td><td class="num">3,206 篇</td><td class="num">412</td><td class="num">58</td><td><span class="bdg ok">已完成</span></td><td style="color:var(--text3)">09-20 22:40</td></tr>
+          <tr><td class="cell-main">就业信息库清洗</td><td style="color:var(--text2)">数据中心 · API 同步</td><td class="num">18.6 万条</td><td class="num">23,410</td><td class="num">1,872</td><td><span class="bdg ok">已完成</span></td><td style="color:var(--text3)">09-19 14:12</td></tr>
+          <tr><td class="cell-main">科研摘要标准化</td><td style="color:var(--text2)">数据库 · MySQL 视图</td><td class="num">726 篇</td><td class="num">31</td><td class="num">0</td><td><span class="bdg ok">已完成</span></td><td style="color:var(--text3)">09-17 09:55</td></tr>
+          <tr><td class="cell-main">历史问答日志清洗</td><td style="color:var(--text2)">平台日志库</td><td class="num">52 万条</td><td class="num">88,214</td><td class="num">5,966</td><td><span class="bdg warn">质检中</span></td><td style="color:var(--text3)">—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="grid2 eq" style="margin-top:16px">
+      <div class="card">
+        <div class="card-h"><span class="t">本周数据质量报告</span><span class="bdg ok">综合评分 91.4</span></div>
+        <div class="kv2" style="grid-template-columns:1fr 1fr 1fr;padding:14px 16px">
+          <div class="k"><div class="l">字段完整率</div><div class="v" style="color:var(--green)">99.2%</div></div>
+          <div class="k"><div class="l">格式合规率</div><div class="v" style="color:var(--green)">98.6%</div></div>
+          <div class="k"><div class="l">语义可用率</div><div class="v">94.1%</div></div>
+          <div class="k"><div class="l">重复率（清洗后）</div><div class="v">2.3%</div></div>
+          <div class="k"><div class="l">敏感拦截命中率</div><div class="v">100%</div></div>
+          <div class="k"><div class="l">标注一致性</div><div class="v">0.87<small> Kappa</small></div></div>
+        </div>
+        <div style="padding:0 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">语义可用率环比下降 1.8pp，主要来自历史问答日志中的低质寒暄轮次；已在清洗规则中新增「有效信息密度」过滤器，预计下批次回升。</div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">清洗规则库</span><span class="more" data-t="规则支持正则与模型判别两种方式，可按数据源叠加">规则说明 ›</span></div>
+        <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+          <thead><tr><th>规则</th><th>方式</th><th style="text-align:right">近 30 日命中</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-main">身份证 / 手机号脱敏</td><td style="color:var(--text2)">正则</td><td class="num" style="text-align:right">5,966</td></tr>
+            <tr><td class="cell-main">正文乱码与编码异常剔除</td><td style="color:var(--text2)">规则</td><td class="num" style="text-align:right">2,418</td></tr>
+            <tr><td class="cell-main">低质寒暄轮次过滤</td><td style="color:var(--text2)">模型判别</td><td class="num" style="text-align:right">41,096</td></tr>
+            <tr><td class="cell-main">跨源近似重复合并</td><td style="color:var(--text2)">向量聚类</td><td class="num" style="text-align:right">23,410</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-fanno">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">标注任务</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="bdg info">模型辅助标注已开启</span>
+          <button class="btn sm" data-t="模型预标注可提升 3~5 倍标注效率，人工仅做确认修正">辅助标注说明</button>
+        </div>
+      </div>
+      <div id="annos"></div>
+    </div>
+    <div class="grid2 eq">
+      <div class="card">
+        <div class="card-h"><span class="t">协同标注团队</span><span class="more" data-t="支持多人协同标注与交叉质检">管理 ›</span></div>
+        <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+          <thead><tr><th>标注员</th><th>所属部门</th><th style="text-align:right">本周标注</th><th style="text-align:right">质检通过率</th></tr></thead>
+          <tbody>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><span class="miniava" style="background:#4f46e5">李</span>李思远</div></td><td style="color:var(--text2)">教务处</td><td class="num" style="text-align:right">1,240</td><td class="num" style="text-align:right;color:var(--green)">98.2%</td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><span class="miniava" style="background:#0e9f6e">周</span>周晓岚</div></td><td style="color:var(--text2)">学工处</td><td class="num" style="text-align:right">1,086</td><td class="num" style="text-align:right;color:var(--green)">97.6%</td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><span class="miniava" style="background:#b45309">吴</span>吴雨桐</div></td><td style="color:var(--text2)">信息中心</td><td class="num" style="text-align:right">862</td><td class="num" style="text-align:right;color:var(--green)">99.1%</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">质检流程</span><span class="bdg ok">三级质检</span></div>
+        <div class="vflow" style="padding:16px 18px">
+          <div class="anno-row" style="border:0;padding:8px 0"><div class="sw" style="background:var(--primary-weak)" data-icon="pen"></div><div class="ttl"><b>一级 · 标注员自检</b><span>标注时实时校验格式与完整性</span></div><span class="bdg ok">通过 99.4%</span></div>
+          <div class="anno-row" style="border:0;padding:8px 0"><div class="sw" style="background:var(--amber-weak)" data-icon="users"></div><div class="ttl"><b>二级 · 交叉互检</b><span>标注员之间随机交叉抽检 20%</span></div><span class="bdg ok">通过 98.8%</span></div>
+          <div class="anno-row" style="border:0;padding:8px 0"><div class="sw" style="background:var(--green-weak)" data-icon="target"></div><div class="ttl"><b>三级 · 专家终审</b><span>领域专家审核争议样本</span></div><span class="bdg warn">待审 126 条</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-fds">
+    <div class="card">
+      <div class="card-h"><span class="t">数据集版本管理</span><span class="more" data-t="训练/验证/测试集独立版本管理，微调过程可复现">版本策略 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>数据集</th><th>版本</th><th>训练集</th><th>验证集</th><th>测试集</th><th>格式</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody id="ds-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+<!-- 智能体开发运维平台 -->
+<section class="view" id="v-studio">
+  <div class="ph">
+    <div><h1>智能体开发运维平台</h1><div class="sub">智能体从设计、调试、评测到灰度发布的完整研发链路</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" data-goto="factory">从数据工场导入</button>
+      <button class="btn pri" data-t="已进入编排画布 · 可选择复制现有智能体或新建空白流程"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建智能体</button>
+    </div>
+  </div>
+  <div class="vtabs" id="s-vtabs">
+    <div class="vtab on" data-p="wflow">工作流编排</div>
+    <div class="vtab" data-p="pmt2">提示词工程<span class="cnt">8</span></div>
+    <div class="vtab" data-p="plug">插件工具<span class="cnt">6</span></div>
+    <div class="vtab" data-p="eval">评测中心<span class="cnt">4</span></div>
+    <div class="vtab" data-p="life">发布与版本</div>
+  </div>
+  <div class="vpane on" id="p-wflow">
+    <div class="card">
+      <div class="card-h">
+        <span class="t">编排画布 · 校规速查顾问 v3</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span class="bdg ok">画布校验通过</span>
+          <button class="btn sm" data-t="已发起试运行：上一次调试耗时 2.4s，点击对话面板回看">调试运行</button>
+          <button class="btn sm" data-t="已发布为新版本 v3.1，自动进入 5% 灰度">发布</button>
+          <button class="btn sm pri" data-t="已保存新版本 v3-draft，可发起灰度发布">保存草稿</button>
+        </div>
+      </div>
+      <div class="wf-shell">
+        <div class="wf-pal">
+          <div class="pg">基础</div>
+          <div class="pi" data-t="「开始」节点已拖入画布 · 自动吸附 22px 网格"><span class="ic2" style="background:var(--primary-weak);color:var(--primary)" data-icon="play"></span>开始</div>
+          <div class="pi" data-t="「消息回复」节点已拖入画布 · 流式输出"><span class="ic2" style="background:#f1f5f9;color:#475569" data-icon="mail"></span>消息回复</div>
+          <div class="pg">流程</div>
+          <div class="pi" data-t="「大模型调用」节点已拖入画布 · 可选 12 个已接入模型"><span class="ic2" style="background:var(--primary-weak);color:var(--primary)" data-icon="bot"></span>大模型调用</div>
+          <div class="pi" data-t="「知识库检索」节点已拖入画布 · 混合召回 + Rerank"><span class="ic2" style="background:#e0f2f7;color:#0e7490" data-icon="books"></span>知识库检索</div>
+          <div class="pi" data-t="「条件分支」节点已拖入画布 · 支持 IF / ELIF / ELSE"><span class="ic2" style="background:var(--green-weak);color:var(--green)" data-icon="check"></span>条件分支</div>
+          <div class="pi" data-t="「代码执行」节点已拖入画布 · 沙箱 Python 3.11"><span class="ic2" style="background:#eef0fe;color:#4338ca" data-icon="pen"></span>代码执行</div>
+          <div class="pg">增强</div>
+          <div class="pi" data-t="「插件工具」节点已拖入画布 · 6 个插件可选"><span class="ic2" style="background:var(--amber-weak);color:var(--amber)" data-icon="tools"></span>插件工具</div>
+          <div class="pi" data-t="「会话记忆」节点已拖入画布 · Redis 摘要缓存"><span class="ic2" style="background:var(--amber-weak);color:var(--amber)" data-icon="clock"></span>会话记忆</div>
+          <div class="pi" data-t="「敏感预检」节点已拖入画布 · 输出内容安全过滤"><span class="ic2" style="background:var(--red-weak);color:var(--red)" data-icon="shield"></span>敏感预检</div>
+          <div class="pi" data-t="「人工转接」节点已拖入画布 · 通知辅导员接入"><span class="ic2" style="background:var(--green-weak);color:var(--green)" data-icon="users"></span>人工转接</div>
+          <div class="pg">集成</div>
+          <div class="pi" data-t="「HTTP 请求」节点已拖入画布 · 支持 OAuth2"><span class="ic2" style="background:#e0f2f7;color:#0e7490" data-icon="link"></span>HTTP 请求</div>
+          <div class="pi" data-t="「变量赋值」节点已拖入画布 · 会话级变量"><span class="ic2" style="background:#f3e8ff;color:#6d28d9" data-icon="layers"></span>变量赋值</div>
+        </div>
+        <div class="wf-viewport">
+          <div class="wf-cv">
+            <div class="wf" id="wflow" style="position:relative;height:480px">
+              <svg class="links"></svg>
+              <div class="node start" data-n="start" style="left:20px;top:72px"><div class="hd"><div class="ic" style="background:var(--bg)" data-icon="play"></div><b>开始 · 用户输入</b></div><div class="sub">多轮对话上下文 + 用户身份</div><span class="tag">触发器</span></div>
+              <div class="node" data-n="mem" style="left:20px;top:206px"><div class="hd"><div class="ic" style="background:var(--amber-weak)" data-icon="clock"></div><b>会话记忆</b></div><div class="sub">近 5 轮摘要 · Redis</div><span class="tag">上下文</span></div>
+              <div class="node kb2" data-n="kb" style="left:262px;top:62px"><div class="hd"><div class="ic" data-icon="books"></div><b>知识库检索</b></div><div class="sub">规章制度库 · 混合召回 Top-20</div><span class="tag">RAG</span><div class="ms">126ms</div></div>
+              <div class="node cond" data-n="cond" style="left:496px;top:54px"><div class="hd"><div class="ic" data-icon="check"></div><b>条件判断</b></div><div class="sub">首条相似度 ≥ 0.55 ?</div><span class="tag">分支</span></div>
+              <div class="node model run" data-n="llm" style="left:722px;top:28px"><div class="hd"><div class="ic" data-icon="bot"></div><b>大模型调用</b></div><div class="sub">DeepSeek-V4-Flash · 引用片段作答</div><span class="tag">temperature 0.2</span><div class="ms">1.4s · 正在执行</div></div>
+              <div class="node tool" data-n="tool" style="left:496px;top:266px"><div class="hd"><div class="ic" data-icon="tools"></div><b>插件 · 工单转派</b></div><div class="sub">创建人工工单 · 通知辅导员</div><span class="tag">OA API</span><div class="ms">已跳过</div></div>
+              <div class="node model" data-n="fb" style="left:20px;top:338px"><div class="hd"><div class="ic" data-icon="chat"></div><b>兜底话术生成</b></div><div class="sub">小参数模型 · 快速应答</div><span class="tag">降级分支</span></div>
+              <div class="node end" data-n="end" style="left:574px;top:372px"><div class="hd"><div class="ic" style="background:var(--bg)" data-icon="mail"></div><b>消息回复</b></div><div class="sub">组装答案 + 引用来源 + 满意度</div><span class="tag">流式输出</span></div>
+              <div class="node" data-n="safe" style="left:844px;top:208px"><div class="hd"><div class="ic" style="background:var(--red-weak)" data-icon="shield"></div><b>敏感预检</b></div><div class="sub">输出内容安全过滤</div><span class="tag">全局前置</span></div>
+            </div>
+          </div>
+          <div class="wf-tools">
+            <button id="zf-out" title="缩小"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <span class="zval" id="zval">100%</span>
+            <button id="zf-in" title="放大"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <span class="sep"></span>
+            <button id="zf-fit" title="适应画布"><svg viewBox="0 0 24 24"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></svg></button>
+            <span class="sep"></span>
+            <button id="wf-undo" title="撤销"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+            <button id="wf-redo" title="重做"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+          </div>
+          <div class="wf-mini"><span class="cap">导航</span><div id="wf-mini-box"></div></div>
+          <div class="wf-insp" id="wf-insp"></div>
+        </div>
+      </div>
+      <div class="wf-status"><span class="dot"></span><span>9 节点 · 10 条连线 · 画布校验通过 · 断点 0</span><span style="margin-left:auto">拖入组件开始编排 · 单击节点查看配置 · 支持变量引用 <span class="mono">{{retrieved_chunks}}</span> · 上次调试 2.4s</span></div>
+      <div style="padding:0 18px 16px;font-size:12px;color:var(--text3)">本次试运行覆盖全部 9 个节点 · 分支覆盖率 2/3 · 节点级耗时与输入输出可在执行链路中逐级展开，变量引用 <span class="mono">{{retrieved_chunks}}</span> 已通过注入安全检查。</div>
+    </div>
+    <div class="grid2 eq" style="margin-top:16px">
+      <div class="card">
+        <div class="card-h"><span class="t">调试对话 · 上次试运行</span><span class="bdg ok">耗时 2.4s · Token 1,284</span></div>
+        <div class="chat">
+          <div class="m u">研究生可以申请延长住宿吗？</div>
+          <div class="step">▸ 意图识别 <b>住宿政策咨询</b> · 32ms</div>
+          <div class="step">▸ 混合召回 <b>23 片段</b> → Rerank 精排 <b>5 片段</b> · 126ms</div>
+          <div class="step">▸ 命中分支 <b>是 · 相似度 0.87</b> → 大模型引用作答 · 1.4s</div>
+          <div class="m a">可以。根据《学生住宿管理办法》第十八条，因科研需要经导师和学院批准，住宿期限可延长一学年，累计不超过两学年…<span class="ref">引用 · 学生住宿管理办法 第十八条 · 相似度 0.87</span></div>
+          <div class="m u">那需要提前多久提交申请？</div>
+          <div class="m a"><span class="typing"><i></i><i></i><i></i></span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">执行链路 · 端到端追踪</span><span class="more" data-goto="api">全链路监控 ›</span></div>
+        <div class="vflow" style="padding:12px 18px">
+          <div class="trstep"><span class="no">1</span><span class="nm"><b>网关接入 · 提示词注入检测</b><span>输入含变量引用，通过安全规则 12 条</span></span><span class="t"><b>50ms</b></span></div>
+          <div class="trstep"><span class="no">2</span><span class="nm"><b>会话记忆读取</b><span>命中 5 轮上下文摘要缓存</span></span><span class="t"><b>18ms</b></span></div>
+          <div class="trstep"><span class="no">3</span><span class="nm"><b>知识库混合召回 + Rerank</b><span>向量 23 + BM25 14 → 融合精排 5 片段</span></span><span class="t"><b>172ms</b></span></div>
+          <div class="trstep"><span class="no">4</span><span class="nm"><b>条件分支判断</b><span>首条相似度 0.87 ≥ 0.55 → 走引用作答分支</span></span><span class="t"><b>3ms</b></span></div>
+          <div class="trstep"><span class="no">5</span><span class="nm"><b>大模型推理 · DeepSeek-V4-Flash</b><span>流式输出 · 消耗 Token 1,284</span></span><span class="t"><b>1.4s</b></span></div>
+          <div class="trstep"><span class="no">6</span><span class="nm"><b>敏感预检 + 组装回复</b><span>追加引用来源与反馈组件</span></span><span class="t"><b>80ms</b></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><span class="t">节点配置 · 大模型调用</span><span class="bdg info">已绑定提示词模板 v3</span></div>
+      <div style="padding:16px 18px">
+        <div class="pmt">你是XX大学的校规速查顾问。请严格依据下方【制度片段】回答问题，
+若片段不足以回答，请明确告知并建议转人工，不得编造。
+
+【制度片段】{{retrieved_chunks}}
+【用户问题】{{query}}</div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn sm" data-t="提示词变量：{{retrieved_chunks}} {{query}} {{user_profile}}">变量说明</button>
+          <button class="btn sm" data-t="支持 A/B 版本对比调试，查看两版输出的差异">版本对比调试</button>
+          <button class="btn sm" data-t="已发起测试对话，查看模型实际输出">运行一次</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-pmt2">
+    <div class="card">
+      <div class="card-h"><span class="t">提示词模板库</span><button class="btn sm pri" data-t="新建提示词模板，支持版本管理与对比">新建模板</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>模板名称</th><th>适用场景</th><th>版本</th><th>最近调试</th><th>引用智能体</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">校规速查 · 严格引用型</td><td style="color:var(--text2)">知识问答</td><td class="mono">v3</td><td style="color:var(--text3)">1 小时前</td><td class="num">12 个</td><td style="text-align:right"><button class="btn sm" data-t="在线调试「校规速查 · 严格引用型」">调试</button></td></tr>
+          <tr><td class="cell-main">教学咨询 · 引导追问型</td><td style="color:var(--text2)">对话助手</td><td class="mono">v2</td><td style="color:var(--text3)">昨天</td><td class="num">8 个</td><td style="text-align:right"><button class="btn sm" data-t="在线调试「教学咨询 · 引导追问型」">调试</button></td></tr>
+          <tr><td class="cell-main">生涯领航 · 个性化推荐</td><td style="color:var(--text2)">推荐类</td><td class="mono">v4</td><td style="color:var(--text3)">09-18</td><td class="num">3 个</td><td style="text-align:right"><button class="btn sm" data-t="在线调试「生涯领航 · 个性化推荐」">调试</button></td></tr>
+          <tr><td class="cell-main">公文写作 · 格式规范型</td><td style="color:var(--text2)">写作类</td><td class="mono">v1</td><td style="color:var(--text3)">09-15</td><td class="num">5 个</td><td style="text-align:right"><button class="btn sm" data-t="在线调试「公文写作 · 格式规范型」">调试</button></td></tr>
+          <tr><td class="cell-main">敏感预检 · 输入过滤</td><td style="color:var(--text2)">安全</td><td class="mono">v2</td><td style="color:var(--text3)">09-12</td><td class="num">46 个</td><td style="text-align:right"><button class="btn sm" data-t="在线调试「敏感预检 · 输入过滤」">调试</button></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+  <div class="vpane" id="p-plug">
+    <div class="card">
+      <div class="card-h"><span class="t">插件工具 · 校内系统 API 封装</span><button class="btn sm pri" data-t="业务人员可通过可视化配置将校内 API 快速封装为插件">封装新插件</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>插件名称</th><th>封装来源</th><th>调用方式</th><th style="text-align:right">近 30 日调用</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">教务课表查询</td><td style="color:var(--text2)">教务系统 API</td><td class="mono">GET /jwapi/schedule</td><td class="num" style="text-align:right">21,408</td><td><span class="bdg ok">已上架</span></td><td style="text-align:right"><button class="btn sm" data-t="查看「教务课表查询」插件配置">配置</button></td></tr>
+          <tr><td class="cell-main">一卡通余额查询</td><td style="color:var(--text2)">一卡通系统 API</td><td class="mono">GET /card/balance</td><td class="num" style="text-align:right">12,844</td><td><span class="bdg ok">已上架</span></td><td style="text-align:right"><button class="btn sm" data-t="查看「一卡通余额查询」插件配置">配置</button></td></tr>
+          <tr><td class="cell-main">图书馆馆藏检索</td><td style="color:var(--text2)">图书馆系统 API</td><td class="mono">POST /lib/search</td><td class="num" style="text-align:right">8,216</td><td><span class="bdg ok">已上架</span></td><td style="text-align:right"><button class="btn sm" data-t="查看「图书馆馆藏检索」插件配置">配置</button></td></tr>
+          <tr><td class="cell-main">OA 待办提醒</td><td style="color:var(--text2)">OA 系统 API</td><td class="mono">GET /oa/todo</td><td class="num" style="text-align:right">6,372</td><td><span class="bdg ok">已上架</span></td><td style="text-align:right"><button class="btn sm" data-t="查看「OA 待办提醒」插件配置">配置</button></td></tr>
+          <tr><td class="cell-main">成绩单生成</td><td style="color:var(--text2)">教务系统 API</td><td class="mono">POST /jwapi/transcript</td><td class="num" style="text-align:right">980</td><td><span class="bdg warn">测试中</span></td><td style="text-align:right"><button class="btn sm" data-t="查看「成绩单生成」插件配置">配置</button></td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:14px 18px;font-size:12px;color:var(--text3)">业务人员通过可视化配置或轻代码即可封装校内已有 API 为智能体插件，无需研发介入。</div>
+    </div>
+  </div>
+  <div class="vpane" id="p-eval">
+    <div class="grid2b eq" style="margin-top:0">
+      <div class="stack">
+        <div class="card">
+          <div class="card-h"><span class="t">评测任务</span><button class="btn sm pri" data-t="新建评测：选择智能体版本与评测集">新建评测</button></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>评测对象</th><th>评测集</th><th>用例数</th><th>通过率</th><th>状态</th><th>最近执行</th></tr></thead>
+            <tbody>
+              <tr><td class="cell-main">校规速查顾问 v3</td><td style="color:var(--text2)">制度问答 · 标注集 A</td><td class="num">200</td><td class="num" style="color:var(--green);font-weight:600">93.5%</td><td><span class="bdg ok">已完成</span></td><td style="color:var(--text3)">09-20 22:10</td></tr>
+              <tr><td class="cell-main">材料速填助手 v5</td><td style="color:var(--text2)">表单场景 · 回归集</td><td class="num">42</td><td class="num" style="color:var(--green);font-weight:600">100%</td><td><span class="bdg ok">已完成</span></td><td style="color:var(--text3)">09-19 10:20</td></tr>
+              <tr><td class="cell-main">学途规划推荐 v2</td><td style="color:var(--text2)">推荐相关性 · 人工标注</td><td class="num">80</td><td class="num" style="color:var(--amber);font-weight:600">86.2%</td><td><span class="bdg warn">待复核</span></td><td style="color:var(--text3)">09-18 15:47</td></tr>
+              <tr><td class="cell-main">招生答疑官 v1</td><td style="color:var(--text2)">招生问答 · 混合集</td><td class="num">120</td><td class="num" style="color:var(--text2)">—</td><td><span class="bdg off">排队中</span></td><td style="color:var(--text3)">—</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="t">典型失败用例 · 学途规划推荐</span><span class="more" data-t="失败用例已同步至数据工场，生成评测报告">全部 11 条 ›</span></div>
+          <div class="tbl-wrap"><table class="tbl">
+            <thead><tr><th>用例</th><th>预期</th><th>实际输出（截断）</th><th>失败类型</th></tr></thead>
+            <tbody>
+              <tr><td class="cell-main">问：大二可以转专业吗？</td><td style="color:var(--text2)">引用学籍制度转专业条款</td><td style="color:var(--text2)">回答了大类分流，未命中转专业…</td><td><span class="bdg err">知识缺失</span></td></tr>
+              <tr><td class="cell-main">问：辅修学位证什么时间发？</td><td style="color:var(--text2)">说明发证时间与流程</td><td style="color:var(--text2)">编造了「6 月统一发放」的说法…</td><td><span class="bdg err">幻觉</span></td></tr>
+              <tr><td class="cell-main">问：推荐适合我的实习</td><td style="color:var(--text2)">结合专业标签推荐 3 个</td><td style="color:var(--text2)">仅回复通用建议，未调用插件…</td><td><span class="bdg warn">链路未触发</span></td></tr>
+            </tbody>
+          </table></div>
+          <div style="padding:12px 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">失败用例一键回流数据工场，生成微调样本；两轮迭代后推荐类通过率从 79% 提升至 86.2%。</div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="card-h"><span class="t">评测维度 · 校规速查顾问</span><span class="bdg ok">综合 4.6 / 5</span></div>
+          <div class="vflow" style="padding:16px 18px" id="eval-radar"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="t">A/B 版本对比 · v3 vs v2</span></div>
+          <div class="ab vflow" style="grid-template-columns:1fr">
+            <div class="kv"><span>引用准确率</span><b><span style="color:var(--green)">93.5%</span> <small style="color:var(--text3)">← v2 88.1%（+5.4）</small></b></div>
+            <div class="kv"><span>幻觉率</span><b><span style="color:var(--green)">1.2%</span> <small style="color:var(--text3)">← v2 4.8%（-3.6）</small></b></div>
+            <div class="kv"><span>平均响应耗时</span><b><span>1.9s</span> <small style="color:var(--text3)">← v2 1.7s（+0.2）</small></b></div>
+            <div class="kv"><span>转人工率</span><b><span style="color:var(--green)">6.8%</span> <small style="color:var(--text3)">← v2 11.4%（-4.6）</small></b></div>
+            <div class="kv"><span>多轮追问完成率</span><b><span style="color:var(--green)">88.9%</span> <small style="color:var(--text3)">← v2 82.3%（+6.6）</small></b></div>
+            <div class="kv"><span>学生满意度</span><b><span style="color:var(--green)">4.5<small> / 5</small></span> <small style="color:var(--text3)">← v2 4.2（+0.3）</small></b></div>
+            <div class="win">✓ v3 综合更优 · 已设为线上版本</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-life">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">发布流水线 · 材料速填助手</span><span class="bdg info">灰度发布 25%</span></div>
+      <div class="pipe">
+        <div class="pstep done"><div class="bub" data-icon="puzzle"></div><div class="nm">开发</div><div class="dt">v5 · 09-18</div></div>
+        <div class="pstep done"><div class="bub" data-icon="flask"></div><div class="nm">测试</div><div class="dt">42 用例全部通过</div></div>
+        <div class="pstep run"><div class="bub" data-icon="moon"></div><div class="nm">灰度 25%</div><div class="dt">运行 2 天 · 无异常</div></div>
+        <div class="pstep"><div class="bub" data-icon="play"></div><div class="nm">全量发布</div><div class="dt">明日 02:00 执行</div></div>
+        <div class="pstep"><div class="bub" data-icon="refresh"></div><div class="nm">下线</div><div class="dt">支持一键回滚</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">版本记录</span><span class="more" data-t="支持任意版本一键回滚，回滚即时生效">回滚策略 ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>智能体</th><th>版本</th><th>变更说明</th><th>发布方式</th><th>状态</th><th>发布时间</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">材料速填助手</td><td class="mono">v5</td><td style="color:var(--text2)">新增表单字段智能预填</td><td style="color:var(--text2)">灰度 25%</td><td><span class="bdg info">灰度中</span></td><td style="color:var(--text3)">09-19 10:20</td></tr>
+          <tr><td class="cell-main">材料速填助手</td><td class="mono">v4</td><td style="color:var(--text2)">修复附件上传失败问题</td><td style="color:var(--text2)">全量</td><td><span class="bdg ok">运行中</span></td><td style="color:var(--text3)">09-12 15:44</td></tr>
+          <tr><td class="cell-main">校规速查顾问</td><td class="mono">v3</td><td style="color:var(--text2)">接入规章制度库 v2 索引</td><td style="color:var(--text2)">全量</td><td><span class="bdg ok">运行中</span></td><td style="color:var(--text3)">09-16 09:02</td></tr>
+          <tr><td class="cell-main">生涯领航员</td><td class="mono">v2</td><td style="color:var(--text2)">接入就业信息库实时数据</td><td style="color:var(--text2)">全量</td><td><span class="bdg ok">运行中</span></td><td style="color:var(--text3)">09-10 11:36</td></tr>
+          <tr><td class="cell-main">招生答疑官</td><td class="mono">v1</td><td style="color:var(--text2)">初始版本</td><td style="color:var(--text2)">—</td><td><span class="bdg warn">草稿</span></td><td style="color:var(--text3)">—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 智能体广场运营 -->
+<section class="view" id="v-plaza">
+  <div class="ph">
+    <div><h1>智能体广场运营</h1><div class="sub">面向全校师生的智能服务门户 · 按场景即取即用 · 持续运营优化</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" data-t="分类管理：新增 / 排序 / 合并场景分类">管理分类</button>
+      <button class="btn pri" data-t="上架新智能体到广场：选择已发布版本">上架智能体</button>
+    </div>
+  </div>
+  <div class="vtabs" id="pz-vtabs">
+    <div class="vtab on" data-p="pzlist">智能体列表<span class="cnt">46</span></div>
+    <div class="vtab" data-p="pztpl">复用模板库<span class="cnt">3</span></div>
+    <div class="vtab" data-p="pzfb">反馈数据</div>
+    <div class="vtab" data-p="pzint">多端集成</div>
+  </div>
+  <div class="vpane on" id="p-pzlist">
+    <div class="card">
+      <div class="card-h">
+        <div class="chips" id="a-tabs">
+          <span class="chip on" data-k="all">全部</span>
+          <span class="chip" data-k="pub">已发布</span>
+          <span class="chip" data-k="draft">草稿</span>
+          <span class="chip" data-k="off">已停用</span>
+        </div>
+        <div class="search-in"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="a-q" placeholder="搜索智能体名称"></div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>智能体</th><th>场景分类</th><th>负责人</th><th style="text-align:right">近 30 日调用</th><th style="text-align:right">启用部门</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody id="a-body"></tbody>
+      </table></div>
+    </div>
+    <div class="grid2 eq" style="margin-top:16px">
+      <div class="card">
+        <div class="card-h"><span class="t">场景渗透与活跃时段</span><span class="bdg info">近 30 天</span></div>
+        <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+          <thead><tr><th>场景分类</th><th>渗透院系</th><th>活跃时段</th><th style="text-align:right">次均轮次</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-main">教务教学</td><td style="color:var(--text2)">11 / 24</td><td style="color:var(--text2)">工作日 10-12 时 · 16-18 时</td><td class="num" style="text-align:right">3.8</td></tr>
+            <tr><td class="cell-main">学生管理</td><td style="color:var(--text2)">19 / 24</td><td style="color:var(--text2)">每日 21-23 时为峰值</td><td class="num" style="text-align:right">4.6</td></tr>
+            <tr><td class="cell-main">制度建设</td><td style="color:var(--text2)">8 / 24</td><td style="color:var(--text2)">工作日 9-11 时</td><td class="num" style="text-align:right">2.2</td></tr>
+            <tr><td class="cell-main">科研管理</td><td style="color:var(--text2)">6 / 24</td><td style="color:var(--text2)">工作日 14-17 时</td><td class="num" style="text-align:right">5.1</td></tr>
+          </tbody>
+        </table></div>
+        <div style="padding:12px 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">学生管理类智能体在晚间自习时段集中使用，建议对应知识库的同步任务安排在 19:00 前完成；科研类对话轮次最长，检索深度配置已相应上调。</div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">本月运营动作</span><span class="more" data-t="运营动作与效果均记录在案，可追溯">运营档案 ›</span></div>
+        <div class="vflow" style="padding:6px 18px 10px">
+          <div class="trstep"><span class="no" style="background:var(--green-weak);color:var(--green)" data-icon="check"></span><span class="nm"><b>生涯领航员 · 知识补录上线</b><span>实习补贴政策文档 34 篇入库 · 反馈解决率回升至 96%</span></span><span class="t" style="color:var(--text3)">09-19</span></div>
+          <div class="trstep"><span class="no" style="background:var(--green-weak);color:var(--green)" data-icon="check"></span><span class="nm"><b>公文写作 · 提示词精简改版</b><span>平均回复长度 -38% · 完成率持平 · 用户满意度 +4.1</span></span><span class="t" style="color:var(--text3)">09-17</span></div>
+          <div class="trstep"><span class="no" style="background:var(--primary-weak);color:var(--primary)" data-icon="chart"></span><span class="nm"><b>材料速填助手 v5 灰度进行中</b><span>5% 流量观察 · 明日自动全量发布</span></span><span class="t" style="color:var(--text3)">进行中</span></div>
+          <div class="trstep"><span class="no" style="background:var(--amber-weak);color:var(--amber)" data-icon="warn"></span><span class="nm"><b>就业数据罗盘 · 停用待改版</b><span>口径与就业指导处新报表不一致 · 暂停服务避免误导</span></span><span class="t" style="color:var(--text3)">09-08</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-pztpl">
+    <div class="card">
+      <div class="card-h"><span class="t">典型场景复用模板</span><span class="more" data-t="业务部门可基于模板一键创建，二次配置即可上线">模板机制 ›</span></div>
+      <div class="tgrid" id="tpls"></div>
+    </div>
+  </div>
+  <div class="vpane" id="p-pzfb">
+    <div class="grid2 eq">
+      <div class="card">
+        <div class="card-h"><span class="t">用户反馈总览 · 近 30 天</span></div>
+        <div class="kv2" style="grid-template-columns:1fr 1fr">
+          <div class="k"><div class="l"><span class="ithumb" data-icon="thumbup" style="color:var(--green)"></span>点赞</div><div class="v" style="color:var(--green)">42,318</div></div>
+          <div class="k"><div class="l"><span class="ithumb" data-icon="thumbdn" style="color:var(--red)"></span>点踩</div><div class="v" style="color:var(--red)">3,102</div></div>
+          <div class="k"><div class="l">文字反馈</div><div class="v">1,846</div></div>
+          <div class="k"><div class="l">好评率</div><div class="v">93.2%</div></div>
+        </div>
+        <div style="padding:0 18px 18px;margin-top:auto"><button class="btn pri sm" data-t="已从点赞点踩数据自动生成微调数据集 1,284 条（含 RLHF 偏好对），可前往数据工场查看">生成微调数据集 (1,284 条)</button></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">最新文字反馈</span><span class="more" data-t="反馈处理规则：点踩自动进入待优化清单">全部 ›</span></div>
+        <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+          <tbody>
+            <tr><td><div class="cell-main"><span class="ithumb" data-icon="thumbup" style="color:var(--green)"></span>「校规查得准，还能给出文件出处」</div><div class="cell-sub">校规速查顾问 · 09-21 14:20 · 学生用户</div></td></tr>
+            <tr><td><div class="cell-main"><span class="ithumb" data-icon="thumbdn" style="color:var(--red)"></span>「问实习补贴没有答上来，希望补充」</div><div class="cell-sub">生涯领航员 · 09-21 11:05 · 已转知识补录</div></td></tr>
+            <tr><td><div class="cell-main"><span class="ithumb" data-icon="thumbup" style="color:var(--green)"></span>「课表查询秒回，太方便了」</div><div class="cell-sub">学生事务管家 · 09-21 09:44 · 学生用户</div></td></tr>
+            <tr><td><div class="cell-main"><span class="ithumb" data-icon="thumbdn" style="color:var(--red)"></span>「回答太长，希望精简一些」</div><div class="cell-sub">公文写作 · 09-20 17:32 · 已转提示词优化</div></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-pzint">
+    <div class="card">
+      <div class="card-h"><span class="t">多端集成</span><span class="more" data-t="对接学校融合门户与企业微信工作台">说明 ›</span></div>
+      <div class="int-grid">
+        <div class="int"><div class="r"><span class="ithumb" data-icon="school" style="color:var(--primary);width:15px;height:15px"></span> <b>学校融合门户</b><span class="bdg ok" style="margin-left:auto">已对接</span></div><p>门户首页嵌入智能体广场入口，用户免登（CAS 统一认证），日均引流 4,200+ 人次。</p><button class="btn sm pri int-preview" data-pv="portal" data-t="预览融合门户内的智能体广场入口效果">预览效果</button></div>
+        <div class="int"><div class="r"><span class="ithumb" data-icon="chat" style="color:var(--primary);width:15px;height:15px"></span> <b>企业微信工作台</b><span class="bdg ok" style="margin-left:auto">已对接</span></div><p>工作台应用「云枢助手」，核心功能移动端自适应展示，消息推送直达。</p><button class="btn sm pri int-preview" data-pv="wecom" data-t="预览企业微信工作台内的应用效果">预览效果</button></div>
+        <div class="int"><div class="r"><span class="ithumb" data-icon="grid" style="color:var(--primary);width:15px;height:15px"></span> <b>IFrame 嵌入</b><span class="bdg ok" style="margin-left:auto">可用</span></div><p>各业务系统可通过 iframe + 免登链接嵌入指定智能体，支持身份透传。</p></div>
+        <div class="int"><div class="r"><span class="ithumb" data-icon="tools" style="color:var(--primary);width:15px;height:15px"></span> <b>开放 API</b><span class="bdg ok" style="margin-left:auto">可用</span></div><p>第三方系统通过 API 网关调用智能体对话接口，统一鉴权与计量。</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- API 网关 -->
+<section class="view" id="v-api">
+  <div class="ph">
+    <div><h1>API 网关</h1><div class="sub">面向校内业务系统开放 AI 能力 · 密钥授权 · 限流计量 · 调用全程可审计</div></div>
+    <button class="btn pri" data-t="密钥已创建：请立即复制保存，仅显示一次"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>创建密钥</button>
+  </div>
+  <div class="vtabs" id="api-vtabs">
+    <div class="vtab on" data-p="akeys">API 密钥<span class="cnt">3</span></div>
+    <div class="vtab" data-p="alimit">限流与配额<span class="cnt">5</span></div>
+    <div class="vtab" data-p="aguard">安全防护</div>
+    <div class="vtab" data-p="alogs">调用日志</div>
+  </div>
+  <div class="vpane on" id="p-akeys">
+    <div class="card">
+      <div class="card-h"><span class="t">API 密钥</span><span class="more">密钥仅创建时完整显示，请妥善保管</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>名称</th><th>密钥</th><th>权限范围</th><th>最近使用</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody id="k-body"></tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-h"><span class="t">开放接口能力</span><span class="bdg info">OpenAI 兼容协议</span><div class="more" data-t="沙箱环境与生产环境同协议，密钥可分别签发">接入文档 ›</div></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>接口</th><th>方法</th><th>路径</th><th>说明</th><th style="text-align:right">近 7 日调用</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">对话补全</td><td class="mono">POST</td><td class="mono">/v1/chat/completions</td><td style="color:var(--text2)">支持流式输出与智能体编号调用</td><td class="num" style="text-align:right">1,204,380</td></tr>
+          <tr><td class="cell-main">文本向量化</td><td class="mono">POST</td><td class="mono">/v1/embeddings</td><td style="color:var(--text2)">Qwen3-Embedding-8B · 批量上限 64 条</td><td class="num" style="text-align:right">86,214</td></tr>
+          <tr><td class="cell-main">重排序</td><td class="mono">POST</td><td class="mono">/v1/rerank</td><td style="color:var(--text2)">Qwen3-Reranker-8B · 返回融合得分</td><td class="num" style="text-align:right">42,106</td></tr>
+          <tr><td class="cell-main">知识库检索</td><td class="mono">POST</td><td class="mono">/v1/kb/query</td><td style="color:var(--text2)">按知识库编号检索，返回来源引用</td><td class="num" style="text-align:right">18,932</td></tr>
+          <tr><td class="cell-main">语音识别</td><td class="mono">POST</td><td class="mono">/v1/audio/transcriptions</td><td style="color:var(--text2)">普通话与方言 · 上限 60 秒</td><td class="num" style="text-align:right">3,084</td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:14px 18px;font-size:12px;color:var(--text3);line-height:1.8">所有接口统一经网关鉴权、限流与计量；错误码遵循 <span class="mono">429 限流 / 401 鉴权失败 / 403 权限不足 / 503 上游不可用</span> 约定，响应头返回剩余配额。</div>
+    </div>
+  </div>
+  <div class="vpane" id="p-alimit">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h"><span class="t">限流策略</span><span class="bdg ok">配额预警已开启</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>对象</th><th>粒度</th><th>限额</th><th>当前用量</th><th>预警阈值</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">材料速填助手 · 应用</td><td style="color:var(--text2)">每分钟</td><td class="num">600 次</td><td><div style="display:flex;align-items:center;gap:8px;min-width:130px"><div class="pbar" style="max-width:none;flex:1"><i class="g" style="width:42%"></i></div><span class="num" style="font-size:12px;color:var(--text2)">253</span></div></td><td class="num">80%</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">材料速填助手 · 应用</td><td style="color:var(--text2)">每天</td><td class="num">50 万次</td><td><div style="display:flex;align-items:center;gap:8px;min-width:130px"><div class="pbar" style="max-width:none;flex:1"><i class="g" style="width:64%"></i></div><span class="num" style="font-size:12px;color:var(--text2)">32.1万</span></div></td><td class="num">80%</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">学途规划推荐 · 应用</td><td style="color:var(--text2)">每小时</td><td class="num">2 万次</td><td><div style="display:flex;align-items:center;gap:8px;min-width:130px"><div class="pbar" style="max-width:none;flex:1"><i style="width:88%;background:var(--amber)"></i></div><span class="num" style="font-size:12px;color:var(--text2)">1.76万</span></div></td><td class="num">80%</td><td><span class="bdg warn">接近阈值</span></td></tr>
+          <tr><td class="cell-main">学生用户 · 单人</td><td style="color:var(--text2)">每天</td><td class="num">200 次</td><td><div style="display:flex;align-items:center;gap:8px;min-width:130px"><div class="pbar" style="max-width:none;flex:1"><i class="g" style="width:31%"></i></div><span class="num" style="font-size:12px;color:var(--text2)">62</span></div></td><td class="num">90%</td><td><span class="bdg ok">正常</span></td></tr>
+          <tr><td class="cell-main">教师用户 · 单人</td><td style="color:var(--text2)">每天</td><td class="num">500 次</td><td><div style="display:flex;align-items:center;gap:8px;min-width:130px"><div class="pbar" style="max-width:none;flex:1"><i class="g" style="width:22%"></i></div><span class="num" style="font-size:12px;color:var(--text2)">110</span></div></td><td class="num">90%</td><td><span class="bdg ok">正常</span></td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:14px 18px;font-size:12px;color:var(--text3)">支持按应用或用户维度配置分钟 / 小时 / 天粒度的请求数限流，超限自动告警并返回 429。</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">全链路调用追踪</span><span class="more" data-t="支持按时间段、模型类型、应用维度结构化查询">高级查询 ›</span></div>
+      <div class="hbar" id="trace"></div>
+    </div>
+  </div>
+  <div class="vpane" id="p-aguard">
+    <div class="grid2 eq">
+      <div class="card">
+        <div class="card-h"><span class="t">防护能力</span></div>
+        <div class="vflow" style="padding:8px 0">
+          <div class="anno-row"><div class="sw" style="background:var(--primary-weak)" data-icon="shield"></div><div class="ttl"><b>提示词注入检测</b><span>对模型输入进行异常模式检测，识别角色劫持与指令注入</span></div><span class="bdg ok">已启用</span></div>
+          <div class="anno-row"><div class="sw" style="background:var(--green-weak)" data-icon="globe"></div><div class="ttl"><b>API 调用白名单</b><span>仅白名单来源 IP / 应用可调用智能体接口</span></div><span class="bdg ok">32 个来源</span></div>
+          <div class="anno-row"><div class="sw" style="background:var(--amber-weak)" data-icon="clock"></div><div class="ttl"><b>访问频率控制</b><span>网关层频控，异常高频自动封禁 10 分钟</span></div><span class="bdg ok">已启用</span></div>
+          <div class="anno-row"><div class="sw" style="background:var(--red-weak)" data-icon="key"></div><div class="ttl"><b>传输加密</b><span>与数据中台交互启用 TLS 1.2+ 加密</span></div><span class="bdg ok">TLS 1.3</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">近 7 日拦截记录</span><span class="more" data-t="拦截明细已同步审计日志">全部 ›</span></div>
+        <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+          <thead><tr><th>类型</th><th>来源</th><th style="text-align:right">次数</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-main">提示词注入</td><td style="color:var(--text2)">校外 IP · 已封禁</td><td class="num" style="text-align:right;color:var(--red);font-weight:550">126</td></tr>
+            <tr><td class="cell-main">高频异常请求</td><td style="color:var(--text2)">单用户 · 已限流</td><td class="num" style="text-align:right">88</td></tr>
+            <tr><td class="cell-main">非白名单来源</td><td style="color:var(--text2)">校外 IP · 已拒绝</td><td class="num" style="text-align:right">2,104</td></tr>
+          </tbody>
+        </table></div>
+        <div style="padding:12px 18px;font-size:12px;color:var(--text3)">检测规则每周自动更新，支持自定义规则。</div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-alogs">
+    <div class="card">
+      <div class="card-h"><span class="t">调用日志</span><span class="more" data-t="日志已导出 CSV">导出 CSV ›</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>时间</th><th>密钥</th><th>端点</th><th>模型</th><th>状态码</th><th style="text-align:right">耗时</th></tr></thead>
+        <tbody id="l-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 运营分析 -->
+<section class="view" id="v-ana">
+  <div class="ph">
+    <div><h1>运营分析</h1><div class="sub">平台运行、场景渗透与资源成本的常态化运营洞察 · 统计周期 2026-09-14 至 2026-09-21</div></div>
+    <button class="btn" data-t="运营周报（09-14 至 09-21）已生成"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>下载报告</button>
+  </div>
+  <div class="grid2 eq">
+    <div class="card">
+      <div class="card-h"><span class="t">各学院调用分布</span><span class="more">本周</span></div>
+      <div class="hbar" id="colleges"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">24 小时调用量</span><span class="more">按小时</span></div>
+      <div class="bars-v" id="hours"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-h"><span class="t">接口性能</span><span class="more">近 7 日均值</span></div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>端点</th><th style="text-align:right">请求数</th><th style="text-align:right">平均耗时</th><th style="text-align:right">P95 耗时</th><th style="text-align:right">错误率</th><th style="width:130px">7 日趋势</th></tr></thead>
+      <tbody id="perf"></tbody>
+    </table></div>
+  </div>
+  <div class="grid2 eq" style="margin-top:16px">
+    <div class="card">
+      <div class="card-h"><span class="t">算力与成本 · 本周</span><span class="bdg ok">环比 -6.2%</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>计费项</th><th style="text-align:right">消耗</th><th style="text-align:right">折算成本</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">本地推理 · GPU 时</td><td class="num" style="text-align:right">312 h</td><td class="num" style="text-align:right">¥0<small> · 自有算力</small></td><td style="color:var(--text2)">按调度折算，不产生外部费用</td></tr>
+          <tr><td class="cell-main">云端弹性调用</td><td class="num" style="text-align:right">48.2 万次</td><td class="num" style="text-align:right">¥2,164</td><td style="color:var(--text2)">峰值溢出流量 · 成本优先路由</td></tr>
+          <tr><td class="cell-main">语音识别服务</td><td class="num" style="text-align:right">3,084 次</td><td class="num" style="text-align:right">¥308</td><td style="color:var(--text2)">无障碍场景专用</td></tr>
+          <tr><td class="cell-main">向量化与 Rerank</td><td class="num" style="text-align:right">2,140 万次</td><td class="num" style="text-align:right">¥0<small> · 本地</small></td><td style="color:var(--text2)">bge 系列本地部署，不产生外部费用</td></tr>
+          <tr><td class="cell-main">对象存储与备份</td><td class="num" style="text-align:right">1.9 TB</td><td class="num" style="text-align:right">¥186</td><td style="color:var(--text2)">文档与索引快照 · 双副本</td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:12px 18px 16px;font-size:12px;color:var(--text3);line-height:1.8">本周通过路由策略将 86% 流量留在本地集群，云端仅承接峰值溢出；建议维持当前策略，预计月度外部成本稳定在 ¥9,000 以内。</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">用户与采纳 · 本周</span><span class="bdg info">周活跃创新高</span></div>
+      <div class="kv2" style="grid-template-columns:1fr 1fr;padding:14px 16px">
+        <div class="k"><div class="l">周活跃用户</div><div class="v">6,842<small> · 环比 +9.4%</small></div></div>
+        <div class="k"><div class="l">活跃院系覆盖</div><div class="v">22<small> / 24</small></div></div>
+        <div class="k"><div class="l">人均会话</div><div class="v">4.1<small> 轮</small></div></div>
+        <div class="k"><div class="l">7 日留存</div><div class="v">71%</div></div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+        <thead><tr><th>增长观察</th><th style="text-align:right">变化</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-main">企业微信端新增用户</td><td style="text-align:right"><span class="bdg ok">+1,208</span></td></tr>
+          <tr><td class="cell-main">教师端使用占比</td><td style="text-align:right"><span class="bdg ok">28% ↑</span></td></tr>
+          <tr><td class="cell-main">未覆盖院系</td><td style="text-align:right"><span class="bdg warn">2 个 · 对接中</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 审计日志 -->
+<section class="view" id="v-audit">
+  <div class="ph">
+    <div><h1>审计日志</h1><div class="sub">平台操作与数据访问全程留痕 · 支持行为追溯与敏感访问专项核查</div></div>
+    <button class="btn" data-t="审计日志（近 30 天）已导出，包含完整操作链路">导出审计报告</button>
+  </div>
+  <div class="vtabs" id="au-vtabs">
+    <div class="vtab on" data-p="auop">操作审计</div>
+    <div class="vtab" data-p="ausen">敏感数据审计</div>
+  </div>
+  <div class="vpane on" id="p-auop">
+    <div class="card">
+      <div class="card-h">
+        <div class="chips" id="au-tabs">
+          <span class="chip on" data-k="all">全部</span>
+          <span class="chip" data-k="login">登录</span>
+          <span class="chip" data-k="cfg">配置变更</span>
+          <span class="chip" data-k="op">运维操作</span>
+        </div>
+        <div class="search-in"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="au-q" placeholder="搜索操作人 / 对象"></div>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>对象</th><th>来源 IP</th><th>结果</th></tr></thead>
+        <tbody id="au-body"></tbody>
+      </table></div>
+    </div>
+    <div class="grid2 eq" style="margin-top:16px">
+      <div class="card">
+        <div class="card-h"><span class="t">审计策略</span><span class="bdg ok">策略生效中</span></div>
+        <div class="form" style="max-width:none">
+          <div class="frow"><label>日志留存时长</label><div><select><option>180 天</option><option selected>1 年</option><option>3 年</option></select><div class="hint">到期自动归档至冷存储，归档后只读</div></div></div>
+          <div class="frow"><label>敏感操作实时告警</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">导出 / 批量查询敏感数据时立即通知安全管理员</div></div></div>
+          <div class="frow"><label>审计日志防篡改</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">日志链式哈希校验，任何删除与修改可被检测</div></div></div>
+          <div class="frow"><label>异常时段访问标记</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">00:00 - 06:00 的敏感访问自动标记复核</div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="t">合规基线状态</span><span class="more" data-t="对照《网络安全等级保护基本要求》第三级">基线说明 ›</span></div>
+        <div class="kv2" style="grid-template-columns:1fr 1fr;padding:16px">
+          <div class="k"><div class="l">日志完整率</div><div class="v" style="color:var(--green)">100%</div></div>
+          <div class="k"><div class="l">待复核告警</div><div class="v" style="color:var(--amber)">2<small> 条</small></div></div>
+          <div class="k"><div class="l">本月专项核查</div><div class="v">已完成</div></div>
+          <div class="k"><div class="l">整改项</div><div class="v">1<small> · 进行中</small></div></div>
+        </div>
+        <div class="vflow" style="padding:0 18px 14px">
+          <div class="trstep"><span class="no" style="background:var(--green-weak);color:var(--green)" data-icon="check"></span><span class="nm"><b>完成季度安全自查</b><span>等保三级要求逐条核验 · 自查报告已归档</span></span><span class="t" style="color:var(--text3)">09-14</span></div>
+          <div class="trstep"><span class="no" style="background:var(--amber-weak);color:var(--amber)" data-icon="warn"></span><span class="nm"><b>修正敏感访问告警规则</b><span>2 条误报 · 复核通过并更新判定阈值</span></span><span class="t" style="color:var(--text3)">09-18</span></div>
+          <div class="trstep"><span class="no" style="background:var(--primary-weak);color:var(--primary)" data-icon="refresh"></span><span class="nm"><b>教务文档库权限改造</b><span>库级只读账号 → 字段级授权视图 · 计划 09-30 切换</span></span><span class="t" style="color:var(--text3)">进行中</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vpane" id="p-ausen">
+    <div class="card">
+      <div class="card-h"><span class="t">敏感数据访问记录</span><span class="bdg info">薪酬 / 身份信息等</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>时间</th><th>操作人</th><th>行为</th><th>数据类型</th><th>来源 IP</th><th>SQL（脱敏）</th></tr></thead>
+        <tbody>
+          <tr><td class="num" style="color:var(--text2)">09-21 14:02</td><td>郑海峰</td><td>查询</td><td><span class="bdg warn">教职工薪酬</span></td><td class="mono">10.28.1.15</td><td class="mono" style="color:var(--text3)">SELECT avg(sal**) FROM hr_sala** WHERE dept=?</td></tr>
+          <tr><td class="num" style="color:var(--text2)">09-21 10:44</td><td>陈明宇</td><td>导出</td><td><span class="bdg warn">学生身份信息</span></td><td class="mono">10.28.3.72</td><td class="mono" style="color:var(--text3)">SELECT name,idc** FROM stu_inf* WHERE grade=?</td></tr>
+          <tr><td class="num" style="color:var(--text2)">09-20 16:18</td><td>系统 · 定时任务</td><td>修改</td><td><span class="bdg off">脱敏规则</span></td><td class="mono">127.0.0.1</td><td class="mono" style="color:var(--text3)">UPDATE mask_rul* SET pattern=?</td></tr>
+          <tr><td class="num" style="color:var(--text2)">09-20 09:30</td><td>周晓岚</td><td>查询</td><td><span class="bdg warn">学生身份信息</span></td><td class="mono">10.28.3.21</td><td class="mono" style="color:var(--text3)">SELECT phone** FROM stu_inf* WHERE id=?</td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:14px 18px;font-size:12px;color:var(--text3)">支持按用户、时间段、数据类型溯源分析；所有查询 / 导出 / 修改行为均已记录。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 系统设置 -->
+<section class="view" id="v-set">
+  <div class="ph"><div><h1>系统设置</h1><div class="sub">平台参数、组织权限与外部系统集成的统一配置管理</div></div></div>
+  <div class="grid2 eq">
+  <div class="card form">
+    <div class="card-h" style="margin:0 0 4px;padding:0;border:none"><span class="t">基础配置</span></div>
+    <div class="frow"><label>平台名称</label><div><input type="text" value="云枢 AI 中台"><div class="hint">显示在门户首页与浏览器标签页</div></div></div>
+    <div class="frow"><label>平台副标题</label><div><input type="text" value="让 AI 能力触达校园每个场景"><div class="hint">门户首页 Banner 下方展示</div></div></div>
+    <div class="frow"><label>默认对话模型</label><div><select><option>DeepSeek-V4-Flash</option><option>Qwen3.8-Flash</option><option>Qwen3.8-27B · 校本微调版</option><option>Kimi-K3</option></select><div class="hint">新建智能体未指定模型时使用</div></div></div>
+    <div class="frow"><label>单文件上传上限</label><div><select><option>10 MB</option><option>25 MB</option><option>50 MB</option><option>100 MB</option></select></div></div>
+    <div class="frow"><label>统一身份认证</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">接入学校 CAS 统一身份认证，首次登录自动开户</div></div></div>
+    <div class="frow"><label>新用户自动开通</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">通过 CAS 登录后自动分配默认密钥</div></div></div>
+    <div class="frow"><label>调用失败告警</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">单模型失败率超过 2% 时向管理员推送告警</div></div></div>
+    <div class="frow"><label>数据中台对接</label><div><label class="tg"><input type="checkbox" checked><i></i></label><div class="hint">通过 API / 视图方式实时同步业务数据（TLS 1.2+）</div></div></div>
+    <div class="frow"><label>运营大屏公开访问</label><div><label class="tg"><input type="checkbox"><i></i></label><div class="hint">关闭后访问数据大屏需管理员身份</div></div></div>
+    <div class="frow"><label></label><div><button class="btn pri" data-t="设置已保存并即时生效">保存设置</button><button class="btn" style="margin-left:10px" data-t="已恢复上次保存的配置">重置</button></div></div>
+  </div>
+  <div class="stack">
+    <div class="card">
+      <div class="card-h"><span class="t">组织架构同步</span><span class="bdg ok">每日 02:00 自动同步</span></div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+        <tbody>
+          <tr><td class="cell-main">主数据源</td><td style="text-align:right;color:var(--text2)">人事系统组织树</td></tr>
+          <tr><td class="cell-main">上次同步</td><td style="text-align:right;color:var(--text2)">今日 02:00 · 增量 14 人 / 2 部门</td></tr>
+          <tr><td class="cell-main">冲突处理</td><td style="text-align:right;color:var(--text2)">以主数据为准，本地角色映射保留</td></tr>
+          <tr><td class="cell-main">待处理差异</td><td style="text-align:right"><span class="bdg warn">3 条待确认</span></td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:12px 18px 14px;margin-top:auto"><button class="btn sm" data-t="组织差异对照已打开：3 条待确认（新建部门 / 撤销部门 / 更名）">查看差异 (3)</button></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">数据备份与恢复</span><span class="bdg ok">近 7 次全部成功</span></div>
+      <div class="kv2" style="grid-template-columns:1fr 1fr;padding:14px 16px">
+        <div class="k"><div class="l">备份策略</div><div class="v">每日全量</div></div>
+        <div class="k"><div class="l">保留份数</div><div class="v">30<small> 份</small></div></div>
+        <div class="k"><div class="l">存储位置</div><div class="v">校内双机房</div></div>
+        <div class="k"><div class="l">最近恢复演练</div><div class="v">08-30<small> · 22 分钟</small></div></div>
+      </div>
+      <div style="padding:0 18px 14px;margin-top:auto"><button class="btn sm" data-t="恢复演练需管理员二次确认，建议安排在维护窗口执行">发起恢复演练</button></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">消息通知渠道</span><span class="bdg info">告警统一推送</span></div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+        <tbody>
+          <tr><td class="cell-main">企业微信机器人</td><td style="text-align:right"><span class="bdg ok">已启用 · 运维群</span></td></tr>
+          <tr><td class="cell-main">邮件通知</td><td style="text-align:right"><span class="bdg ok">已启用 · 3 位管理员</span></td></tr>
+          <tr><td class="cell-main">短信网关</td><td style="text-align:right"><span class="bdg off">仅 P0 级故障</span></td></tr>
+        </tbody>
+      </table></div>
+      <div style="padding:10px 18px 12px;font-size:12px;color:var(--text3)">模型失败率、同步异常与证书到期均经此渠道推送，通知记录可在审计日志追溯。</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="t">平台信息</span></div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:0">
+        <tbody>
+          <tr><td class="cell-main">版本</td><td style="text-align:right;color:var(--text2)">v2.4.1 · 2026-09-12 发布</td></tr>
+          <tr><td class="cell-main">授权对象</td><td style="text-align:right;color:var(--text2)">XX大学 · 校级部署</td></tr>
+          <tr><td class="cell-main">服务窗口</td><td style="text-align:right;color:var(--text2)">工作日 08:00 - 18:00 · 紧急 7×24</td></tr>
+          <tr><td class="cell-main">更新通道</td><td style="text-align:right"><span class="bdg info">稳定版</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<div class="foot">© 2026 XX大学 · <b>云枢 AI 中台</b> v2.4.1</div>
+</main>
+<div class="toast" id="toast"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span id="toast-msg"></span></div>
+<div class="fab-wrap" id="fab-wrap">
+  <div class="fab-panel">
+    <div class="fab-head">
+      <span class="fb-ic"><svg viewBox="0 0 24 24"><path d="M17.5 18H7a4.5 4.5 0 0 1-.9-8.9 5.5 5.5 0 0 1 10.8-1.2A4 4 0 0 1 17.5 18z"/><circle cx="12" cy="13" r="1.6" fill="#fff" stroke="none"/><path d="M12 14.6v3.4M12 13l6.5-4.6M12 13 5.5 8.4" opacity=".75"/></svg></span>
+      <span style="flex:1;min-width:0"><b>云枢智能助手</b><span>一个入口，直达校园 AI 能力</span></span>
+    </div>
+    <div class="fab-links">
+      <button class="fab-link" data-fab-goto="chat"><span class="fl-ic" style="background:var(--primary-weak);color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14h4"/></svg></span><span style="min-width:0"><b>发起 AI 对话</b><span>多模型智能问答 · 引用留痕</span></span></button>
+      <button class="fab-link" data-fab-goto="ask"><span class="fl-ic" style="background:#e0f2f7;color:#0e7490"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span><span style="min-width:0"><b>问知识库</b><span>校园制度 · 有据可答</span></span></button>
+      <button class="fab-link" data-fab-goto="studio"><span class="fl-ic" style="background:var(--green-weak);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span style="min-width:0"><b>编排新智能体</b><span>画布编排 · 调试即所见</span></span></button>
+      <button class="fab-link" data-fab-goto="plaza"><span class="fl-ic" style="background:#fdf3e2;color:#b45309"><svg viewBox="0 0 24 24"><path d="M10 2h4v3a2 2 0 1 0 4 0V2h3v5a2 2 0 0 1-2 2h-3a2 2 0 1 0 0 4h3a2 2 0 0 1 2 2v5h-5v-3a2 2 0 1 0-4 0v3H3v-4h3a2 2 0 1 0 0-4H3V2h7z"/></svg></span><span style="min-width:0"><b>逛智能体广场</b><span>46 个应用 · 一键使用</span></span></button>
+    </div>
+  </div>
+  <button class="fab-btn" id="fab-btn" data-t="打开智能助手"><span class="fab-ping"></span><svg class="fab-plus" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="10" rx="3"/><path d="M12 9V4M9 13h.01M15 13h.01M9 17h6"/><circle cx="12" cy="3" r="1"/></svg><svg class="fab-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<div class="pv-mask" id="pv-mask">
+  <div class="pv-modal" id="pv-modal">
+    <div class="pv-head">
+      <span class="pv-ic" id="pv-ic"></span>
+      <span style="flex:1;min-width:0"><b id="pv-title">预览</b><small id="pv-sub"></small></span>
+      <button class="pv-close" id="pv-close" data-t="关闭预览"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <!-- 企业微信工作台预览（手机竖屏） -->
+    <div class="pv-body" id="pv-wecom">
+      <div class="pv-stage">
+        <div class="phone">
+          <div class="ph-bar"><i></i></div>
+          <div class="ph-app">
+            <div class="ph-wechat-top"><span class="ph-wxlogo">企</span><span style="flex:1;min-width:0"><span class="ph-wxname">企业微信</span><span class="ph-wxsub">工作台 · 云枢 AI 中台</span></span><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:#6b7080;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M4 12h16M4 6h16M4 18h10"/></svg></div>
+            <div class="ph-hello">下午好，陈明宇 · 教务处</div>
+            <div class="ph-actions">
+              <div class="ph-act" data-t="向你智能体发起提问"><span style="color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14h4"/></svg></span>问 AI</div>
+              <div class="ph-act" data-t="已订阅智能体"><span style="color:#0e7490"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span>知识库</div>
+              <div class="ph-act" data-t="填表助手快捷入口"><span style="color:var(--green)"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4a2 2 0 0 1 6 0v2H9zM9 11h6M9 15h4"/></svg></span>填表</div>
+              <div class="ph-act" data-t="材料速填助手"><span style="color:#b45309"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></span>材料速填</div>
+              <div class="ph-act" data-t="学途规划推荐"><span style="color:#6d28d9"><svg viewBox="0 0 24 24"><path d="M17.5 18H7a4.5 4.5 0 0 1-.9-8.9 5.5 5.5 0 0 1 10.8-1.2A4 4 0 0 1 17.5 18z"/><circle cx="12" cy="13" r="1.6"/><path d="M12 14.6v3.4"/></svg></span>学途规划</div>
+              <div class="ph-act" data-t="校规速查顾问"><span style="color:#0e7490"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>校规速查</div>
+            </div>
+            <div class="ph-wx-grid-title">更多服务，由云枢 AI 中台提供</div>
+            <div class="ph-tabbar">
+              <span class="on" data-t="企业微信工作台"><svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg><small>工作台</small></span>
+              <span data-t="消息中心"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14h4"/></svg><small>消息</small></span>
+              <span data-t="我的应用"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg><small>我的</small></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pv-note">
+        <b>企业微信工作台 · 云枢助手</b>
+        <p>应用内嵌于学校企业微信工作台，教师/职工免登录打开「云枢助手」，支持订阅常用智能体、发起对话、接收消息推送。核心能力移动端自适应，无需单独下载。</p>
+        <div class="pv-kv"><span>接入方式</span><b>工作台应用 · 免登（企业微信 OAuth）</b></div>
+        <div class="pv-kv"><span>覆盖用户</span><b>全体教职工 · 1,284 人次（上周）</b></div>
+      </div>
+    </div>
+    <!-- 学校融合门户预览（桌面网页） -->
+    <div class="pv-body" id="pv-portal">
+      <div class="pv-stage pv-desktop">
+        <div class="pt-browser">
+          <div class="pt-browser-top">
+            <div class="pt-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+            <div class="pt-addr"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>portal.XX大学.edu.cn · 智能体广场</div>
+          </div>
+          <div class="portal">
+          <div class="pt-nav"><span class="pt-logo">云枢 AI 中台</span><span class="pt-links"><i>首页</i><i class="on">智能体广场</i><i>AI 助手</i><i>帮助</i></span><span class="pt-user">陈明宇 · 教务处</span></div>
+          <div class="pt-banner">
+            <span class="pt-chip">智能体广场</span>
+            <h3>让 AI 能力触达校园每个场景</h3>
+            <p>融合门户内嵌 · 统一身份免登 · 就近使用全校智能体</p>
+          </div>
+          <div class="pt-tools">
+            <div class="pt-tool" data-t="打开智能体"><span style="background:var(--primary-weak);color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14h4"/></svg></span><b>智能问答</b></div>
+            <div class="pt-tool" data-t="打开智能体"><span style="background:#e0f2f7;color:#0e7490"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></span><b>材料速填</b></div>
+            <div class="pt-tool" data-t="打开智能体"><span style="background:var(--green-weak);color:var(--green)"><svg viewBox="0 0 24 24"><path d="M17.5 18H7a4.5 4.5 0 0 1-.9-8.9 5.5 5.5 0 0 1 10.8-1.2A4 4 0 0 1 17.5 18z"/><circle cx="12" cy="13" r="1.6"/><path d="M12 14.6v3.4"/></svg></span><b>学途规划</b></div>
+            <div class="pt-tool" data-t="打开智能体"><span style="background:#fdf3e2;color:#b45309"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><b>校规速查</b></div>
+          </div>
+          <div class="pt-chat">
+            <div class="pt-msg ai"><span class="pt-ava">AI</span><p>下午好，陈老师。我是云枢助手，可以帮你起草采购材料、查询制度、规划选课。今天想从哪里开始？</p></div>
+            <div class="pt-msg me"><span class="pt-ava u">陈</span><p>帮我起草一份教学名师申报材料初稿</p></div>
+            <div class="pt-msg ai"><span class="pt-ava">AI</span><p>好的，已为你引用「申报指南」与「近三年获奖记录」。材料速填助手可自动生成初稿，预计 12 分钟完成，需要我现在开始吗？</p><div class="pt-quick"><span data-t="开始生成">开始生成 ›</span><span data-t="稍后再说" style="color:var(--text3)">稍后再说</span></div></div>
+          </div>
+          </div>
+        </div>
+      </div>
+      <div class="pv-note">
+        <b>学校融合门户 · 智能体广场入口</b>
+        <p>门户首页卡片式嵌入智能体广场与应用，CAS 统一认证免登，师生在门户内直接使用全部智能体，维持校园统一入口体验。</p>
+        <div class="pv-kv"><span>接入方式</span><b>门户 iFrame 卡片 + 免登链接</b></div>
+        <div class="pv-kv"><span>日均引流</span><b>4,200+ 人次</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const fmt=n=>n.toLocaleString("en-US");
+/* ===== 线性图标库（currentColor，透明背景）===== */
+const ICONS={
+doc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+doc2:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+books:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+chat:'<path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14h4"/>',
+grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+puzzle:'<path d="M10 3h4v3a2 2 0 1 0 4 0V3h3v5a2 2 0 0 1-2 2h-3a2 2 0 1 0 0 4h3a2 2 0 0 1 2 2v5h-5v-3a2 2 0 1 0-4 0v3H3v-4h3a2 2 0 1 0 0-4H3V3h7z"/>',
+tag:'<path d="M12 2l2.4 2.4 3.4-.3.3 3.4L20.5 10l-2.4 2.4.3 3.4-3.4.3L12 18.5l-2.4-2.4-3.4-.3-.3-3.4L3.5 10l2.4-2.4-.3-3.4 3.4-.3z"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',
+thumbup:'<path d="M7 10v12"/><path d="M15 5.9 14 10h5.5a2 2 0 0 1 2 2.4l-1.4 6.8a2 2 0 0 1-2 1.6H7V10l4-8a3 3 0 0 1 4 3.9z"/>',
+thumbdn:'<path d="M17 14V2"/><path d="M9 18.1 10 14H4.5a2 2 0 0 1-2-2.4l1.4-6.8a2 2 0 0 1 2-1.6H17v10l-4 8a3 3 0 0 1-4-3.9z"/>',
+moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+bot:'<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 14h.01M15 14h.01M9 17.5h6"/><circle cx="12" cy="3" r="1"/>',
+flask:'<path d="M9 3h6v5l4.5 9a2 2 0 0 1-1.8 3H6.3a2 2 0 0 1-1.8-3L9 8z"/><path d="M7 14h10"/>',
+clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+play:'<path d="M8 5.4v13.2l10.5-6.6z"/>',
+school:'<path d="M3 21h18M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6M12 3v2"/>',
+briefcase:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+microscope:'<path d="M6 22h12M11 14l-4 8M17 14l3 8"/><path d="M9 9a5 5 0 0 1 9 3c0 2-1 3-2 4H9c-1-1-2-2-2-4 0-1 .2-2 .7-3"/><path d="M12 7V3h4"/>',
+compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>',
+warn:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+chart:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+key:'<circle cx="8" cy="15" r="4.5"/><path d="m11.5 11.5 8-8 2 2-2 2 2 2-3 3-2-2-2 2"/>',
+inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5 5h14l3 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>',
+refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>',
+ruler:'<path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4z"/><path d="m7.5 10.5 2 2M11 7l2 2M14.5 3.5l2 2M4 14l2 2"/>',
+outbox:'<path d="M22 12h-6l-2-3h-4l-2 3H2"/><path d="M5 19h14a2 2 0 0 0 2-2v-6l-3-7H5L2 11v6a2 2 0 0 0 2 2z"/><path d="M12 8V4M9.5 6.5 12 4l2.5 2.5"/>',
+pen:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+users:'<circle cx="9" cy="8" r="4"/><path d="M2 21v-1a7 7 0 0 1 14 0v1"/><path d="M16 3.1a4 4 0 0 1 0 7.8M22 21v-1a6.9 6.9 0 0 0-3-5.7"/>',
+tools:'<path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3z"/>',
+mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+clip:'<path d="M21 12.8 12.8 21a5 5 0 0 1-7-7l8.5-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/>',
+rocket:'<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2 0-2.8-.8-.7-2.1-.7-3 .8z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 21.5 2.5c0 2.7-.9 7.5-5.6 10.6A22.4 22.4 0 0 1 12 15z"/><path d="M9 12H4s.5-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.5 4-2c1.1-1.6 0-5 0-5"/>',
+link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+clipboard:'<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4a2 2 0 0 1 6 0v2H9zM9 11h6M9 15h4"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+cap:'<path d="M22 9 12 4 2 9l10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v5"/>',
+factory:'<path d="M2 20h20V9l-6 4V9l-6 4V6l-8 5v9z"/><path d="M6 20v-4M12 20v-3M18 20v-5"/>',
+database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+antenna:'<path d="M4.9 16.1C1 12.3 1 6 4.9 2.2"/><path d="M7.8 13.2a6 6 0 0 1 0-8"/><circle cx="12" cy="9" r="2"/><path d="M12 11v11M8 22h8"/>',
+scale:'<path d="M12 3v18M8 21h8M3 7l4.5 9L12 7l-4.5 0z M12 7l4.5 9L21 7z"/><path d="M3 7h18"/>',
+calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 15h.01M12 15h.01M16 15h.01"/>',
+palette:'<circle cx="13.5" cy="6.5" r="1.2"/><circle cx="17.5" cy="10.5" r="1.2"/><circle cx="8.5" cy="7.5" r="1.2"/><circle cx="6.5" cy="12.5" r="1.2"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.5a5 5 0 0 0 5-5c0-4.6-4.5-8.4-10.5-8.4z"/>',
+card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+flag:'<path d="M4 22V4c0-.6.4-1 1-1 4-1.5 6.5 1.5 10.5 0 .3-.1.5-.1.5.3v9.4c0 .4-.3.7-.6.8-3.9 1.5-6.5-1.4-10.4 0"/>',
+trendup:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+layers:'<path d="M12 2 2 7l10 5 10-5z"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5"/>',
+workflow:'<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h8a3 3 0 0 1 3 3v6"/>',
+heart:'<path d="M12 21a9 9 0 0 1-8.5-6A5.5 5.5 0 0 1 12 8.5 5.5 5.5 0 0 1 20.5 15 9 9 0 0 1 12 21z"/><path d="M12 8.5C10.5 6 8.5 5 6.5 5.5"/>',
+bookopen:'<path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/>',
+};
+const icon=(k,extra)=>`<svg viewBox="0 0 24 24"${extra?" "+extra:""}>${ICONS[k]||ICONS.doc}</svg>`;
+/* 静态 HTML emoji → 线性图标 */
+const EMOJI_MAP={"📥":"inbox","🔁":"refresh","📐":"ruler","🛡️":"shield","🏷️":"tag","📤":"outbox","✍️":"pen","👥":"users","🎯":"target","📚":"books","✓":"check","🤖":"bot","🧰":"tools","💬":"chat","✉️":"mail","📎":"clip","🧩":"puzzle","🧪":"flask","🌗":"moon","🚀":"rocket","👍":"thumbup","👎":"thumbdn","🏫":"school","🔗":"link","📋":"clipboard","🔒":"lock","▶":"play"};
+document.querySelectorAll(".bub,.sw,.node .ic,.ti,.em,.int .r,.kv2 .k .l,.cell-main,.win").forEach(el=>{
+  const walk=node=>{
+    [...node.childNodes].forEach(ch=>{
+      if(ch.nodeType===3){
+        const m=ch.textContent.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{25B6}]/u);
+        if(m){
+          const span=document.createElement("span");
+          span.className="ic";
+          span.style.cssText="width:1em;height:1em;color:inherit;vertical-align:-0.14em";
+          span.innerHTML=icon(EMOJI_MAP[m[0]]||"doc");
+          ch.replaceWith(span);
+        }
+      }
+    });
+  };
+  walk(el);
+});
+/* 静态 HTML data-icon 占位 → 图标 */
+$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)});
+const AVC=["#7c3aed","#db2777","#0891b2","#ea580c","#4f46e5","#0e9f6e","#b45309","#4338ca"];
+const toast=m=>{const t=$("#toast");$("#toast-msg").textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)};
+document.addEventListener("click",e=>{const t=e.target.closest("[data-t]");if(t)toast(t.dataset.t)});
+
+const NAMES={dash:"平台概览",models:"模型服务广场",kb:"知识库中心",factory:"AI 数据工场",studio:"开发运维平台",plaza:"智能体广场运营",api:"API 网关",ana:"运营分析",audit:"审计日志",set:"系统设置"};
+function goto(v){
+  $$(".ni").forEach(x=>x.classList.toggle("active",x.dataset.v===v));
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  $("#crumb").textContent=NAMES[v];
+  window.scrollTo({top:0});
+  if(v==="studio")setTimeout(drawFlow,0);
+}
+$$(".ni").forEach(n=>n.onclick=()=>goto(n.dataset.v));
+$$("[data-goto]").forEach(b=>b.addEventListener("click",()=>goto(b.dataset.goto)));
+
+/* 视图内页签引擎（.vtabs 的兄弟 .vpane 按序切换） */
+$$(".vtabs").forEach(tb=>{
+  const panes=tb.parentElement.querySelectorAll(".vpane");
+  tb.querySelectorAll(".vtab").forEach(t=>t.onclick=()=>{
+    tb.querySelectorAll(".vtab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+    const idx=[...tb.children].indexOf(t);
+    panes.forEach((p,i)=>p.classList.toggle("on",i===idx));
+    setTimeout(drawFlow,0);
+  });
+});
+
+/* ===== 工作流引擎画布：连线 / 缩放 / 小地图 / 检查器 ===== */
+let zScale=1;
+const WFCFG={
+  start:{t:"开始 · 触发器",ic:"play",bg:"var(--primary-weak)",fg:"var(--primary)",rows:[["触发方式","对话消息"],["输入变量","{{user_query}}"],["上下文","近 5 轮摘要"]]},
+  mem:{t:"上下文 · 增强",ic:"clock",bg:"var(--amber-weak)",fg:"var(--amber)",rows:[["存储","Redis · TTL 24h"],["粒度","近 5 轮摘要"],["状态","本次已命中"]]},
+  kb:{t:"知识检索 · RAG",ic:"books",bg:"#e0f2f7",fg:"#0e7490",rows:[["知识库","规章制度库"],["召回策略","向量 + BM25 混合"],["Top-K","20 → 精排 5"],["耗时","126ms"]]},
+  cond:{t:"逻辑控制 · 分支",ic:"check",bg:"var(--green-weak)",fg:"var(--green)",rows:[["分支条件","首条相似度 ≥ 0.55"],["是","引用作答分支"],["否","兜底 + 工单转派"],["超时","15s 强制降级"]]},
+  llm:{t:"模型节点 · 执行中",ic:"bot",bg:"var(--primary-weak)",fg:"var(--primary)",rows:[["模型","DeepSeek-V4-Flash"],["temperature","0.2"],["最大 Token","2,048"],["引用模式","片段注入作答"]]},
+  tool:{t:"插件 · OA API",ic:"tools",bg:"var(--amber-weak)",fg:"var(--amber)",rows:[["插件","OA 工单创建"],["通知对象","辅导员 + 宿管"],["超时","8s 静默重试"]]},
+  fb:{t:"模型节点 · 降级",ic:"chat",bg:"var(--primary-weak)",fg:"var(--primary)",rows:[["模型","Qwen3.8-27B · 校本微调版"],["策略","降级话术模板"],["并发上限","10"]]},
+  end:{t:"输出 · 流式",ic:"mail",bg:"#f1f5f9",fg:"#475569",rows:[["输出","答案 + 引用来源"],["满意度","自动埋点上报"],["通道","SSE 逐字输出"]]},
+  safe:{t:"安全 · 全局前置",ic:"shield",bg:"var(--red-weak)",fg:"var(--red)",rows:[["规则库","12 条安全规则"],["动作","拦截并脱敏"],["旁路","失败放行 + 告警"]]}};
+function drawFlow(){
+  const wf=$("#wflow");if(!wf||!wf.offsetParent)return;
+  const svg=wf.querySelector("svg.links");if(!svg)return;
+  const z=zScale,wb=wf.getBoundingClientRect(),N={};
+  wf.querySelectorAll(".node[data-n]").forEach(n=>{const r=n.getBoundingClientRect(),x=(r.left-wb.left)/z,y=(r.top-wb.top)/z;
+    N[n.dataset.n]={l:x,r:x+r.width/z,t:y,b:y+r.height/z,cx:x+r.width/z/2,cy:y+r.height/z/2}});
+  if(!N.start||!N.kb||!N.cond||!N.llm||!N.tool||!N.fb||!N.end||!N.safe||!N.mem)return;
+  const bez=(x1,y1,x2,y2)=>{const sx=Math.sign(x2-x1),sy=Math.sign(y2-y1);
+    if(Math.abs(x2-x1)>Math.abs(y2-y1)){const dx=Math.max(26,Math.abs(x2-x1)*.55);return `M${x1} ${y1} C ${x1+sx*dx} ${y1}, ${x2-sx*dx} ${y2}, ${x2} ${y2}`}
+    const dy=Math.max(22,Math.abs(y2-y1)*.55);return `M${x1} ${y1} C ${x1} ${y1+sy*dy}, ${x2} ${y2-sy*dy}, ${x2} ${y2}`};
+  const S="#a5b4fc",R="#fca5a5";
+  const mk=`<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${S}"/></marker><marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#86efac"/></marker></defs>`;
+  const P=(d,c,dash,g,flow)=>`<path d="${d}" stroke="${c}" stroke-width="2" fill="none"${dash?' stroke-dasharray="5 4"':""}${flow?' class="flow"':""} marker-end="url(#${g?"arrg":"arr"})"/>`;
+  const port=(x,y,c)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="${c}" stroke="#fff" stroke-width="1.6"/>`;
+  const T=(x,y,s)=>`<text x="${x.toFixed(0)}" y="${y.toFixed(0)}" class="lab">${s}</text>`;
+  svg.setAttribute("width",wf.clientWidth);svg.setAttribute("height",wf.clientHeight);
+  const E=[
+    [bez(N.start.r,N.start.cy,N.kb.l,N.kb.cy),S,0,0,0,[N.start.r,N.start.cy]],
+    [bez(N.kb.r,N.kb.cy,N.cond.l,N.cond.cy),S,0,0,0,[N.kb.r,N.kb.cy]],
+    [bez(N.cond.r,N.cond.cy,N.llm.l,N.llm.cy),S,0,0,1,[N.cond.r,N.cond.cy]],
+    [bez(N.cond.cx,N.cond.b,N.tool.cx,N.tool.t),"#86efac",0,1,0,[N.cond.cx,N.cond.b]],
+    [bez(N.fb.r,N.fb.cy,N.end.l,N.end.cy),S,0,0,0,[N.fb.r,N.fb.cy]],
+    [bez(N.tool.r,N.tool.cy,N.end.cx,N.end.t),S,0,0,0,[N.tool.r,N.tool.cy]],
+    [bez(N.llm.r,N.llm.cy,N.safe.cx,N.safe.t),R,1,0,0,[N.llm.r,N.llm.cy]],
+    [bez(N.safe.cx,N.safe.b,N.end.r,N.end.cy),R,1,0,0,[N.safe.cx,N.safe.b]],
+    [bez(N.start.cx,N.start.b,N.mem.cx,N.mem.t),S,0,0,0,[N.start.cx,N.start.b]],
+    [bez(N.mem.r,N.mem.cy,N.kb.l,N.kb.cy),S,1,0,0,[N.mem.r,N.mem.cy]]];
+  svg.innerHTML=mk+E.map(e=>P(e[0],e[1],e[2],e[3],e[4])+port(e[5][0],e[5][1],e[1])).join("")+
+    T((N.cond.r+N.llm.l)/2-30,(N.cond.cy+N.llm.cy)/2-10,"是 · ≥0.55")+
+    T(N.cond.cx+8,(N.cond.b+N.tool.t)/2+4,"否 · 低置信度")+
+    T(N.llm.r+16,(N.llm.cy+N.safe.t)/2+4,"输出预检");
+  const mini=$("#wf-mini-box");
+  if(mini){mini.style.cssText="position:absolute;inset:0";const P2=8,mx=(166-2*P2)/1020,my=(88-2*P2)/480;
+    mini.innerHTML=Object.entries(N).map(([k,n])=>`<div class="mn${k==="llm"?" run":""}" style="left:${(P2+n.l*mx).toFixed(1)}px;top:${(P2+n.t*my).toFixed(1)}px;width:${((n.r-n.l)*mx).toFixed(1)}px;height:${((n.b-n.t)*my).toFixed(1)}px"></div>`).join("")}
+}
+(function(){
+  const wf=$("#wflow");if(!wf)return;
+  const insp=$("#wf-insp");
+  wf.querySelectorAll(".node[data-n]").forEach(n=>n.addEventListener("click",e=>{e.stopPropagation();
+    wf.querySelectorAll(".node.sel").forEach(x=>x.classList.remove("sel"));n.classList.add("sel");
+    const c=WFCFG[n.dataset.n];if(!c)return;
+    insp.innerHTML=`<div class="ih"><span class="ic" style="background:${c.bg};color:${c.fg}">${icon(c.ic)}</span><div><h5>${n.querySelector("b").textContent}</h5><span class="ity">${c.t}</span></div></div>`+
+      c.rows.map(r=>`<div class="ir"><span>${r[0]}</span><b>${r[1]}</b></div>`).join("");
+    insp.classList.add("show")}));
+  wf.addEventListener("click",e=>{if(e.target.closest(".node"))return;insp.classList.remove("show");wf.querySelectorAll(".node.sel").forEach(x=>x.classList.remove("sel"))});
+  const applyZoom=()=>{wf.style.transform=`scale(${zScale})`;$("#zval").textContent=Math.round(zScale*100)+"%";drawFlow()};
+  $("#zf-in").onclick=()=>{zScale=Math.min(1.5,+(zScale+.1).toFixed(2));applyZoom()};
+  $("#zf-out").onclick=()=>{zScale=Math.max(.5,+(zScale-.1).toFixed(2));applyZoom()};
+  $("#zf-fit").onclick=()=>{zScale=1;document.querySelector(".wf-cv").scrollTo({left:0,top:0});applyZoom()};
+  $("#wf-undo").onclick=()=>toast("已撤销：删除「变量赋值」节点");
+  $("#wf-redo").onclick=()=>toast("已重做：恢复「变量赋值」节点");
+})();
+window.addEventListener("load",drawFlow);
+
+/* ===== 图表 ===== */
+function spark(el,data,color){
+  const w=el.clientWidth||92,h=el.clientHeight||34,mx=Math.max(...data),mn=Math.min(...data);
+  const pts=data.map((v,i)=>[i*(w-4)/(data.length-1)+2,h-3-(v-mn)/(mx-mn||1)*(h-8)]);
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
+  el.innerHTML=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/><path d="${d}L${w-2},${h}L2,${h}Z" fill="${color}" opacity=".08"/>`;
+}
+spark($("#sp1"),[92,88,105,98,120,112,128],"#4f46e5");
+spark($("#sp2"),[201,214,232,228,241,236,242],"#8b5cf6");
+spark($("#sp3"),[2980,3010,3088,3150,3120,3210,3268],"#0e9f6e");
+spark($("#sp4"),[12,12,12,11,11,11,11],"#d97706");
+
+/* ===== 评测维度条形图 ===== */
+(function(){
+  const box=$("#eval-radar");if(!box)return;
+  const dims=[["引用准确率",93.5,"93.5%"],["答案完整性",90.2,"90.2%"],["意图理解",95.8,"95.8%"],["安全合规",100,"100%"],["响应速度",82.4,"82.4%"]];
+  box.innerHTML=dims.map(d=>`<div style="display:flex;align-items:center;gap:10px;margin:11px 0">
+    <span style="width:72px;flex:none;font-size:12.5px;color:var(--text2)">${d[0]}</span>
+    <div class="pbar" style="flex:1;max-width:none"><i class="${d[1]>=90?"g":""}" style="width:${d[1]}%"></i></div>
+    <b style="width:52px;flex:none;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums;font-weight:600">${d[2]}</b>
+  </div>`).join("")+`<div style="font-size:11.5px;color:var(--text3);margin-top:6px">基于 200 条标注用例 · 由评测模型 + 人工抽检双通道打分</div>`;
+})();
+
+function lineChart(data,labels){
+  const W=640,H=168,L=44,R=10,T=12,B=26,mx=Math.ceil(Math.max(...data)/20)*20,mn=Math.floor(Math.min(...data)/20)*20,n=data.length;
+  const X=i=>L+i*(W-L-R)/(n-1),Y=v=>T+(H-T-B)*(1-(v-mn)/(mx-mn));
+  let g="";
+  for(let v=mn;v<=mx;v+=20)g+=`<line x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}" stroke="#eef0f4"/><text x="${L-8}" y="${Y(v)+4}" font-size="10" fill="#98a1b0" text-anchor="end">${v}k</text>`;
+  const pts=data.map((v,i)=>[X(i),Y(v)]);
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
+  const step=n>10?5:1;
+  const lab=labels.map((t,i)=>i%step===0?`<text x="${X(i)}" y="${H-8}" font-size="10" fill="#98a1b0" text-anchor="middle">${t}</text>`:"").join("");
+  const dots=n>10?"":pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#fff" stroke="#4f46e5" stroke-width="2"/>`).join("");
+  $("#trend").innerHTML=`<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f46e5" stop-opacity=".18"/><stop offset="1" stop-color="#4f46e5" stop-opacity="0"/></linearGradient></defs>${g}<path d="${d}L${W-R},${H-B}L${L},${H-B}Z" fill="url(#ga)"/><path d="${d}" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round"/>${lab}${dots}`;
+}
+const D7=[86.2,92.4,78.1,105.3,118.6,96.8,128.4];
+const D30=Array.from({length:30},(_,i)=>70+Math.sin(i/3.2)*22+i*1.6+(i%7===5?18:0));
+const MIX7=[["对话问答",52,"#4f46e5"],["文档生成",18,"#8b5cf6"],["知识检索",14,"#a78bfa"],["数据查询",11,"#94a3b8"],["其他",5,"#e2e5ec"]];
+const MIX30=[["对话问答",48,"#4f46e5"],["文档生成",16,"#8b5cf6"],["知识检索",16,"#a78bfa"],["数据查询",15,"#94a3b8"],["其他",5,"#e2e5ec"]];
+const mixHTML=mix=>`<div class="mixbar">${mix.map(m=>m[1]>=8?`<i style="width:${m[1]}%;background:${m[2]}">${m[1]}%</i>`:"").join("")}</div><div class="mix-mk">${mix.map(m=>`<b><span class="sq" style="background:${m[2]}"></span>${m[0]} ${m[1]}%</b>`).join("")}</div>`;
+lineChart(D7,["09-15","09-16","09-17","09-18","09-19","09-20","09-21"]);
+$("#trend-foot").innerHTML=`<span>7 日合计 <b>605.8 万次</b></span><span>日均 <b>86.5 万</b></span><span>峰值 <b>128.4 万</b> · 09-21</span><span>环比上周 <b class="up">+12.4%</b></span><span>对话类占比 <b>78%</b></span>`;
+$("#trend-mix").innerHTML=mixHTML(MIX7);
+$$("[data-ct]").forEach(c=>c.onclick=()=>{
+  $$("[data-ct]").forEach(x=>x.classList.remove("on"));c.classList.add("on");
+  if(c.dataset.ct==="d7"){lineChart(D7,["09-15","09-16","09-17","09-18","09-19","09-20","09-21"]);
+    $("#trend-foot").innerHTML=`<span>7 日合计 <b>605.8 万次</b></span><span>日均 <b>86.5 万</b></span><span>峰值 <b>128.4 万</b> · 09-21</span><span>环比上周 <b class="up">+12.4%</b></span><span>对话类占比 <b>78%</b></span>`;
+    $("#trend-mix").innerHTML=mixHTML(MIX7)}
+  else{lineChart(D30.map(v=>+v.toFixed(1)),Array.from({length:30},(_,i)=>`08-${23+i}`));
+    $("#trend-foot").innerHTML=`<span>30 日合计 <b>2,431 万次</b></span><span>日均 <b>81.0 万</b></span><span>峰值 <b>131.2 万</b> · 09-08</span><span>工作日均 <b>88.4 万</b> · 周末 <b>62.1 万</b></span><span>对话类占比 <b>76%</b></span>`;
+    $("#trend-mix").innerHTML=mixHTML(MIX30)}
+});
+
+(function(){
+  const share=[["DeepSeek-V4",34],["Qwen3.8",26],["Qwen3.8-27B 校本微调",18],["Kimi-K3",12],["其他模型",10]];
+  const cols=["#4f46e5","#8b5cf6","#a78bfa","#c7cdfb","#e5e7eb"];
+  const C=95,r=74;let off=0,svg="";
+  share.forEach((s,i)=>{
+    const len=s[1]/100*2*Math.PI*r;
+    svg+=`<circle cx="${C}" cy="${C}" r="${r}" fill="none" stroke="${cols[i]}" stroke-width="18" stroke-dasharray="${len} ${2*Math.PI*r-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${C} ${C})"/>`;
+    off+=len;
+  });
+  svg+=`<text x="${C}" y="${C-4}" text-anchor="middle" font-size="24" font-weight="700" fill="#1a1d27">96.4%</text><text x="${C}" y="${C+16}" text-anchor="middle" font-size="10" fill="#98a1b0">调用成功率</text>`;
+  $("#donut").innerHTML=svg;
+  $("#legend").innerHTML=share.map((s,i)=>`<div class="li"><span class="sw" style="background:${cols[i]}"></span>${s[0]}<span class="pv">${s[1]}%</span></div>`).join("");
+})();
+
+/* ===== 概览 ===== */
+(function(){
+  const top=[["材料速填助手",32480,"+18.2%"],["学途规划推荐",21930,"+9.4%"],["学生事务管家",8120,"+4.1%"],["课件智作工坊",6340,"-2.3%"],["校园卡百事通",5890,"+6.8%"]];
+  $("#rank").innerHTML=top.map((t,i)=>`<div class="ri"><span class="no">${i+1}</span><span class="nm">${t[0]}</span><span class="bar"><i style="width:${(t[1]/top[0][1]*100).toFixed(0)}%"></i></span><span class="rv">${fmt(t[1])}<em class="${t[2].startsWith("+")?"u2":"d2"}">${t[2]}</em></span></div>`).join("")+
+    `<div style="display:flex;justify-content:space-between;padding:10px 0 2px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--text3)"><span>TOP5 合计 74,760 次 · 占全平台 62%</span><span>新晋上升 · 学途规划推荐</span></div>`;
+  const rec=[["14:32:08","材料速填助手","DeepSeek-V4-Flash","412ms",1],["14:31:45","学途规划推荐","Qwen3.8-Flash","1.2s",1],["14:31:02","校规速查顾问","校本微调版","860ms",1],["14:30:37","课件智作工坊","GLM-5.3","1.8s",1],["14:30:12","校园卡百事通","DeepSeek-V4-Flash","—",0],["14:29:58","学生事务管家","Kimi-K3","530ms",1]];
+  $("#recent").innerHTML=rec.map(r=>`<tr><td class="num" style="color:var(--text2)">${r[0]}</td><td class="cell-main">${r[1]}</td><td style="color:var(--text2)">${r[2]}</td><td class="num" style="text-align:right">${r[3]}</td><td>${r[4]?'<span class="bdg ok">成功</span>':'<span class="bdg err">失败</span>'}</td></tr>`).join("");
+  const cnt=(el,tg)=>{let v=0;const st=tg/38;const h=setInterval(()=>{v+=st;if(v>=tg){v=tg;clearInterval(h)}el.textContent=fmt(Math.round(v))},28)};
+  cnt($("#s-calls"),128430);cnt($("#s-users"),3268);
+  const tk=$("#s-token");let v=0;const h=setInterval(()=>{v+=6.4;if(v>=241.6){v=241.6;clearInterval(h)}tk.innerHTML=v.toFixed(1)+"<small>M</small>"},28);
+})();
+
+/* ===== 模型列表 ===== */
+const MODELS=[
+["DeepSeek-V4-Flash","本地部署 · vLLM","通用推理","1M","¥1.5 / 百万tokens",412300,"ok","general"],
+["Qwen3.8-Flash","本地部署 · vLLM","通用","262K","¥0.8 / 百万tokens",314800,"ok","general"],
+["Kimi-K3","云端 API · 月之暗面","深度推理","1M","¥3 / 百万tokens",146500,"ok","general"],
+["GLM-5.3","云端 API · 智谱","智能体编排","1M","¥2.4 / 百万tokens",92700,"ok","general"],
+["Qwen3.8-27B · 校本微调版","校本微调 · vLLM","校本模型","262K","校内免费",88600,"ok","vertical"],
+["Llama-4-Scout","本地部署 · vLLM","长文档分析","10M","¥1 / 百万tokens",45200,"ok","general"],
+["DeepSeek-V4-Pro","云端 API · DeepSeek 官方","深度推理","1M","¥5 / 百万tokens",32400,"ok","general"],
+["CodeGeeX4-ALL-9B","校本微调 · vLLM","代码实训","128K","校内免费",21500,"ok","vertical"],
+["HuatuoGPT-II-7B","校本微调 · vLLM","医护健康","16K","校内免费",18600,"ok","vertical"],
+["Qwen3-Embedding-8B","Qwen · 通用 · Ollama","嵌入","32K","¥0.35 / 百万tokens",121000,"ok","embed"],
+["Qwen3-Reranker-8B","Qwen · 通用 · Ollama","重排","32K","¥0.45 / 百万tokens",38200,"warn","embed"],
+["通用语音识别服务","讯飞 · 第三方","语音","—","按次计费",9200,"draft","general"]];
+let mTab="all",mQ="";
+function renderModels(){
+  const list=MODELS.filter(m=>(mTab==="all"||m[7]===mTab)&&(m[0]+m[1]).toLowerCase().includes(mQ));
+  const mx=MODELS[0][5];
+  $("#m-body").innerHTML=list.map(m=>`<tr>
+    <td><div class="cell-main">${m[0]}</div><div class="cell-sub">${m[1]}</div></td>
+    <td><span class="bdg ${m[7]==="vertical"?"info":"off"}">${m[2]}</span></td>
+    <td class="num" style="color:var(--text2)">${m[3]}</td><td class="num" style="color:var(--text2)">${m[4]}</td>
+    <td><div style="display:flex;align-items:center;gap:10px"><div class="pbar" style="max-width:none;flex:1"><i style="width:${(m[5]/mx*100).toFixed(0)}%"></i></div><span class="num" style="font-size:12px;color:var(--text2)">${(m[5]/10000).toFixed(1)}w</span></div></td>
+    <td>${m[6]==="ok"?'<span class="bdg ok">运行中</span>':m[6]==="warn"?'<span class="bdg warn">维护中</span>':'<span class="bdg off">接入中</span>'}</td>
+    <td style="text-align:right;white-space:nowrap"><button class="btn sm" data-t="已打开「${m[0]}」调试窗口">调用</button></td>
+  </tr>`).join("")||`<tr><td colspan="7"><div class="empty">未找到匹配的模型</div></td></tr>`;
+}
+$$("#m-tabs .chip").forEach(c=>c.onclick=()=>{$$("#m-tabs .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");mTab=c.dataset.k;renderModels()});
+$("#m-q").addEventListener("input",e=>{mQ=e.target.value.trim().toLowerCase();renderModels()});
+renderModels();
+/* ===== 知识库卡片 ===== */
+const KBS=[
+["scale","规章制度库","POLICY · 2026","汇集学校现行有效规章制度全文","#eef0fe","#4338ca","8,214","132,600",100,"09-18 索引完成"],
+["cap","教学资源库","TEACHING","课程大纲、教学标准与课件素材","#e5f6ef","#047857","2,346","48,200",100,"09-20 索引完成"],
+["briefcase","就业信息库","CAREER","企业招聘岗位与历届就业数据","#fdf3e2","#b45309","1,082","21,400",100,"09-15 索引完成"],
+["flask","科研知识库","RESEARCH","科研项目、专利与学术成果","#f3e8ff","#6d28d9","726","12,800",100,"09-12 索引完成"],
+["bookopen","学生手册","HANDBOOK · 2026","学生管理条例与服务指南","#e0f2f7","#0e7490","298","6,100",100,"09-21 索引完成"],
+["factory","实训设备手册","EQUIPMENT","实训室设备操作与维保规程","#fdeaea","#b91c1c","138","2,900",63,"索引中 · 63%"]];
+$("#kbs").innerHTML=KBS.map(k=>`<div class="card kb">
+  <div class="kbt"><div class="ico" style="background:${k[4]};color:${k[5]}">${icon(k[0])}</div>
+    <div class="tt"><h3>${k[1]}</h3><div class="en">${k[2]}</div></div>
+    <span style="flex:none">${k[8]>=100?'<span class="bdg ok">已就绪</span>':'<span class="bdg warn">索引中</span>'}</span></div>
+  <div class="desc">${k[3]}</div>
+  <div class="nums"><div><b>${k[6]}</b><span>文档数</span></div><div><b>${k[7]}</b><span>切片数</span></div><div><b>Qwen3-Embed</b><span>嵌入模型</span></div></div>
+  ${k[8]<100?`<div class="prog"><div class="pt"><span>索引进度</span><span>${k[8]}%</span></div><div class="pb"><i style="width:${k[8]}%"></i></div></div>`:""}
+  <div class="fbt"><span>${k[9]}</span><span class="lk" data-t="正在打开「${k[1]}」文档管理">管理文档 ›</span></div>
+</div>`).join("");
+
+/* ===== 检索测试 ===== */
+$("#rt-run").onclick=()=>{
+  const q=$("#rt-q").value.trim();
+  if(!q){toast("请输入测试问题");return}
+  const hits=[
+    ["0.94","《学籍管理规定》第六章 · 休学","学生申请休学一般以一年为期，累计休学不超过两年，期满应按规定复学…",1],
+    ["0.87","《学籍管理规定》第五章 · 学制","标准学制三年，实行弹性学制，在校最长学习年限可延至六年…",1],
+    ["0.71","《请假与考勤管理办法》","病假超过两周需提供二级甲等以上医院证明，由学院审批…",-1],
+    ["0.58","《研究生管理规定》（参考）","休学期间保留学籍但不享受在校生待遇，医疗费用自理…",1],
+    ["0.41","《学分制实施细则》","缓考申请须在考试前一周提出，由任课教师与教务处审批…",-2]];
+  $("#rt-res").innerHTML=`
+    <div style="padding:12px 18px;border-bottom:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text3)">
+      <span>混合召回 <b style="color:var(--text)">23</b> 片段</span><span>RRF 融合后 <b style="color:var(--text)">5</b> 片段</span><span>重排耗时 <b style="color:var(--text)">46ms</b></span><span>总耗时 <b style="color:var(--text)">168ms</b></span>
+    </div>`+hits.map((h,i)=>`
+    <div class="hit">
+      <div class="h1r"><span class="sc">相似度 ${h[0]}</span><span class="sc re">重排 #${i+1}</span><span class="src">${h[1]}</span><span class="up ${h[3]<0?"dn2":""}">${h[3]>0?"↑"+h[3]:(h[3]<0?"↓"+(-h[3]):"持平")}</span></div>
+      <p>${h[2]}</p>
+    </div>`).join("");
+  toast("检索测试完成 · 重排后首条命中目标段落");
+};
+
+/* ===== 数据工场 ===== */
+const SRCS=[
+["doc2","本地文件","Word / PDF / PPT / Excel / TXT","12 个批次","#eef0fe","#4338ca"],
+["database","业务数据库","MySQL 视图 · 只读同步","6 张视图","#e5f6ef","#047857"],
+["antenna","数据中心","消息队列实时接入（对接数据中台）","3 条管道","#f3e8ff","#6d28d9"],
+["globe","OA / 门户","文档更新事件监听 · 增量同步","2 个来源","#fdf3e2","#b45309"]];
+$("#srcs").innerHTML=SRCS.map(s=>`<div class="dsc">
+  <div class="r1"><div class="ic" style="background:${s[4]};color:${s[5]}">${icon(s[0])}</div><div style="min-width:0"><b>${s[1]}</b><div class="m">${s[2]}</div></div></div>
+  <div class="s"><span>${s[3]}</span><span class="bdg ok">已连接</span></div>
+</div>`).join("");
+
+const ANNOS=[
+["tag","制度文件实体标注","命名实体 · 规章条款","8,214 条",76,"模型预标注 + 人工修正","#eef0fe","#4338ca"],
+["chat","校规问答对构建","问答对 · 人工撰写确认","2,480 条",92,"模型抽取题对待确认","#e5f6ef","#047857"],
+["compass","指令对齐微调集","SFT · 多轮指令对话","5,120 条",58,"模型辅助生成 + 人工审核","#f3e8ff","#6d28d9"],
+["scale","偏好对齐数据","RLHF · 偏好排序对","1,284 条",100,"来自广场反馈自动生成","#fdf3e2","#b45309"]];
+$("#annos").innerHTML=ANNOS.map(a=>`<div class="anno-row">
+  <div class="sw" style="background:${a[6]};color:${a[7]}">${icon(a[0])}</div>
+  <div class="ttl"><b>${a[1]}</b><span>${a[2]} · ${a[5]}</span></div>
+  <span style="font-size:12px;color:var(--text3);flex:none">${a[3]}</span>
+  <div class="pbar"><i class="g" style="width:${a[4]}%"></i></div>
+  <span class="num" style="font-size:12px;flex:none;font-weight:550">${a[4]}%</span>
+  <button class="btn sm" style="flex:none" data-t="进入「${a[1]}」标注工作台 · 支持多人协同与质检">进入标注</button>
+</div>`).join("");
+
+const DS=[
+["校规问答指令集","v1.2","3,200","400","400","Alpaca / JSONL",1,"微调 Qwen3.8-27B · 准确率 +12%"],
+["校园对话偏好集","v2.0","1,284","160","160","ShareGPT / JSON",1,"RLHF 偏好训练"],
+["制度领域语料","v1.0","8,214","1,024","512","自定义 / JSONL",1,"继续预训练"],
+["教学问答指令集","v0.9","1,860","240","240","Alpaca / JSONL",0,"构建中 · 待质检"],
+["就业推荐样本集","v1.1","980","120","120","ShareGPT / JSON",1,"垂类模型调优"],
+["公文写作风格集","v0.3","640","80","80","自定义 / JSON",0,"小样本试验"]];
+$("#ds-body").innerHTML=DS.map(d=>`<tr>
+  <td><div class="cell-main">${d[0]}</div><div class="cell-sub">${d[7]}</div></td>
+  <td class="mono">${d[1]}</td>
+  <td class="num">${d[2]}</td><td class="num">${d[3]}</td><td class="num">${d[4]}</td>
+  <td class="mono" style="font-size:11.5px;color:var(--text2)">${d[5]}</td>
+  <td>${d[6]?'<span class="bdg ok">可用</span>':'<span class="bdg warn">构建中</span>'}</td>
+  <td style="text-align:right;white-space:nowrap"><button class="btn sm" data-t="导出「${d[0]}」${d[1]} · ${d[5]} · 保留领域标签与推理链">导出</button> <button class="btn sm" data-t="锁定「${d[0]}」${d[1]} 数据与种子 · 微调可复现">复现微调</button></td>
+</tr>`).join("");
+
+/* ===== 智能体列表 ===== */
+const AGENTS=[
+["pen","材料速填助手","其他特色","陈明宇",32480,12,"pub","2 小时前"],
+["target","学途规划推荐","其他特色","周晓岚",21930,9,"pub","昨天 16:20"],
+["calendar","学生事务管家","学生管理","李思远",8120,14,"pub","09-18"],
+["palette","课件智作工坊","教务教学","吴雨桐",6340,7,"pub","09-17"],
+["card","校园卡百事通","后勤管理","陈明宇",5890,11,"pub","09-17"],
+["flag","校规速查顾问","制度建设","郑海峰",4210,8,"pub","09-16"],
+["bookopen","教务政策一点通","制度建设","郑海峰",3860,6,"pub","09-16"],
+["microscope","科研申报领航","科研管理","赵启航",3120,5,"pub","09-15"],
+["bot","招生答疑官","其他特色","周晓岚",2450,0,"draft","09-14"],
+["shield","实训安全哨兵","后勤管理","赵启航",1820,3,"draft","09-12"],
+["chart","就业数据罗盘","教务教学","李思远",1204,2,"off","09-08"],
+["tools","报修智能调度","后勤管理","吴雨桐",960,4,"off","09-05"]];
+let aTab="all",aQ="";
+function renderAgents(){
+  const list=AGENTS.filter(a=>(aTab==="all"||a[6]===aTab)&&a[1].toLowerCase().includes(aQ));
+  $("#a-body").innerHTML=list.map((a,i)=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:11px"><span class="icbox" style="background:var(--primary-weak);color:var(--primary)">${icon(a[0])}</span><div><div class="cell-main">${a[1]}</div><div class="cell-sub">${a[6]==="pub"?"已上架广场":"未上架"}</div></div></div></td>
+    <td><span class="bdg off">${a[2]}</span></td>
+    <td><div style="display:flex;align-items:center;gap:8px"><span class="miniava" style="background:${AVC[i%8]}">${a[3][0]}</span><span>${a[3]}</span></div></td>
+    <td class="num" style="text-align:right;font-weight:550">${fmt(a[4])}</td>
+    <td class="num" style="text-align:right">${a[5]} 个部门</td>
+    <td>${a[6]==="pub"?'<span class="bdg ok">已发布</span>':a[6]==="draft"?'<span class="bdg warn">草稿</span>':'<span class="bdg err">已停用</span>'}</td>
+    <td style="color:var(--text3);font-size:12.5px">${a[7]}</td>
+    <td style="text-align:right;white-space:nowrap"><button class="btn sm" data-t="正在打开「${a[1]}」编排画布">编辑</button></td>
+  </tr>`).join("")||`<tr><td colspan="8"><div class="empty">未找到匹配的智能体</div></td></tr>`;
+}
+$$("#a-tabs .chip").forEach(c=>c.onclick=()=>{$$("#a-tabs .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");aTab=c.dataset.k;renderAgents()});
+$("#a-q").addEventListener("input",e=>{aQ=e.target.value.trim().toLowerCase();renderAgents()});
+renderAgents();
+
+/* ===== 模板库 ===== */
+const TPLS=[
+["school","校园问答模板","面向学生高频咨询：宿舍、食堂、社团、报修等场景，内置追问引导与转人工。","被使用 18 次","学生管理","#eef0fe","#4338ca"],
+["bookopen","制度解读模板","严格引用制度原文作答，附条款出处，低置信度自动转人工审核。","被使用 9 次","制度建设","#e5f6ef","#047857"],
+["briefcase","就业指导模板","对接就业信息库，个性化推荐岗位与实习，支持简历建议。","被使用 6 次","就业服务","#fdf3e2","#b45309"]];
+$("#tpls").innerHTML=TPLS.map(t=>`<div class="tpl">
+  <div class="em" style="background:${t[5]};color:${t[6]}">${icon(t[0])}</div><h4>${t[1]}</h4><p>${t[2]}</p>
+  <div class="use"><span>${t[3]}</span><span style="color:var(--text3)">${t[4]}</span></div>
+  <div style="margin-top:12px"><button class="btn sm pri" data-t="基于「${t[1]}」创建新智能体 · 二次配置即可上线">一键启用</button></div>
+</div>`).join("");
+/* ===== API 网关 ===== */
+const KEYS=[["生产环境 · 门户前端","sk-cp-prod-8f3e…a21c","全部模型 · 读写","2 分钟前",1],
+["测试环境 · 开发联调","sk-cp-dev-2b7d…9f04","全部模型 · 只读","1 小时前",1],
+["数据中台 · 报表推送","sk-cp-etl-6c91…33d8","仅嵌入模型 · 只读","3 天前",0]];
+$("#k-body").innerHTML=KEYS.map(k=>`<tr>
+  <td class="cell-main">${k[0]}</td>
+  <td><span class="copyable"><span class="mono">${k[1]}</span>
+    <button data-copy="${k[1]}" title="复制"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></span></td>
+  <td style="color:var(--text2)">${k[2]}</td><td style="color:var(--text2)">${k[3]}</td>
+  <td>${k[4]?'<span class="bdg ok">活跃</span>':'<span class="bdg off">已停用</span>'}</td>
+  <td style="text-align:right"><button class="btn sm" data-t="旧密钥将在 24 小时后失效，已生成新密钥">轮换</button></td>
+</tr>`).join("");
+$$("[data-copy]").forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.copy)}catch(e){}toast("密钥已复制到剪贴板")});
+
+const LOGS=[["14:32:08","生产环境 · 门户前端","POST /v1/chat/completions","DeepSeek-V4-Flash",200,"412ms"],
+["14:31:45","生产环境 · 门户前端","POST /v1/chat/completions","Qwen3.8-Flash",200,"1.2s"],
+["14:31:02","生产环境 · 门户前端","POST /v1/chat/completions","校本微调版",200,"860ms"],
+["14:30:37","生产环境 · 门户前端","POST /v1/chat/completions","GLM-5.3",200,"1.8s"],
+["14:30:12","生产环境 · 门户前端","POST /v1/chat/completions","DeepSeek-V4-Flash",500,"—"],
+["14:29:58","生产环境 · 门户前端","POST /v1/embeddings","Qwen3-Embedding-8B",200,"96ms"],
+["14:29:41","数据中台 · 报表推送","POST /v1/embeddings","Qwen3-Embedding-8B",200,"88ms"],
+["14:28:56","测试环境 · 开发联调","POST /v1/chat/completions","Qwen3.8-Flash",429,"—"]];
+$("#l-body").innerHTML=LOGS.map(l=>`<tr>
+  <td class="num" style="color:var(--text2)">${l[0]}</td><td style="color:var(--text2)">${l[1]}</td>
+  <td class="mono">${l[2]}</td><td style="color:var(--text2)">${l[3]}</td>
+  <td><span class="${l[4]===200?"bdg ok":"bdg err"}" style="font-variant-numeric:tabular-nums">${l[4]}</span></td>
+  <td class="num" style="text-align:right">${l[5]}</td></tr>`).join("");
+
+$("#trace").innerHTML=[["网关接入",18,"186ms"],["注入检测",4,"32ms"],["混合召回",52,"126ms"],["Rerank 重排",8,"46ms"],["模型推理",86,"1.4s"],["流式返回",30,"210ms"]]
+  .map(t=>`<div class="hi"><span class="nm">${t[0]}</span><div class="tr"><i style="width:${Math.max(4,t[1])}%"></i></div><span class="pv">${t[2]}</span></div>`).join("");
+
+/* ===== 运营分析 ===== */
+(function(){
+  const col=[["机械工程学院",28400],["电子信息工程学院",24100],["计算机与软件学院",19600],["电气工程学院",17300],["经济管理学院",11200],["外国语学院",9400],["艺术设计学院",6800],["基础教学部",4200]];
+  $("#colleges").innerHTML=col.map(c=>`<div class="hi"><span class="nm">${c[0]}</span><div class="tr"><i style="width:${(c[1]/col[0][1]*100).toFixed(0)}%"></i></div><span class="pv">${fmt(c[1])}</span></div>`).join("");
+  const hrs=[2,1,1,1,2,8,24,41,68,92,118,105,96,88,97,110,104,86,64,48,37,26,14,6];
+  $("#hours").innerHTML=hrs.map((h,i)=>`<div class="b" title="${String(i).padStart(2,"0")}:00 · ${fmt(h*14)} 次"><i class="${i>=9&&i<=17?"hot":""}" style="height:${(h/118*100).toFixed(0)}%"></i><em>${i%3===0?String(i).padStart(2,"0"):""}</em></div>`).join("");
+  const perf=[["POST /v1/chat/completions","1,284,300","780ms","2.4s","0.31%",[52,60,55,72,68,80,96]],
+["POST /v1/embeddings","842,100","94ms","210ms","0.12%",[40,42,45,41,48,52,58]],
+["POST /v1/files/upload","18,600","1.1s","3.2s","0.86%",[20,18,26,22,30,28,34]],
+["GET /v1/models","206,400","18ms","45ms","0.02%",[30,32,31,36,40,38,44]],
+["POST /v1/rerank","80,420","210ms","480ms","0.19%",[18,22,20,26,24,30,32]]];
+  $("#perf").innerHTML=perf.map(p=>`<tr><td class="mono">${p[0]}</td><td class="num" style="text-align:right">${p[1]}</td><td class="num" style="text-align:right">${p[2]}</td><td class="num" style="text-align:right">${p[3]}</td><td class="num" style="text-align:right;color:${parseFloat(p[4])>0.5?"var(--amber)":"var(--green)"};font-weight:550">${p[4]}</td><td><svg width="110" height="26" style="max-width:110px"></svg></td></tr>`).join("");
+  $$("#perf svg").forEach((s,i)=>spark(s,perf[i][5],"#4f46e5"));
+})();
+
+/* ===== 审计日志 ===== */
+const AUDIT=[
+["09-21 14:02","郑海峰","cfg","修改检索配置","知识库 · 规章制度库","10.28.1.15","ok"],
+["09-21 11:36","周晓岚","login","登录平台","CAS 单点登录","10.28.3.21","ok"],
+["09-21 10:20","郑海峰","op","发布智能体 v5 灰度","材料速填助手 · v5","10.28.1.15","ok"],
+["09-21 09:44","陈明宇","cfg","新建 API 密钥","数据中台 · 报表推送","10.28.3.72","ok"],
+["09-20 22:40","系统 · 定时","op","执行清洗任务","教务文档批量清洗","127.0.0.1","ok"],
+["09-20 16:18","吴雨桐","cfg","上传知识文档","教学资源库 · 42 篇","10.28.2.8","ok"],
+["09-20 14:02","未知来源","login","登录尝试（已拦截）","非白名单 IP","172.16.4.99","err"],
+["09-20 09:30","周晓岚","op","导出数据集","校规问答指令集 v1.2","10.28.3.21","ok"]];
+let auTab="all",auQ="";
+const AU_KIND={login:"登录",cfg:"配置变更",op:"运维操作"};
+function renderAudit(){
+  const list=AUDIT.filter(a=>(auTab==="all"||a[2]===auTab)&&(a[1]+a[3]+a[4]).toLowerCase().includes(auQ));
+  $("#au-body").innerHTML=list.map(a=>`<tr>
+    <td class="num" style="color:var(--text2)">${a[0]}</td>
+    <td><div style="display:flex;align-items:center;gap:8px"><span class="miniava" style="background:${a[2]==="login"&&a[6]==="err"?"#dc2626":"#4f46e5"};font-size:10px">${a[1][0]}</span><span>${a[1]}</span></div></td>
+    <td><span class="bdg ${a[2]==="cfg"?"info":a[2]==="login"?"off":"ok"}">${AU_KIND[a[2]]}</span></td>
+    <td class="cell-main">${a[3]}</td>
+    <td style="color:var(--text2)">${a[4]}</td>
+    <td class="mono" style="font-size:12px">${a[5]}</td>
+    <td>${a[6]==="ok"?'<span class="bdg ok">成功</span>':'<span class="bdg err">已拦截</span>'}</td>
+  </tr>`).join("")||`<tr><td colspan="7"><div class="empty">无匹配记录</div></td></tr>`;
+}
+$$("#au-tabs .chip").forEach(c=>c.onclick=()=>{$$("#au-tabs .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");auTab=c.dataset.k;renderAudit()});
+$("#au-q").addEventListener("input",e=>{auQ=e.target.value.trim().toLowerCase();renderAudit()});
+renderAudit();
+
+/* ===== 全局 ===== */
+$("#bell").onclick=e=>{e.stopPropagation();$("#drop").classList.toggle("open")};
+document.addEventListener("click",e=>{if(!e.target.closest(".bell-wrap"))$("#drop").classList.remove("open")});
+$(".drop .dh span").onclick=()=>{$("#drop").classList.remove("open");toast("3 条通知已全部标记为已读")};
+$("#help").onclick=()=>toast("帮助中心：docs.cloudpivot.wxut.edu.cn");
+window.addEventListener("resize",()=>{spark($("#sp1"),[92,88,105,98,120,112,128],"#4f46e5")});
+
+/* ===== 智能体悬浮球 ===== */
+const fab=$("#fab-wrap");
+$("#fab-btn").onclick=e=>{e.stopPropagation();fab.classList.toggle("open")};
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#fab-wrap"))fab.classList.remove("open");
+});
+$$("#fab-wrap [data-fab-goto]").forEach(b=>{
+  b.onclick=e=>{
+    e.stopPropagation();
+    const goto=b.dataset.fabGoto;
+    if(goto==="chat"){toast("智能助手对话窗口已唤起");fab.classList.remove("open");return}
+    if(goto==="ask"){toast("正在查找知识库条目…");fab.classList.remove("open");return}
+    const nav=$$(".ni[data-v='"+goto+"']")[0];if(nav)nav.click();
+    fab.classList.remove("open");
+  };
+});
+
+/* ===== 多端集成预览 ===== */
+const pvMask=$("#pv-mask");
+const PV_TITLE={wecom:["企业微信工作台 · 云枢助手","移动端工作台应用预览","#4f46e5","M12 2 3 7v10l9 5 9-5V7z"],portal:["学校融合门户 · 智能体广场","门户首页集成效果预览","#0e7490","M3 21h18M5 21V10l7-5 7 5v11"]};
+const PV_ICON=function(path){return '<svg viewBox="0 0 24 24"><path d="'+path+'"/></svg>'};
+function openIntPreview(type){
+  const m=PV_TITLE[type]||PV_TITLE.wecom;
+  $("#pv-ic").style.background=m[2];
+  $("#pv-ic").innerHTML=PV_ICON(m[3]);
+  $("#pv-title").textContent=m[0];
+  $("#pv-sub").textContent=m[1];
+  $$(".pv-body").forEach(b=>b.classList.toggle("on",b.id==="pv-"+type));
+  pvMask.classList.add("open");
+}
+$$(".int-preview").forEach(b=>b.onclick=e=>{e.stopPropagation();openIntPreview(b.dataset.pv)});
+$("#pv-close").onclick=()=>pvMask.classList.remove("open");
+pvMask.addEventListener("click",e=>{if(e.target===pvMask)pvMask.classList.remove("open")});
+</script>
+</body>
+</html>

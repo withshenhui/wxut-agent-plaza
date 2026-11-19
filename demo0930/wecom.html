@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>憬悟智能 · 企业微信工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#0071e3;--blue-weak:#eaf3fc;
+  --bg:#f5f5f7;--card:#fff;--line:#e5e5ea;--hair:#ececf0;
+  --text:#1d1d1f;--text2:#55575f;--text3:#8e8e93;
+  --fill:#e9e9eb;--green:#34c759;--orange:#ff9500;--purple:#5e5ce6;
+}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Segoe UI",sans-serif;background:linear-gradient(180deg,#fbfbfd 0%,#e9e9ee 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px 20px;color:var(--text)}
+/* ===== 桌面舞台 ===== */
+.stage{display:flex;align-items:center;gap:44px;flex-wrap:wrap;justify-content:center}
+.note{width:352px;max-width:100%}
+.note .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-weak);padding:5px 14px;border-radius:980px}
+.note .eyebrow svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note h1{font-size:27px;line-height:1.25;margin:15px 0 4px;letter-spacing:-.4px;font-weight:700}
+.note h1 small{display:block;font-size:13px;font-weight:500;color:var(--text3);letter-spacing:0;margin-top:5px}
+.note>p{font-size:13px;line-height:1.75;color:var(--text2);margin:10px 0 16px}
+.kvs{border-radius:18px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden}
+.kv{display:flex;gap:12px;padding:12px 16px;font-size:12.5px;border-bottom:1px solid var(--hair)}
+.kv:last-child{border-bottom:0}
+.kv span{color:var(--text3);flex:none;width:62px}
+.kv b{font-weight:600;color:var(--text)}
+.wswitch{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.wswitch .lbl{font-size:11.5px;color:var(--text3)}
+.wchips{display:flex;gap:6px}
+.wchip{font-size:11.5px;color:var(--blue);background:var(--card);border:1px solid #d8d8dd;border-radius:980px;padding:5px 14px;cursor:pointer;font-family:inherit;transition:all .15s}
+.wchip.on{color:#fff;background:var(--blue);border-color:var(--blue)}
+.note .foot{margin-top:14px;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.note .foot svg{width:13px;height:13px;fill:none;stroke:var(--green);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* ===== 手机壳 ===== */
+.device{width:395px;flex:none;background:#1d1d1f;border-radius:54px;padding:11px;box-shadow:0 38px 88px rgba(0,0,0,.32),0 4px 16px rgba(0,0,0,.14);transition:width .25s ease}
+.disp{position:relative;width:375px;margin:0 auto;background:var(--bg);border-radius:44px;overflow:hidden;display:flex;flex-direction:column;height:772px;transition:width .25s ease}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:102px;height:28px;background:#1d1d1f;border-radius:99px;z-index:60}
+.status{display:flex;align-items:center;justify-content:space-between;padding:16px 28px 8px;font-size:13px;font-weight:600;color:#1d1d1f;flex:none;z-index:5}
+.status .sic{display:flex;align-items:center;gap:5px}
+.status svg{height:11px;fill:#1d1d1f}
+.wxn{display:flex;align-items:center;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line);padding:8px 10px 8px 6px;flex:none;position:relative;z-index:5}
+.wxn .bk{display:flex;align-items:center;color:var(--blue);font-size:13.5px;cursor:pointer;padding:4px 6px;border-radius:9px}
+.wxn .bk:active{opacity:.5}
+.wxn .bk svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;margin-right:2px}
+.wxn .tt{position:absolute;left:60px;right:60px;text-align:center;font-size:15px;font-weight:600;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wxn .ops{margin-left:auto;display:flex;gap:13px;align-items:center;padding-right:5px}
+.wxn .ops svg{width:5px;height:19px;fill:none;stroke:#3a3a3c;stroke-width:2.4;stroke-linecap:round}
+/* ===== 应用区 ===== */
+.app{flex:1;overflow-y:auto;overscroll-behavior:contain;position:relative;scrollbar-width:none}
+.app::-webkit-scrollbar{display:none}
+.view{display:none;min-height:100%}
+.view.on{display:block}
+/* —— 主页 —— */
+.lgtitle{padding:16px 18px 4px}
+.lgtitle h2{font-size:26px;font-weight:800;letter-spacing:-.4px}
+.lgtitle p{font-size:12.5px;color:var(--text3);margin-top:4px}
+.hcard{margin:14px 14px 0;border-radius:18px;padding:16px;display:flex;gap:12px;align-items:center}
+.hcard.hblue{background:linear-gradient(135deg,#0a84ff 0%,#5e5ce6 100%);color:#fff}
+.hcard .hi{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex:none}
+.hcard .hi svg{width:23px;height:23px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hcard b{font-size:15.5px;font-weight:700;display:block}
+.hcard p{font-size:11px;opacity:.85;margin-top:3px}
+.hcard .go{margin-left:auto;flex:none;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.92);color:#0a84ff;border-radius:980px;padding:7px 14px;cursor:pointer}
+.hcard .go:active{opacity:.7}
+.sect{display:flex;align-items:baseline;justify-content:space-between;padding:20px 18px 10px}
+.sect b{font-size:19px;font-weight:700;letter-spacing:-.3px}
+.sect i{font-style:normal;font-size:12.5px;color:var(--blue);cursor:pointer}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px}
+.acard{background:var(--card);border-radius:18px;padding:14px;cursor:pointer;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.acard:active{transform:scale(.97)}
+.acard .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.acard .ic svg{width:23px;height:23px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.acard b{font-size:13.5px;font-weight:600;display:block}
+.acard p{font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.5}
+.ovcard{margin:12px 14px 0;background:var(--card);border-radius:18px;padding:15px 8px;display:grid;grid-template-columns:repeat(3,1fr);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.ov{text-align:center;padding:0 4px}
+.ov b{font-size:21px;font-weight:800;letter-spacing:-.5px;color:var(--blue);font-variant-numeric:tabular-nums}
+.ov b small{font-size:10.5px;font-weight:600;color:var(--text3);margin-left:1px}
+.ov em{display:block;font-style:normal;font-size:10.5px;color:var(--text3);margin-top:3px}
+.igroup{margin:12px 14px 0;background:var(--card);border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
+.irow{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:.5px solid var(--hair);cursor:pointer}
+.irow:last-child{border-bottom:0}
+.irow:active{background:var(--fill)}
+.irow .ic{width:29px;height:29px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
+.irow .ic svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.irow .lb{flex:1;font-size:13.5px}
+.irow .vv{font-size:12px;color:var(--text3)}
+.irow svg.ar{width:14px;height:14px;fill:none;stroke:#c7c7cc;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* —— 应用页 —— */
+.arow{display:flex;align-items:center;gap:12px;margin:12px 14px 0;background:var(--card);border-radius:18px;padding:13px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.arow .ic{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.arow .ic svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.arow .md{flex:1;min-width:0}
+.arow .nm{font-size:14.5px;font-weight:600}
+.arow .ds{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.45}
+.arow .get{flex:none;font-size:12px;font-weight:700;color:#fff;background:var(--blue);border-radius:980px;padding:7px 16px;cursor:pointer}
+.arow .get:active{opacity:.7}
+.aend{text-align:center;font-size:10.5px;color:var(--text3);padding:20px 0 90px}
+/* —— 通知 —— */
+.nseg{display:flex;margin:14px 14px 0;background:var(--fill);border-radius:10px;padding:2px}
+.nseg button{flex:1;font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 0;border:0;border-radius:8px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.nseg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.nitem{display:flex;gap:11px;background:var(--card);border-radius:18px;margin:10px 14px 0;padding:13px 14px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.nitem .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.nitem .ic svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nitem .bd{flex:1;min-width:0}
+.nitem .r1{display:flex;align-items:center;gap:7px}
+.nitem .app{font-size:10.5px;color:var(--text3);flex:none}
+.nitem .tt{font-size:13.5px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nitem .tm{font-size:10.5px;color:var(--text3);flex:none}
+.nitem p{font-size:12px;color:var(--text2);line-height:1.55;margin-top:4px}
+.nitem .go{display:inline-block;margin-top:8px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer}
+.nend{text-align:center;font-size:10.5px;color:var(--text3);padding:18px 0 90px}
+/* —— 我的 —— */
+.me{padding:24px 18px 12px;display:flex;align-items:center;gap:14px}
+.me .av{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.me .nm{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.me .sub{font-size:12px;color:var(--text3);margin-top:4px}
+.mend{text-align:center;font-size:10.5px;color:var(--text3);padding:18px 0 90px;line-height:1.9}
+/* ===== 底部标签栏 ===== */
+.tabbar{flex:none;display:flex;background:rgba(249,249,251,.9);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);padding:6px 0 calc(10px + env(safe-area-inset-bottom))}
+.tabbar .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--text3);cursor:pointer;font-weight:500}
+.tabbar .tb svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabbar .tb.on{color:var(--blue)}
+/* ===== 悬浮问一问 ===== */
+.fab{position:absolute;right:16px;bottom:76px;z-index:30;display:flex;align-items:center;gap:7px;background:var(--blue);color:#fff;font-size:13px;font-weight:600;border-radius:980px;padding:12px 18px;box-shadow:0 8px 22px rgba(0,113,227,.42);cursor:pointer;transition:transform .15s}
+.fab:active{transform:scale(.94)}
+.fab svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ===== 聊天页 ===== */
+.chatpage{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:40}
+.chatpage.on{display:flex}
+.chnav{flex:none;display:flex;align-items:center;background:rgba(249,249,251,.9);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line);padding:8px 10px;gap:8px}
+.chnav .bk{display:flex;align-items:center;cursor:pointer;color:var(--blue);padding:4px 6px;border-radius:9px}
+.chnav .bk:active{opacity:.5}
+.chnav .bk svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;margin-right:2px}
+.chnav .ag{flex:1;min-width:0;text-align:center}
+.chnav .ag b{font-size:14.5px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chnav .ag i{font-style:normal;font-size:10px;color:var(--text3);display:block;margin-top:1px}
+.chnav .more{padding:4px 6px;cursor:pointer;color:#3a3a3c}
+.chnav .more svg{width:5px;height:19px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;display:block}
+.msgs{flex:1;overflow-y:auto;padding:16px 13px 12px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.msgs::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:8px;align-items:flex-end;max-width:100%}
+.msg .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:12px;font-weight:600;color:#fff}
+.msg .av svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.msg .bd{min-width:0;max-width:calc(100% - 48px)}
+.msg.me{flex-direction:row-reverse}
+.msg.me .bd{display:flex;flex-direction:column;align-items:flex-end}
+.msg.me p{background:var(--blue);color:#fff;border-radius:18px 18px 4px 18px}
+.msg p{background:var(--fill);color:var(--text);border-radius:18px 18px 18px 4px;padding:10px 13px;font-size:13.5px;line-height:1.6;word-break:break-word}
+.msg p b{color:var(--blue);font-weight:700}
+.msg.me p b{color:#fff}
+.msg p code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:rgba(0,0,0,.06);border-radius:5px;padding:1px 5px}
+.msg.me p code{background:rgba(255,255,255,.2)}
+.msg p ol,.msg p ul{margin:4px 0 2px;padding-left:19px;display:flex;flex-direction:column;gap:3px}
+.srcs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0 38px}
+.src{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--blue);background:var(--card);border:1px solid #d3e5f8;border-radius:980px;padding:4px 11px;cursor:pointer}
+.src svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing i{width:7px;height:7px;border-radius:50%;background:#8e8e93;animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.16s}
+.typing i:nth-child(3){animation-delay:.32s}
+@keyframes tp{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.caret{display:inline-block;width:2px;height:15px;background:var(--blue);animation:blink .8s infinite;vertical-align:-2px;margin-left:2px;border-radius:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.quick{flex:none;display:flex;gap:8px;overflow-x:auto;padding:10px 13px 4px;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.qk{flex:none;font-size:12px;color:var(--blue);background:var(--card);border:1px solid #d3e5f8;border-radius:980px;padding:8px 14px;cursor:pointer}
+.qk:active{background:var(--blue-weak)}
+.cbar{flex:none;display:flex;align-items:center;gap:9px;background:rgba(249,249,251,.94);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);padding:9px 12px calc(11px + env(safe-area-inset-bottom))}
+.cbar .in{flex:1;background:var(--card);border:1px solid var(--line);border-radius:980px;padding:9px 14px;font-size:12.5px;color:var(--text3);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar .mic,.cbar .snd{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.cbar .mic{background:var(--card);border:1px solid var(--line)}
+.cbar .mic svg{width:17px;height:17px;fill:none;stroke:var(--text2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cbar .snd{background:var(--blue)}
+.cbar .snd svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ===== toast ===== */
+.toast{position:absolute;left:50%;bottom:104px;transform:translateX(-50%) translateY(8px);background:rgba(29,29,31,.9);color:#fff;font-size:12px;font-weight:500;padding:10px 18px;border-radius:980px;opacity:0;pointer-events:none;transition:all .25s;z-index:99;max-width:82%;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ===== 动作面板 ===== */
+.sheet{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;padding:0 8px calc(10px + env(safe-area-inset-bottom))}
+.sheet.on{display:flex}
+.sheet .card{width:100%;background:rgba(249,249,251,.94);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-radius:14px;overflow:hidden;animation:up .22s ease}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:translateY(0);opacity:1}}
+.sheet .tip{text-align:center;font-size:11.5px;color:var(--text3);padding:11px 14px;border-bottom:.5px solid var(--line)}
+.sheet .opt{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:.5px solid var(--line);cursor:pointer}
+.sheet .opt:active{background:rgba(0,0,0,.05)}
+.sheet .opt .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.sheet .opt .ic svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sheet .opt b{font-size:14.5px;font-weight:600;display:block}
+.sheet .opt p{font-size:11px;color:var(--text3);margin-top:2px}
+.sheet .cancel{text-align:center;font-size:15px;font-weight:600;color:var(--blue);padding:14px 0;cursor:pointer;background:var(--card);border-radius:14px;margin-top:8px}
+/* ===== 移动端自适应 ===== */
+@media(max-width:560px){
+  body{padding:0;background:var(--bg);display:block}
+  .stage{display:block}
+  .note{display:none}
+  .device{width:100%!important;border-radius:0;padding:0;box-shadow:none;background:transparent}
+  .disp{width:100%!important;height:100dvh;border-radius:0;transition:none}
+  .island{display:none}
+  .status{padding-top:calc(10px + env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="note">
+    <span class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 9.5C7.9 19.3 5 15.4 5 11V6z"/><path d="M9 11.5l2 2 4-4.5"/></svg>企业微信移动端自适应展示</span>
+    <h1>憬悟智能 · 工作台应用<small>憬悟大模型平台 · 移动端核心能力</small></h1>
+    <p>平台核心能力以 H5 应用接入学校企业微信工作台，师生免登录即开即用；界面按机型屏宽自适应，与网页端同一版本发布、同步更新。</p>
+    <div class="kvs">
+      <div class="kv"><span>接入方式</span><b>工作台应用 · 企微免登</b></div>
+      <div class="kv"><span>自适应范围</span><b>320–414px 主流机型及折叠屏</b></div>
+      <div class="kv"><span>覆盖能力</span><b>智能问答 · 应用集市 · 消息提醒 · 个人中心</b></div>
+      <div class="kv"><span>发布方式</span><b>与网页端同版本 · v5.2.0</b></div>
+    </div>
+    <div class="wswitch">
+      <span class="lbl">切换屏宽</span>
+      <div class="wchips">
+        <button class="wchip" data-w="320">320</button>
+        <button class="wchip on" data-w="375">375</button>
+        <button class="wchip" data-w="414">414</button>
+      </div>
+    </div>
+    <div class="foot"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>网页端与应用同源发布 · 自动更新</div>
+  </div>
+
+  <div class="device">
+    <div class="disp" id="disp">
+      <div class="island"></div>
+      <div class="status">
+        <span>9:41</span>
+        <span class="sic">
+          <svg viewBox="0 0 17 11" width="17" height="11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="1"/><rect x="9" y="2" width="3" height="9" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1" opacity=".35"/></svg>
+          <svg viewBox="0 0 16 11" width="15" height="11"><path d="M8 9.5 6 7.4a2.9 2.9 0 0 1 4 0zM8 6a5.4 5.4 0 0 0-3.9 1.7L2.7 6.3a7.5 7.5 0 0 1 10.6 0l-1.4 1.4A5.4 5.4 0 0 0 8 6zM8 2.2c-2.3 0-4.4.9-6 2.4L.6 3.2A10.2 10.2 0 0 1 8 .2c2.9 0 5.5 1.1 7.4 3l-1.4 1.4A8.3 8.3 0 0 0 8 2.2z"/></svg>
+          <svg viewBox="0 0 25 12" width="23" height="12"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke-opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2"/><path d="M23 4v4a2.2 2.2 0 0 0 0-4z" opacity=".4"/></svg>
+        </span>
+      </div>
+      <div class="wxn">
+        <span class="bk" data-act="wx-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>工作台</span>
+        <span class="tt">憬悟智能</span>
+        <span class="ops"><svg viewBox="0 0 5 19"><path d="M2.5 0v3M2.5 8v3M2.5 16v3"/></svg></span>
+      </div>
+      <div class="app" id="app"></div>
+      <div class="fab" id="fab" data-act="ask"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14.5h4"/></svg>问一问</div>
+      <div class="tabbar" id="tabbar"></div>
+      <div class="chatpage" id="chatpage"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+
+/* ---------- 图标库 ---------- */
+const IC={
+  sparkle:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
+  flask:'<path d="M10 3h4M10 3v6l-5.2 8.7A2 2 0 0 0 6.5 21h11a2 2 0 0 0 1.7-3.3L14 9V3"/><path d="M8 15h8"/>',
+  box:'<path d="M21 8v8a2 2 0 0 1-1 1.7l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.7l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/>',
+  checkdoc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13.5l2 2 4-4"/>',
+  shield:'<path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 9.5C7.9 19.3 5 15.4 5 11V6z"/><path d="M9 11.5l2 2 4-4.5"/>',
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+  grid:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  me:'<circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/>',
+  chat:'<path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M9 11h6M9 14.5h4"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  stat:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+};
+function svg(n){return '<svg viewBox="0 0 24 24">'+IC[n]+'</svg>'}
+function grad(h){return 'background:linear-gradient(135deg,hsl('+h+' 90% 62%),hsl('+(h+24)+' 84% 48%))'}
+
+/* ---------- 应用与智能体数据 ---------- */
+const AGENTS=[
+  {id:"yx",name:"迎新百事通",icon:"sparkle",hue:199,status:"在线 · 引用学生事务知识库",
+   hello:"翁老师好，我是迎新百事通。新生注册、报到事项、学籍问题都可以问我。",
+   qa:[
+     {q:"2026 级新生学籍注册还差哪些学院？",
+      a:["截至今晨，全校学籍注册完成率 **97.2%**（3,214 / 3,406 人）。","尚未完成的学院：","- 机械工程学院：11 人","- 外国语学院：9 人","- 艺术设计学院：8 人","多为**照片审核不合格**退回补交。建议通知相关学院在 **10 月 9 日**前完成，逾期将影响学信网注册标注。"],
+      src:["学生事务知识库 · 新生学籍注册流程"]},
+     {q:"照片审核不通过怎么重新提交？",
+      a:["重新提交要点如下：","1. 使用「迎新百事通」内的**拍照引导**模式，自动校验背景与光线","2. 免冠、露眉露耳、白底或蓝底，JPG 格式 **60KB–300KB**","3. 提交后后台复核约 **1 个工作日**，结果经企微消息通知","学生端重复提交 3 次仍不通过的，会自动转人工复核。"],
+      src:["学生事务知识库 · 学历照片规范"]}
+   ]},
+  {id:"qs",name:"求是科研助手",icon:"flask",hue:262,status:"在线 · 引用科研制度知识库",
+   hello:"翁老师好，我是求是科研助手。项目申报、经费使用、结题材料相关的问题可以直接问我。",
+   qa:[
+     {q:"校级教改项目申报截止时间和材料清单",
+      a:["**校级教育教学改革项目**本年度申报安排：","- 截止时间：**10 月 12 日 17:00**（科研管理系统在线提交）","- 申报书：系统填报 + 学院盖章扫描件","- 附件：拟改革课程教案、近两学年学评数据","- 限额：每学院推荐不超过 6 项，重点方向见申报指南","项目负责人须具有中级及以上职称，且主持在研校级项目不超过 1 项。"],
+      src:["科研制度知识库 · 校级教改项目管理办法","申报指南 · 2026 年度"]},
+     {q:"教改项目结题需要准备什么材料？",
+      a:["结题需提交三类材料：","1. **结题书**：系统填报，含成果概述与推广计划","2. **成果附件**：论文、教材、获奖或课程上线证明至少 1 项","3. **经费决算表**：财务处盖章版","纸质结题书一式两份，交科研处项目科；结题评审一般在提交后 **6 周**内完成。"],
+      src:["科研制度知识库 · 项目结题与验收细则"]}
+   ]},
+  {id:"da",name:"毕业生档案去向查询",icon:"box",hue:31,status:"在线 · 引用学生事务知识库",
+   hello:"你好，我是毕业生档案去向查询。输入学号或姓名，可查档案去向、寄送单号与转出办理进度。",
+   qa:[
+     {q:"查询学号 2022060135 的档案去向",
+      a:["查询结果：","- 学号 2022060135 · 2026 届 · 软件工程技术专业","- 档案状态：**已于 9 月 18 日寄出**","- 去向单位：苏州市人才服务中心","- 机要通道单号可在详情页查看，预计 10 月 10 日前送达签收","该生已办理离校手续，如去向单位有变，可在 **10 月 31 日**前提交改派申请。"],
+      src:["学生事务知识库 · 毕业生档案管理办法"]},
+     {q:"档案还在学校，怎么申请转出？",
+      a:["档案转出办理方式：","1. 登录网页端「应用集市」，进入**毕业生档案去向查询**","2. 填写转出申请：去向单位全称、机要地址与接收证明","3. 注册中心 **2 个工作日**内审核","4. 审核通过后按机要通道寄出，单号经企微消息推送","升学至本校读研的毕业生档案自动留存，无需申请。"],
+      src:["学生事务知识库 · 毕业生档案管理办法"]}
+   ]}
+];
+
+const APPLIST=[
+  {aid:"yx",name:"迎新百事通",ds:"新生注册 · 迎新咨询",stars:"4.9"},
+  {aid:"qs",name:"求是科研助手",ds:"项目申报 · 经费指南",stars:"4.8"},
+  {aid:"gw",name:"公文格式校对",icon:"checkdoc",hue:150,ds:"版式检查 · 用语规范",stars:"4.7"},
+  {aid:"aq",name:"实验室安全答题",icon:"shield",hue:31,ds:"安全学习 · 题库练习",stars:"4.6"},
+  {aid:"da",name:"毕业生档案去向查询",ds:"档案去向 · 转出申请",stars:"4.9"}
+];
+const HOMEGRID=[{aid:"yx"},{aid:"gw",name:"公文格式校对",icon:"checkdoc",hue:150,ds:"版式检查 · 用语规范"},{aid:"aq",name:"实验室安全答题",icon:"shield",hue:31,ds:"安全学习 · 题库练习"},{aid:"da"}];
+const NOTIFS={
+  remind:[
+    {icon:"flask",hue:262,app:"求是科研助手",time:"10:02",title:"校级教改项目申报提醒",desc:"申报 10 月 12 日 17:00 截止，你所在学院已提交 3 / 6 项。",go:"查看申报指南"},
+    {icon:"shield",hue:31,app:"实验室安全答题",time:"09:46",title:"学院答题完成率未达标",desc:"裴文瀚（设备处）提醒：全院完成率 96.4%，距 100% 还差 47 人。",go:"查看名单"},
+    {icon:"sparkle",hue:199,app:"迎新百事通",time:"昨天",title:"学籍注册临近截止",desc:"三个学院共 28 人未完成注册，10 月 9 日截止。",go:"去督办"}
+  ],
+  news:[
+    {icon:"gear",hue:210,app:"憬悟智能",time:"09-29",title:"移动端 v5.2.0 发布",desc:"沈知行（信息中心）：企业微信端改版上线，新增「问一问」快捷入口。",go:"查看更新说明"},
+    {icon:"stat",hue:150,app:"观测告警",time:"09-28",title:"本周服务周报",desc:"模型服务可用率 99.97%，平均响应 1.9 秒，无 P1 级告警。",go:"查看周报"},
+    {icon:"sparkle",hue:199,app:"应用集市",time:"09-26",title:"3 个应用更新",desc:"迎新百事通、公文格式校对、求是科研助手同步发布新版本。",go:"查看详情"}
+  ]
+};
+const TABS=[["home","主页","home"],["apps","应用","grid"],["msg","消息","bell"],["me","我的","me"]];
+
+/* ---------- 视图渲染 ---------- */
+function agentOf(aid){return AGENTS.find(a=>a.id===aid)}
+function meta(m){const a=agentOf(m.aid)||{};return {name:m.name||a.name,icon:m.icon||a.icon,hue:m.hue!==undefined?m.hue:a.hue,ds:m.ds||(a.status||"").replace("在线 · ","")}}
+
+$("#app").innerHTML=`
+<div class="view on" id="v-home">
+  <div class="lgtitle"><h2>下午好，翁静仪</h2><p>9 月 30 日 周三 · 教务处 · 注册中心</p></div>
+  <div class="hcard hblue" data-ai="qs">
+    <span class="hi">${svg("flask")}</span>
+    <div><b>求是科研助手</b><p>校级教改项目申报 10 月 12 日截止</p></div>
+    <span class="go">立即体验</span>
+  </div>
+  <div class="sect"><b>常用应用</b><i data-act="goto-apps">全部 ›</i></div>
+  <div class="agrid">${HOMEGRID.map(m=>{const g=meta(m);return '<div class="acard" data-ai="'+m.aid+'"><span class="ic" style="'+grad(g.hue)+'">'+svg(g.icon)+'</span><b>'+g.name+'</b><p>'+g.ds+'</p></div>'}).join("")}</div>
+  <div class="sect"><b>本周概览</b><i data-t="完整统计在网页端「观测告警」查看">统计 ›</i></div>
+  <div class="ovcard">
+    <div class="ov"><b>32<small>次</small></b><em>智能咨询</em></div>
+    <div class="ov"><b>97.2<small>%</small></b><em>学籍注册</em></div>
+    <div class="ov"><b>2.6<small>小时</small></b><em>节省工时</em></div>
+  </div>
+  <div class="igroup">
+    <div class="irow" data-act="goto-apps"><span class="ic" style="${grad(210)}">${svg("grid")}</span><span class="lb">应用集市</span><span class="vv">9 个应用</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="irow" data-t="知识检索已内置于各应用的问答中"><span class="ic" style="${grad(150)}">${svg("file")}</span><span class="lb">知识中枢</span><span class="vv">6 个知识库</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="irow" data-act="goto-msg"><span class="ic" style="${grad(31)}">${svg("bell")}</span><span class="lb">消息提醒</span><span class="vv">3 条待处理</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+  </div>
+</div>
+<div class="view" id="v-apps">
+  <div class="lgtitle"><h2>应用集市</h2><p>与网页端同步发布 · 点击打开即用</p></div>
+  ${APPLIST.map(m=>{const g=meta(m);return '<div class="arow" data-ai="'+m.aid+'"><span class="ic" style="'+grad(g.hue)+'">'+svg(g.icon)+'</span><div class="md"><div class="nm">'+g.name+'</div><div class="ds">'+m.ds+'</div><div class="stars"><svg viewBox="0 0 24 24" style="width:10px;height:10px;vertical-align:-1px;fill:#8e8e93"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.5L12 17.3l-5.9 3.2 1.3-6.5L2.5 9.4l6.6-.8z"/></svg> '+m.stars+'</div></div><span class="get" data-ai="'+m.aid+'">打开</span></div>'}).join("")}
+  <div class="aend">应用由憬悟大模型平台统一发布 · 免登使用</div>
+</div>
+<div class="view" id="v-msg">
+  <div class="nseg" id="nseg"><button class="on" data-m="remind">提醒</button><button data-m="news">通知</button></div>
+  <div id="nlist"></div>
+  <div class="nend">提醒经企业微信应用消息同步下发</div>
+</div>
+<div class="view" id="v-me">
+  <div class="me"><span class="av">翁</span><div><div class="nm">翁静仪</div><div class="sub">教务处 · 注册中心 · 企业微信免登</div></div></div>
+  <div class="igroup">
+    <div class="irow" data-t="已启用 9 个应用，与网页端一致"><span class="ic" style="${grad(210)}">${svg("grid")}</span><span class="lb">已启用应用</span><span class="vv">9 个</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="irow" data-t="可按应用分别开启或关闭提醒"><span class="ic" style="${grad(31)}">${svg("bell")}</span><span class="lb">通知偏好</span><span class="vv">全部提醒</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="irow" data-t="咨询次数与节省工时按周统计"><span class="ic" style="${grad(150)}">${svg("stat")}</span><span class="lb">使用统计</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+    <div class="irow" data-t="管理员：沈知行 · 信息中心"><span class="ic" style="${grad(262)}">${svg("chat")}</span><span class="lb">帮助与反馈</span><svg class="ar" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>
+  </div>
+  <div class="mend">憬悟智能 · 憬悟大模型平台移动端<br><b>v5.2.0</b></div>
+</div>`;
+
+$("#tabbar").innerHTML=TABS.map((t,i)=>'<span class="tb'+(i===0?" on":"")+'" data-v="'+t[0]+'">'+svg(t[2])+'<small>'+t[1]+'</small></span>').join("");
+
+function renderN(k){$("#nlist").innerHTML=NOTIFS[k].map(m=>'<div class="nitem"><span class="ic" style="'+grad(m.hue)+'">'+svg(m.icon)+'</span><div class="bd"><div class="r1"><span class="app">'+m.app+'</span><span class="tt">'+m.title+'</span><span class="tm">'+m.time+'</span></div><p>'+m.desc+'</p><span class="go" data-t="'+m.title+'">'+m.go+' ›</span></div></div>').join("")}
+renderN("remind");
+$("#nseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $("#nseg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  renderN(b.dataset.m);
+});
+
+/* ---------- 标签切换 ---------- */
+function tab(v){
+  $$("#tabbar .tb").forEach(x=>x.classList.toggle("on",x.dataset.v===v));
+  $$(".view").forEach(x=>x.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  $("#app").scrollTop=0;
+}
+$$("#tabbar .tb").forEach(el=>el.onclick=()=>tab(el.dataset.v));
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(t){
+  const el=$("#toast");el.textContent=t;el.classList.add("on");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("on"),1900);
+}
+
+/* ---------- 聊天页构建 ---------- */
+$("#chatpage").innerHTML=`
+<div class="chnav">
+  <span class="bk" id="chat-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></span>
+  <div class="ag"><b id="chat-name"></b><i id="chat-status"></i></div>
+  <span class="more"><svg viewBox="0 0 5 19"><path d="M2.5 0v3M2.5 8v3M2.5 16v3"/></svg></span>
+</div>
+<div class="msgs" id="msgs"></div>
+<div class="quick" id="quick"></div>
+<div class="cbar">
+  <span class="mic" data-t="语音提问需管理员在「组织与配置」中开启"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+  <span class="in" id="cbar-in">输入问题，或点选推荐提问</span>
+  <span class="snd" id="cbar-send"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>
+</div>`;
+
+let cur=null,buf="",tick=null;
+function md(t){
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  t=esc(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+  let out="",list=null;
+  const close=()=>{if(list){out+="</"+list+">";list=null}};
+  t.split("\n").forEach(ln=>{
+    if(/^\d+\.\s/.test(ln)){if(list!=="ol"){close();out+="<ol>";list="ol"}out+="<li>"+ln.replace(/^\d+\.\s/,"")+"</li>"}
+    else if(/^-\s/.test(ln)){if(list!=="ul"){close();out+="<ul>";list="ul"}out+="<li>"+ln.replace(/^-\s/,"")+"</li>"}
+    else if(ln.trim()===""){close()}
+    else{close();out+="<p>"+ln+"</p>"}
+  });
+  close();return out;
+}
+function bubble(a,me,html){
+  const d=document.createElement("div");
+  d.className="msg"+(me?" me":"");
+  d.innerHTML='<span class="av" style="'+grad(a.hue)+'">'+svg(a.icon)+'</span><div class="bd">'+html+"</div>";
+  $("#msgs").appendChild(d);$("#msgs").scrollTop=$("#msgs").scrollHeight;
+  return d;
+}
+function openChat(id){
+  cur=agentOf(id);buf="";window.__done=[];
+  $("#chat-name").textContent=cur.name;
+  $("#chat-status").textContent=cur.status;
+  $("#msgs").innerHTML="";
+  bubble(cur,false,"<p>"+cur.hello+"</p>");
+  renderQuick();
+  $("#chatpage").classList.add("on");
+}
+function closeChat(){
+  $("#chatpage").classList.remove("on");
+  if(tick){clearTimeout(tick);tick=null}
+}
+function renderQuick(){
+  const done=window.__done||[];
+  $("#quick").innerHTML=cur.qa.map((q,i)=>done.includes(i)?"":'<span class="qk" data-q="'+i+'">'+q.q+"</span>").join("");
+  $$("#quick .qk").forEach(el=>el.onclick=()=>ask(+el.dataset.q));
+}
+function ask(i){
+  const q=cur.qa[i];
+  bubble(cur,true,"<p>"+q.q+"</p>");
+  window.__done=(window.__done||[]).concat(i);
+  renderQuick();
+  const th=bubble(cur,false,'<p><span class="typing"><i></i><i></i><i></i></span></p>');
+  setTimeout(()=>{
+    th.remove();
+    const b=bubble(cur,false,'<p><span class="caret"></span></p>');
+    const p=b.querySelector("p");buf="";
+    let k=0;
+    const step=()=>{
+      if(k<q.a.length){
+        buf+=(k?"\n":"")+q.a[k];k++;
+        p.innerHTML=md(buf)+'<span class="caret"></span>';
+        $("#msgs").scrollTop=$("#msgs").scrollHeight;
+        tick=setTimeout(step,270+Math.random()*330);
+      }else{
+        p.innerHTML=md(buf);
+        if(q.src&&q.src.length){
+          const s=document.createElement("div");
+          s.className="srcs";
+          s.innerHTML=q.src.map(x=>'<span class="src">'+svg("file")+x+"</span>").join("");
+          b.querySelector(".bd").appendChild(s);
+          $$("#msgs .src").forEach(el=>el.onclick=()=>toast("知识来源："+el.textContent.trim()));
+        }
+        $("#msgs").scrollTop=$("#msgs").scrollHeight;
+      }
+    };
+    step();
+  },600);
+}
+$("#chat-back").onclick=closeChat;
+$("#cbar-in").onclick=()=>{if(!$("#quick").innerHTML)toast("当前应用的推荐问题已全部解答")};
+$("#cbar-send").onclick=()=>{
+  const left=cur.qa.map((q,i)=>i).filter(i=>!(window.__done||[]).includes(i));
+  if(left.length){ask(left[0])}
+  else toast("本应用的推荐问题已全部解答，可返回尝试其他应用");
+};
+
+/* ---------- 动作面板（问一问） ---------- */
+$("#sheet").innerHTML=`
+<div class="card">
+  <div class="tip">选择一个应用开始提问</div>
+  ${AGENTS.map(a=>'<div class="opt" data-ai="'+a.id+'"><span class="ic" style="'+grad(a.hue)+'">'+svg(a.icon)+'</span><div><b>'+a.name+'</b><p>'+a.status.replace("在线 · ","")+'</p></div></div>').join("")}
+  <div class="cancel" id="sheet-cancel">取消</div>
+</div>`;
+function sheet(on){$("#sheet").classList.toggle("on",on)}
+$("#sheet").onclick=e=>{if(e.target.id==="sheet"||e.target.id==="sheet-cancel")sheet(false)};
+$$("#sheet .opt").forEach(el=>el.onclick=()=>{sheet(false);openChat(el.dataset.ai)});
+
+/* ---------- 全局入口 ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-t]");
+  if(t&&t.dataset.t)toast(t.dataset.t);
+  const el=e.target.closest("[data-ai]");
+  if(el&&el.dataset.ai){
+    e.stopPropagation();
+    if(!agentOf(el.dataset.ai)){toast("该应用为工具类应用，详情请在网页端查看");return}
+    openChat(el.dataset.ai)
+  }
+  const aa=e.target.closest("[data-act]");
+  if(aa){
+    if(aa.dataset.act==="goto-apps")tab("apps");
+    if(aa.dataset.act==="goto-msg")tab("msg");
+    if(aa.dataset.act==="ask")sheet(true);
+    if(aa.dataset.act==="wx-back")toast("已返回企业微信工作台");
+  }
+});
+
+/* ---------- 宽度切换 ---------- */
+$$(".wchip").forEach(c=>c.onclick=()=>{
+  $$(".wchip").forEach(x=>x.classList.toggle("on",x===c));
+  const w=+c.dataset.w;
+  $("#disp").style.width=w+"px";
+  document.querySelector(".device").style.width=(w+22)+"px";
+});
+</script>
+</body>
+</html>
