@@ -7,10 +7,22 @@ import { searchModels } from './api/model';
 import { useSiteConfig } from './components/SiteConfigContext';
 import { useUser } from './UserContext';
 import { launchAgent } from './utils/agentLaunch';
+import logoDeepseek from './assets/model-logos/deepseek.svg';
+import logoQwen from './assets/model-logos/qwen.svg';
+import logoBge from './assets/model-logos/bge.png';
 import './dashboard.css';
 
 /* 仪表盘配色：在既有品牌色基础上做低饱和延展，保持 Linear 式的克制 */
 const DONUT_COLORS = ['#4A6CF7', '#8B5CF6', '#0EA5E9', '#14B8A6', '#F59E0B', '#EC4899', '#94A3B8'];
+
+/* 模型品牌 logo：按模型名匹配（来源 simple-icons 官方图标 / FlagEmbedding 官方仓库） */
+const brandOf = (name) => {
+  const n = (name || '').toLowerCase();
+  if (/deep?seek/.test(n)) return { src: logoDeepseek, color: '#4D6BFE' };
+  if (/qwen/.test(n)) return { src: logoQwen, color: '#615CED' };
+  if (/bge/.test(n)) return { src: logoBge, color: null, wide: true };
+  return null;
+};
 
 const nf = (n) => (n == null ? '—' : Number(n).toLocaleString('zh-CN'));
 
@@ -243,11 +255,19 @@ function DashboardHome() {
                   </tr>
                 </thead>
                 <tbody>
-                  {models.map((m) => (
-                    <tr key={m.id}>
+                  {models.map((m) => {
+                    const brand = brandOf(m.name);
+                    return (
+                      <tr key={m.id}>
                       <td>
                         <div className="dash-model">
-                          <span className="dash-model__badge">{(m.name || '?').trim()[0]}</span>
+                          {brand ? (
+                            <span className={`dash-model__logo${brand.wide ? ' dash-model__logo--wide' : ''}`}>
+                              <img src={brand.src} alt="" style={brand.color ? { color: brand.color } : undefined} />
+                            </span>
+                          ) : (
+                            <span className="dash-model__badge">{(m.name || '?').trim()[0]}</span>
+                          )}
                           <span className="dash-model__name">{m.name}</span>
                           {m.type ? <span className="dash-tag">{m.type}</span> : null}
                         </div>
@@ -255,8 +275,9 @@ function DashboardHome() {
                       <td className="dash-muted">{m.provider || '—'}</td>
                       <td><span className="dash-tag dash-tag--soft">{m.category || 'general'}</span></td>
                       <td className="dash-table__r dash-muted">{m.releaseDate || '—'}</td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                   {!models.length && (
                     <tr><td colSpan={4} className="dash-empty">{loading ? '加载中…' : '暂无数据'}</td></tr>
                   )}

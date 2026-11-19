@@ -2,15 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getPublicConfig } from '../api/config';
 
 const SiteConfigContext = createContext({
-  siteName: '智能体广场',
-  siteSubtitle: '欢迎来到无锡职大智能体广场',
+  siteName: 'AI中台',
+  siteSubtitle: '无锡职业技术大学校级AI中台',
   siteFooter: '© 无锡职业技术大学    Powered By 信息化与数据服务中心',
 });
 
 export function SiteConfigProvider({ children }) {
   const [config, setConfig] = useState({
-    siteName: '智能体广场',
-    siteSubtitle: '欢迎来到无锡职大智能体广场',
+    siteName: 'AI中台',
+    siteSubtitle: '无锡职业技术大学校级AI中台',
     siteFooter: '© 无锡职业技术大学    Powered By 信息化与数据服务中心',
   });
 

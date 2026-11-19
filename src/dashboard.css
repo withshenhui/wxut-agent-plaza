@@ -338,6 +338,32 @@
   border-radius: 6px;
   text-transform: uppercase;
 }
+/* 品牌 logo：单色 SVG 走 currentColor 品牌色；宽版 PNG 加浅色衬底防浅色字隐形 */
+.dash-model__logo {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.dash-model__logo img {
+  width: 18px;
+  height: 18px;
+  display: block;
+  object-fit: contain;
+}
+.dash-model__logo--wide {
+  width: auto;
+  padding: 0 7px;
+  background: #F3F8FF;
+  border: 1px solid rgba(74, 108, 247, 0.14);
+}
+.dash-model__logo--wide img {
+  width: auto;
+  height: 15px;
+}
 .dash-model__name {
   font-weight: 500;
   overflow: hidden;
