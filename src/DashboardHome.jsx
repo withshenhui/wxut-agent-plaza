@@ -85,7 +85,7 @@ function DashboardHome() {
       }
       // 智能填报暂时下线（2026-11-20）：推荐列表里同名智能体一并隐藏，恢复时移除该过滤
       if (rec.status === 'fulfilled') {
-        setRecommended((rec.value || []).filter((a) => a.name !== '智能填报').slice(0, 8));
+        setRecommended((rec.value || []).filter((a) => a.name !== '智能填报').slice(0, 10));
       }
       setLoading(false);
     });
@@ -330,7 +330,7 @@ function DashboardHome() {
                   </tr>
                 </thead>
                 <tbody>
-                  {models.map((m) => {
+                  {models.slice(0, 10).map((m) => {
                     const brand = brandOf(m.name);
                     const ava = avaColorOf(m.name);
                     const pColor = providerColor.get(m.provider) || '#94A3B8';
