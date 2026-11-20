@@ -308,6 +308,10 @@ export function FundingWorkbench({ onBack, toast }) {
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [detail, setDetail] = useState(null);
+  useEffect(() => {
+    document.body.classList.toggle('v2-modal-open', !!detail);
+    return () => document.body.classList.remove('v2-modal-open');
+  }, [detail]);
   const [fdTab, setFdTab] = useState('signal');
   useEffect(() => { setFdTab('signal'); }, [detail]);
   const [k, setK] = useState(null);

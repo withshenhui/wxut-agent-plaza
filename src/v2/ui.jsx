@@ -94,6 +94,10 @@ export function Modal({ title, onClose, children, footer, width = 600 }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+  useEffect(() => {
+    document.body.classList.add('v2-modal-open');
+    return () => document.body.classList.remove('v2-modal-open');
+  }, []);
   return (
     <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="v2-modal" style={width ? { width } : null}>

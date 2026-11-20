@@ -87,6 +87,10 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [pageNum, setPageNum] = useState(1);
   const [detail, setDetail] = useState(null);
+  useEffect(() => {
+    document.body.classList.toggle('v2-modal-open', !!detail);
+    return () => document.body.classList.remove('v2-modal-open');
+  }, [detail]);
   const [detailData, setDetailData] = useState(null);
   const [dwTab, setDwTab] = useState('signal');
 
