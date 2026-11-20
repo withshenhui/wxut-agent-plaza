@@ -20,6 +20,8 @@ export const SCENES = {
       { lb: '绿灯线索', vl: (k.watch || 0).toLocaleString(), cmp: '晚归≥5（未归<3）', bar: '#10B981' },
     ],
     m1Label: '未归寝(次)', m2Label: '晚归(次)',
+    summary: (r) => `未归${r.m1}次${r.m2 > 0 ? ' · 晚归' + r.m2 + '次' : ''}${r.m1 >= 5 ? ' · 高频未归' : r.m1 >= 3 ? ' · 多次未归' : ' · 频繁晚归'}`,
+    miniKpis: (r) => [['未归寝', `${r.m1} 次`], ['晚归', `${r.m2} 次`], ['频次合计', r.m1 + r.m2], ['风险档位', LVL[r.level] ? LVL[r.level][0] : '']],
     detailSignals: (r) => [
       ['未归寝次数', `${r.m1} 次`, r.m1 >= 5],
       ['晚归次数（22:30 后）', `${r.m2} 次`, r.m1 >= 3 && r.m2 >= 3],
@@ -41,6 +43,8 @@ export const SCENES = {
       { lb: '绿灯关注', vl: (k.watch || 0).toLocaleString(), cmp: '挂科 1 门且均分<65', bar: '#10B981' },
     ],
     m1Label: '挂科(门)', m2Label: '平均分',
+    summary: (r) => `挂科${r.m1}门 · 均分${Number(r.m2).toFixed(1)}${r.m1 >= 3 ? ' · 学业风险高' : r.m1 === 2 ? ' · 需关注' : ' · 偏低'}`,
+    miniKpis: (r) => [['挂科', `${r.m1} 门`], ['平均分', Number(r.m2).toFixed(1)], ['修读', `${r.score} 门`], ['预警档位', LVL[r.level] ? LVL[r.level][0] : '']],
     detailSignals: (r) => [
       ['挂科门数（成绩<60）', `${r.m1} 门`, r.m1 >= 3],
       ['学期平均分', `${Number(r.m2).toFixed(1)} 分`, Number(r.m2) < 65],
@@ -62,6 +66,8 @@ export const SCENES = {
       { lb: '绿灯留意', vl: (k.watch || 0).toLocaleString(), cmp: '消费降 40–60%', bar: '#10B981' },
     ],
     m1Label: '消费降幅(%)', m2Label: '未归(次)',
+    summary: (r) => `消费降${r.m1}%${r.m2 >= 3 ? ' · 未归' + r.m2 + '次（叠加）' : ''}${r.m1 >= 60 && r.m2 >= 3 ? ' · 多信号' : r.m1 >= 60 ? ' · 单信号' : ' · 轻度'}`,
+    miniKpis: (r) => [['消费降幅', `${r.m1}%`], ['未归次数', `${r.m2} 次`], ['组合评分', r.score], ['关怀档位', LVL[r.level] ? LVL[r.level][0] : '']],
     detailSignals: (r) => [
       ['近15天食堂消费降幅', `${r.m1}%（对比前15天）`, r.m1 >= 60],
       ['观察窗未归寝次数', `${r.m2} 次`, r.m2 >= 3],
@@ -227,7 +233,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
             <thead><tr>
               <th>学号</th><th>姓名</th><th>学院</th><th>年级</th><th>档位</th>
               <th style={{ textAlign: 'right' }}>{cfg.m1Label}</th><th style={{ textAlign: 'right' }}>{cfg.m2Label}</th>
-              <th>操作</th>
+              <th>信号摘要</th><th>操作</th>
             </tr></thead>
             <tbody>
               {rows.map((r) => (
@@ -236,6 +242,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
                   <td><span className={`v2-light ${r.level}`}><i className="bulb" /><span className="lt">{LVL[r.level] ? LVL[r.level][0] : ''}</span></span></td>
                   <td className="num" style={{ textAlign: 'right' }}>{sceneKey === 'mental' ? r.m1 + '%' : r.m1}</td>
                   <td className="num" style={{ textAlign: 'right' }}>{sceneKey === 'academic' ? Number(r.m2).toFixed(1) : r.m2}</td>
+                  <td style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>{cfg.summary(r)}</td>
                   <td><button className="v2-link" onClick={() => setDetail(r)}>详情</button></td>
                 </tr>
               ))}
@@ -273,6 +280,14 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
                 <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level] ? LVL[detail.level][0] : ''}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>{cfg.title}信号</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
+                {cfg.miniKpis(detail).map(([l, v]) => (
+                  <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
+                    <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l}</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', marginTop: 3 }}>{v}</div>
+                  </div>
+                ))}
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '4px 0 9px' }}>信号分解</div>
               {cfg.detailSignals(detail).map(([nm, v, low]) => (
