@@ -439,7 +439,7 @@ function ChatPage({ agent, onExit }) {
             />
             <button className="v2-send" onClick={() => send()} disabled={loading} title="发送"><Icon name="send" size={17} /></button>
           </div>
-          <div className="v2-input-hint">Enter 发送 · Shift + Enter 换行 · 内容由 AI 生成，请注意核对{convs.length ? ` · ${convs.length} 段历史（本机保存）` : ''}</div>
+          <div className="v2-input-hint">Enter 发送 · Shift + Enter 换行 · 内容由 AI 生成，请注意核对</div>
         </div>
       </div>
 
@@ -453,7 +453,8 @@ function ChatPage({ agent, onExit }) {
             <span className="v2-tag blue">{agent.categoryName}</span>
           </div>
           <div style={{ marginTop: 14 }}>
-            <div className="v2-kvv"><span className="k">对话通道</span><span className="v">{gw ? '学院数据网关' : '—'}</span></div>
+            <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '平台默认'}</span></div>
+            <div className="v2-kvv"><span className="k">对话通道</span><span className="v">{gw ? '学院数据网关' : '平台对话通道'}</span></div>
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
             <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>
           </div>
