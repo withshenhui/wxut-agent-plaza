@@ -57,7 +57,7 @@ const WORKBENCHES = [
 ];
 
 /* ================= 频道首页 ================= */
-export function InsightHome({ onOpenWorkbench }) {
+export function InsightHome({ onOpenWorkbench, tab, setTab }) {
   const { user, casLogin } = useV2User();
   const maxTrend = Math.max(...OV.trend.map((x) => x[1]));
   const maxAct = Math.max(...OV.collegeActivity.map((x) => x[1]));
@@ -68,9 +68,14 @@ export function InsightHome({ onOpenWorkbench }) {
       <div className="v2-sec-head v2-insight-head">
         <h2>AI 数据洞察</h2>
         <p>数据驱动的一湖洞察 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
+        <div className="v2-tabs" style={{ marginTop: 16 }}>
+          <div className={'v2-tab' + (tab === 'overview' ? ' on' : '')} onClick={() => setTab('overview')}>公开洞察</div>
+          <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>业务分析工作台</div>
+        </div>
       </div>
       <div className="v2-body" style={{ maxWidth: 1240 }}>
 
+        {tab === 'overview' && (<>
         {/* KPI 行 */}
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
           {OV.kpi.map((k) => (
@@ -125,8 +130,9 @@ export function InsightHome({ onOpenWorkbench }) {
           </div>
         </div>
 
-        {/* 业务分析工作台 */}
-        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '30px 0 6px' }}>业务分析工作台</div>
+        </>)}
+        {tab === 'workbench' && (<>
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>业务分析工作台</div>
         <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · 使用学校统一身份认证登录，并需具备对应业务角色</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {WORKBENCHES.map((w) => (
@@ -161,6 +167,7 @@ export function InsightHome({ onOpenWorkbench }) {
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
           <span>本页聚合洞察对所有师生开放（仅统计汇总，不涉及个体数据）；业务分析工作台涉及学生个人信息，须使用统一身份认证登录且具备对应业务角色。需要开通请联系信息化与数据服务中心（dcc@wxit.edu.cn）。</span>
         </div>
+        </>)}
       </div>
     </>
   );

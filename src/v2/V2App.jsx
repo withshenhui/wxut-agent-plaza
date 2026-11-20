@@ -809,6 +809,7 @@ export default function V2App() {
   const { user, guest, casLogin, logout, requireLogin } = useV2User();
   const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
+  const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
 
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
   useEffect(() => {
@@ -880,7 +881,7 @@ export default function V2App() {
       {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
-        <InsightHome onOpenWorkbench={(w) => {
+        <InsightHome tab={insightTab} setTab={setInsightTab} onOpenWorkbench={(w) => {
           if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
           if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
           setWorkbench(w.key);
