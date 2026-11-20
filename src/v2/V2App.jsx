@@ -283,6 +283,13 @@ function ChatPage({ agent, onExit }) {
   const suggestions = Number(agent.id) === 111 ? SUGGEST_ALL : (agent.categoryKey === 'college' ? SUGGEST_COLLEGE : []);
   const storageKey = `v2-chat-${agent.id}`;
   const active = convs.find((c) => c.id === activeId);
+  const [currentModel, setCurrentModel] = useState('');
+
+  // 后台"大模型配置"当前生效的模型（脱敏公开端点）
+  useEffect(() => {
+    fetch(`${API_BASE}/configs/llm/current-model`).then((r) => r.json())
+      .then((j) => setCurrentModel(j.data || '')).catch(() => {});
+  }, []);
 
   // 持久化（最多 30 个会话）
   useEffect(() => { try { localStorage.setItem(storageKey, JSON.stringify(convs.slice(0, 30))); } catch {} }, [convs, storageKey]);
@@ -455,7 +462,7 @@ function ChatPage({ agent, onExit }) {
             <span className="v2-tag blue">{agent.categoryName}</span>
           </div>
           <div style={{ marginTop: 14 }}>
-            <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '平台默认'}</span></div>
+            <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{currentModel || (gw ? '平台默认' : '—')}</span></div>
             <div className="v2-kvv"><span className="k">对话通道</span><span className="v">{gw ? '学院数据网关' : '平台对话通道'}</span></div>
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
             <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>
