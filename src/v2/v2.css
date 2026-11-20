@@ -390,3 +390,10 @@ input,select,textarea{font-family:inherit}
 .v2-chat-left{display:flex;flex-direction:column;min-height:0}
 .v2-chat-left .v2-chat-history{flex:1 1 0;min-height:0}
 .v2-back-plaza{margin-bottom:10px}
+
+/* ============ 模型服务页背景 logo 墙 ============ */
+.v2-models-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.v2-models-bg img{position:absolute;opacity:.05;filter:grayscale(30%);user-select:none}
+.v2-sec-head.v2-models-head{position:relative;z-index:1;
+  background:linear-gradient(180deg,rgba(236,240,255,.85) 0%,rgba(245,246,250,0) 100%);padding-top:56px;padding-bottom:26px;margin-top:-16px}
+.v2-models-head ~ .v2-body{position:relative;z-index:1}

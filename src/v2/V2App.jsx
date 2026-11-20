@@ -516,9 +516,29 @@ function Models({ toast }) {
     if ((m.provider || '').includes('无锡职大')) return './v2-xixi.png';
     return null;
   };
+  // 背景 logo 墙：供应商 logo 淡色错落排布
+  const bgLogos = [
+    { src: './v2-deepseek.svg', x: 3, y: 6, s: 150, r: -14 },
+    { src: './v2-qwen.svg', x: 14, y: 38, s: 110, r: 10 },
+    { src: './v2-zhiyuan.svg', x: 7, y: 66, s: 130, r: -8 },
+    { src: './v2-qwen.svg', x: 24, y: 12, s: 90, r: 16 },
+    { src: './v2-deepseek.svg', x: 84, y: 10, s: 120, r: 12 },
+    { src: './v2-zhiyuan.svg', x: 90, y: 44, s: 150, r: -12 },
+    { src: './v2-qwen.svg', x: 82, y: 74, s: 100, r: -16 },
+    { src: './v2-xixi.png', x: 40, y: 82, s: 90, r: 8 },
+    { src: './v2-deepseek.svg', x: 60, y: 4, s: 80, r: 18 },
+    { src: './v2-zhiyuan.svg', x: 55, y: 88, s: 110, r: 10 },
+    { src: './v2-qwen.svg', x: 72, y: 30, s: 70, r: -20 },
+    { src: './v2-deepseek.svg', x: 18, y: 88, s: 95, r: 6 },
+  ];
   return (
     <>
-      <div className="v2-sec-head">
+      <div className="v2-models-bg" aria-hidden="true">
+        {bgLogos.map((l, i) => (
+          <img key={i} src={l.src} alt="" style={{ left: `${l.x}%`, top: `${l.y}%`, width: l.s, transform: `rotate(${l.r}deg)` }} />
+        ))}
+      </div>
+      <div className="v2-sec-head v2-models-head">
         <h2>模型服务</h2>
         <p>学校本地部署与外部合作的大模型能力统一纳管 · 智能体经平台统一调用 · 公测期间服务可能偶发波动，敬请谅解</p>
       </div>
