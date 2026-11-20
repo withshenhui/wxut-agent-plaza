@@ -119,9 +119,9 @@ input,select,textarea{font-family:inherit}
 .v2-empty{text-align:center;color:var(--p-t4);font-size:13px;padding:48px 0;grid-column:1/-1}
 
 /* ============ 对话页 ============ */
-.v2-chat-shell{max-width:1240px;margin:0 auto;padding:20px 30px 30px;display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;min-height:calc(100vh - 170px)}
-.v2-chat-col{display:flex;flex-direction:column;flex:1;min-height:calc(100vh - 170px)}
-.v2-chat-head{display:flex;align-items:center;gap:12px;background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-r);padding:13px 18px;margin-bottom:14px}
+.v2-chat-shell{max-width:1560px;margin:0 auto;padding:14px 30px 16px;display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:stretch;height:calc(100vh - 60px);box-sizing:border-box}
+.v2-chat-col{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.v2-chat-head{display:flex;align-items:center;gap:12px;background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-r);padding:10px 16px;margin-bottom:10px;flex-shrink:0}
 .v2-chat-head .em{width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--el-primary)}
 .v2-chat-head .em svg{width:22px;height:22px;display:block}
 .v2-chat-head .em img{width:30px;height:30px;object-fit:contain;display:block}
@@ -130,7 +130,7 @@ input,select,textarea{font-family:inherit}
 .v2-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--p-t3);cursor:pointer;padding:6px 10px;border-radius:8px;background:none;border:none}
 .v2-back:hover{background:var(--p-fill);color:var(--p-text)}
 .v2-model-chip{font-size:11px;color:var(--p-t3);background:var(--p-fill);border-radius:6px;padding:3px 10px}
-.v2-chat-scroll{flex:1;overflow-y:auto;padding:6px 4px 18px}
+.v2-chat-scroll{flex:1 1 0;overflow-y:auto;padding:6px 4px 12px;min-height:0}
 .v2-msg{display:flex;gap:12px;margin-bottom:20px;animation:v2msg-in .25s ease both}
 @keyframes v2msg-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .v2-msg .who{width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -153,8 +153,8 @@ input,select,textarea{font-family:inherit}
 .v2-typing i:nth-child(2){animation-delay:.15s}.v2-typing i:nth-child(3){animation-delay:.3s}
 @keyframes v2tp{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-3px)}}
 .v2-toolstatus{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--el-primary);margin:6px 0 2px}
-.v2-chat-inputbar{position:sticky;bottom:14px;margin-top:auto}
-.v2-suggests{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.v2-chat-inputbar{margin-top:12px;flex-shrink:0}
+.v2-suggests{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .v2-sug{font-size:12px;color:var(--p-t3);background:var(--p-surface);border:1px solid var(--p-line2);border-radius:999px;padding:6px 14px;cursor:pointer;transition:all .15s}
 .v2-sug:hover{border-color:var(--el-primary-l3);color:var(--el-primary)}
 .v2-input-box{background:var(--p-surface);border:1.5px solid var(--p-line2);border-radius:14px;padding:10px 10px 10px 16px;
@@ -164,7 +164,7 @@ input,select,textarea{font-family:inherit}
 .v2-send{width:38px;height:38px;border-radius:10px;border:none;background:var(--el-primary);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .v2-send:hover{background:var(--el-primary-d2)}
 .v2-input-hint{text-align:center;font-size:11px;color:var(--p-t4);margin-top:8px}
-.v2-chat-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px}
+.v2-chat-side{display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0}
 .v2-side-card{background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-r);padding:18px 20px}
 .v2-side-card .t{font-size:13.5px;font-weight:600;color:var(--aink)}
 .v2-side-card .em{display:flex;justify-content:center;margin:12px 0 6px;color:var(--el-primary)}
@@ -346,7 +346,7 @@ input,select,textarea{font-family:inherit}
 /* ============ 对话页 V2：三栏宽布局 + 历史会话 ============ */
 .v2-chat-wide{max-width:1560px;grid-template-columns:220px 1fr 280px;gap:16px}
 .v2-chat-history{display:flex;flex-direction:column;background:var(--p-surface);border:1px solid var(--p-line);
-  border-radius:var(--p-r);padding:14px;position:sticky;top:78px;max-height:calc(100vh - 100px)}
+  border-radius:var(--p-r);padding:14px;overflow:hidden}
 .v2-conv-list{flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px}
 .v2-conv-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:9px;cursor:pointer;
   font-size:12.5px;color:var(--p-t2);margin-bottom:2px;transition:background .15s}
@@ -372,3 +372,10 @@ input,select,textarea{font-family:inherit}
 .v2-md th{background:#F0F4FB;color:var(--p-t3);font-weight:600;padding:7px 12px;text-align:left;white-space:nowrap}
 .v2-md td{padding:6px 12px;border-top:1px solid #F3F6FA;color:var(--p-t2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .v2-md hr{border:none;border-top:1px solid var(--p-line);margin:10px 0}
+
+/* 对话页左上返回广场 */
+.v2-back-plaza{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--p-t2);
+  background:var(--p-surface);border:1px solid var(--p-line);border-radius:10px;padding:8px 14px;cursor:pointer;
+  transition:all .15s;margin-bottom:12px;flex-shrink:0;width:100%;justify-content:center;box-sizing:border-box}
+.v2-back-plaza:hover{border-color:var(--el-primary-l3);color:var(--el-primary)}
+.v2-back-plaza svg{width:14px;height:14px}
