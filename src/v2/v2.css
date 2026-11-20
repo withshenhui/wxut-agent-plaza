@@ -379,3 +379,6 @@ input,select,textarea{font-family:inherit}
   transition:all .15s;margin-bottom:12px;flex-shrink:0;width:100%;justify-content:flex-start;box-sizing:border-box}
 .v2-back-plaza:hover{border-color:var(--el-primary-l3);color:var(--el-primary)}
 .v2-back-plaza svg{width:14px;height:14px}
+
+/* 流式加载行（typing + 工具状态合一显示在占位气泡内） */
+.v2-loading-inline{display:flex;align-items:center;gap:8px;color:var(--p-t3);font-size:12.5px;min-height:22px}

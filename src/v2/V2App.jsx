@@ -18,7 +18,9 @@ marked.use({
   renderer: { html(token) { return escapeHtml2(token.text); } },
 });
 function renderMd(text) {
-  try { return marked.parse(text || ''); } catch { return escapeHtml2(text || ''); }
+  // 净化旧版历史数据中拼接的 HTML 尾注（改为 note 字段渲染）
+  const cleaned = String(text || '').replace(/\n*<div class="v2-note-line">[\s\S]*?<\/div>\s*$/g, '').trim();
+  try { return marked.parse(cleaned); } catch { return escapeHtml2(cleaned); }
 }
 
 /** 学工号 gzip+base64 编码为 sys.user_id（与 V1 utils/agentLaunch 完全一致） */
@@ -367,8 +369,7 @@ function ChatPage({ agent, onExit }) {
           }
         }
       }
-      const final = acc + '\n\n<div class="v2-note-line">数据来源：学校数据中台 · 实时查询</div>';
-      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: final, streaming: false } : m)) }));
+      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc, streaming: false, note: '数据来源：学校数据中台 · 实时查询' } : m)) }));
     } catch (e) {
       mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
     }
@@ -411,17 +412,17 @@ function ChatPage({ agent, onExit }) {
               {m.sender === 'user'
                 ? <div className="who">我</div>
                 : <div className="who"><AgentAvatar agent={agent} size={26} /></div>}
-              <div className="v2-bubble v2-md" dangerouslySetInnerHTML={{ __html: m.sender === 'user' ? escapeHtml2(m.content).replace(/\n/g, '<br>') : (m.content ? renderMd(m.content) : '<span class="v2-typing"><i></i><i></i><i></i></span>') }} />
-            </div>
-          ))}
-          {toolStatus && (
-            <div className="v2-msg ai">
-              <div className="who"><AgentAvatar agent={agent} size={26} /></div>
-              <div className="v2-bubble" style={{ borderStyle: 'dashed' }}>
-                <span className="v2-typing"><i></i><i></i><i></i></span>&nbsp; {toolStatus}
+              <div className="v2-bubble v2-md">
+                {m.sender === 'user'
+                  ? <div dangerouslySetInnerHTML={{ __html: escapeHtml2(m.content).replace(/\n/g, '<br>') }} />
+                  : m.content
+                    ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content) }} />
+                    : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
+                {m.sender === 'agent' && !m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
               </div>
             </div>
-          )}
+          ))}
+
           <div ref={bottomRef} />
         </div>
         <div className="v2-chat-inputbar">
