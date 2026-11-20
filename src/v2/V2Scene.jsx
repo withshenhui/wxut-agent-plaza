@@ -88,6 +88,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const [pageNum, setPageNum] = useState(1);
   const [detail, setDetail] = useState(null);
   const [detailData, setDetailData] = useState(null);
+  const [dwTab, setDwTab] = useState('signal');
 
   const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
@@ -117,6 +118,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   }, [win, sceneKey, filters.level, filters.college, filters.q, pageNum]);
   useEffect(() => { setPageNum(1); }, [win, filters.level, filters.college, filters.q]);
 
+  useEffect(() => { setDwTab('signal'); }, [detail]);
   useEffect(() => {
     if (!detail || (sceneKey !== 'safety' && sceneKey !== 'mental')) { setDetailData(null); return; }
     setDetailData(null);
@@ -300,14 +302,22 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '4px 0 9px' }}>信号分解</div>
+              {(sceneKey === 'safety' || sceneKey === 'mental') ? (
+                <div className="dw-tabs">
+                  <button className={dwTab === 'signal' ? 'on' : ''} onClick={() => setDwTab('signal')}>信号分解</button>
+                  <button className={dwTab === 'leave' ? 'on' : ''} onClick={() => setDwTab('leave')}>明细 · 请假核验</button>
+                </div>
+              ) : null}
+              {((sceneKey !== 'safety' && sceneKey !== 'mental') || dwTab === 'signal') && (<>
+              <div style={{ fontSize: (sceneKey === 'safety' || sceneKey === 'mental') ? 13 : 13, fontWeight: 600, color: 'var(--aink)', margin: '4px 0 9px' }}>信号分解</div>
               {cfg.detailSignals(detail).map(([nm, v, low]) => (
                 <div key={nm} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--p-t2)' }}>{nm}</span>
                   <span style={{ fontWeight: 600, color: low ? 'var(--abad)' : 'var(--aink)' }}>{v}{low ? ' · 显著异常' : ''}</span>
                 </div>
               ))}
-              {(sceneKey === 'safety' || sceneKey === 'mental') && detailData && (
+              </>)}
+              {(sceneKey === 'safety' || sceneKey === 'mental') && dwTab === 'leave' && detailData && (
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 6px' }}>
                     未归寝明细（{detailData.nights.length} 次 · 请假对应 {detailData.matched} 次 / 未请假 {detailData.unmatched} 次）

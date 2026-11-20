@@ -308,6 +308,8 @@ export function FundingWorkbench({ onBack, toast }) {
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [detail, setDetail] = useState(null);
+  const [fdTab, setFdTab] = useState('signal');
+  useEffect(() => { setFdTab('signal'); }, [detail]);
   const [k, setK] = useState(null);
   const [colleges, setColleges] = useState(null);
   const [list, setList] = useState(null);
@@ -560,6 +562,11 @@ export function FundingWorkbench({ onBack, toast }) {
                   </div>
                 ))}
               </div>
+              <div className="dw-tabs">
+                <button className={fdTab === 'signal' ? 'on' : ''} onClick={() => setFdTab('signal')}>信号分解</button>
+                <button className={fdTab === 'check' ? 'on' : ''} onClick={() => setFdTab('check')}>排除项核验</button>
+              </div>
+              {fdTab === 'signal' && (<>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>信号分解（百分位 = 同学院同年级相对位置）</div>
               {[
                 ['单顿均价分位', 'P' + Math.round(Number(detail.pct) || 0), Number(detail.pct) < 5],
@@ -571,12 +578,15 @@ export function FundingWorkbench({ onBack, toast }) {
                   <span style={{ fontWeight: 600, color: low ? 'var(--abad)' : 'var(--aink)' }}>{v}{low ? ' · 显著偏低' : ''}</span>
                 </div>
               ))}
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 9px' }}>排除项核验</div>
+              </>)}
+              {fdTab === 'check' && (<>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>排除项核验</div>
               {[['观察窗内请假离校 0 天（无「人不在校」干扰）'], ['消费数据覆盖 29 / 30 天（完整性达标）'], ['无大额异常消费（单笔 ≤ 25 元）']].map((t) => (
                 <div key={t} style={{ display: 'flex', gap: 9, fontSize: 12.5, color: 'var(--p-t2)', padding: '6px 0' }}>
                   <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>✓</span>{t}
                 </div>
               ))}
+              </>)}
               <DetailAiInsight detail={detail} />
             </div>
           </div>
