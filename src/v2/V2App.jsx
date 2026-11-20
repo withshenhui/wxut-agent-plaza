@@ -426,7 +426,7 @@ function Models({ toast }) {
     if (n.includes('qwen')) return './v2-qwen.svg';
     if (n.includes('baai') || n.includes('bge')) return './v2-zhiyuan.svg';
     if (n.includes('deep')) return './v2-deepseek.svg';
-    if ((m.provider || '').includes('无锡职大')) return '/v2-logo.png';
+    if ((m.provider || '').includes('无锡职大')) return './v2-xixi.png';
     return null;
   };
   return (
