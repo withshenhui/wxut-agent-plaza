@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
+// 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
+const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate } from 'react-router-dom';
 import { Icon, Modal, Switch, Pager, useToast, AgentAvatar, CAT_ICON } from './ui.jsx';
 import * as agentApi from '../api/agent';
@@ -38,7 +41,7 @@ export default function V2Admin({ user, onLogout }) {
     <div className="v2-admin-app">
       <aside className="v2-sidebar">
         <div className="v2-side-brand">
-          <img src="/v2-logo.png" alt="无锡职业技术大学校徽" />
+          <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
           <div><div className="t1">锡职大 AI中台 <span style={{ fontSize: 9, color: 'var(--el-primary)', fontWeight: 700 }}>V2</span></div><div className="t2">AGENT PLAZA · ADMIN</div></div>
         </div>
         <nav className="v2-side-menu">
@@ -89,10 +92,10 @@ function Dashboard({ go }) {
   const [st, setSt] = useState(null);
   useEffect(() => {
     Promise.all([
-      fetch('/agent-plaza/api/v1/agents?size=100').then((r) => r.json()),
-      fetch('/agent-plaza/api/v1/categories').then((r) => r.json()),
-      fetch('/agent-plaza/api/v1/models?category=general&size=50').then((r) => r.json()),
-      fetch('/agent-plaza/api/v1/models?category=vertical&size=50').then((r) => r.json()),
+      fetch(`${API_BASE}/agents?size=100`).then((r) => r.json()),
+      fetch(`${API_BASE}/categories`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
     ]).then(([a, c, g, v]) => {
       const agents = a.data?.records || [];
       setSt({
@@ -360,8 +363,8 @@ function ModelsAdmin({ toast }) {
   const [edit, setEdit] = useState(null);
   const load = () => {
     Promise.all([
-      fetch('/agent-plaza/api/v1/models?category=general&size=50').then((r) => r.json()),
-      fetch('/agent-plaza/api/v1/models?category=vertical&size=50').then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
     ]).then(([g, v]) => setList([...(g.data?.records || []), ...(v.data?.records || [])]))
       .catch(() => { setList([]); toast('加载失败'); });
   };

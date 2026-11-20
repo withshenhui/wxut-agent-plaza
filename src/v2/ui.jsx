@@ -53,7 +53,7 @@ export function useMascot(agent) {
 }
 export function AgentAvatar({ agent, size = 36 }) {
   const isMascot = useMascot(agent);
-  if (isMascot) return <img src="/v2-xixi.png" alt="锡锡" style={{ width: size, height: size, objectFit: 'contain' }} />;
+  if (isMascot) return <img src="./v2-xixi.png" alt="锡锡" style={{ width: size, height: size, objectFit: 'contain' }} />;
   return <Icon name={CAT_ICON[agent?.categoryKey] || 'robot'} size={Math.round(size * 0.78)} />;
 }
 

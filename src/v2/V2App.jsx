@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
+const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
 
@@ -13,7 +16,7 @@ export function TopNav({ page, onNav, user, onLogin }) {
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
-        <img src="/v2-logo.png" alt="无锡职业技术大学校徽" />
+        <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
         <div><div className="t1">锡职大 AI中台 <span style={{ fontSize: 10, color: 'var(--el-primary)', fontWeight: 700 }}>V2</span></div><div className="t2">AGENT PLAZA</div></div>
       </a>
       <div className="v2-nav-links">
@@ -48,7 +51,7 @@ export function Footer({ onNav, toast }) {
         <div className="v2-foot-grid">
           <div className="v2-foot-brand">
             <div className="row">
-              <img src="/v2-logo.png" alt="无锡职业技术大学校徽" />
+              <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
               <div><div className="t1">锡职大 AI中台</div><div className="t2">AGENT PLAZA</div></div>
             </div>
             <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。一个中台、全员受益 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
@@ -118,7 +121,7 @@ function Hero({ agents, onChat, onSearch, q }) {
             <span className="tail" />
           </div>
           <div className="v2-hero-mascot">
-            <img src="/v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
+            <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
           </div>
         </div>
       </div>
@@ -358,9 +361,9 @@ function Models({ toast }) {
   const [mg, setMg] = useState(null);
   const [mv, setMv] = useState(null);
   useEffect(() => {
-    fetch('/agent-plaza/api/v1/models?category=general&size=50').then((r) => r.json())
+    fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json())
       .then((j) => setMg(j.data?.records || [])).catch(() => setMg([]));
-    fetch('/agent-plaza/api/v1/models?category=vertical&size=50').then((r) => r.json())
+    fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json())
       .then((j) => setMv(j.data?.records || [])).catch(() => setMv([]));
   }, []);
   if (!mg || !mv) return <div className="v2-body"><div className="v2-loading">模型数据加载中…</div></div>;
@@ -368,9 +371,9 @@ function Models({ toast }) {
   const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
   const provLogo = (m) => {
     const n = ((m.name || '') + (m.provider || '')).toLowerCase();
-    if (n.includes('qwen')) return '/v2-qwen.svg';
-    if (n.includes('baai') || n.includes('bge')) return '/v2-zhiyuan.svg';
-    if (n.includes('deep')) return '/v2-deepseek.svg';
+    if (n.includes('qwen')) return './v2-qwen.svg';
+    if (n.includes('baai') || n.includes('bge')) return './v2-zhiyuan.svg';
+    if (n.includes('deep')) return './v2-deepseek.svg';
     if ((m.provider || '').includes('无锡职大')) return '/v2-logo.png';
     return null;
   };
@@ -556,9 +559,9 @@ export default function V2App({ user, onLogin }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('/agent-plaza/api/v1/agents?size=100').then((r) => r.json())
+    fetch(`${API_BASE}/agents?size=100`).then((r) => r.json())
       .then((j) => setAgents(j.data?.records || [])).catch((e) => setLoadErr(e.message));
-    fetch('/agent-plaza/api/v1/categories').then((r) => r.json())
+    fetch(`${API_BASE}/categories`).then((r) => r.json())
       .then((j) => setCats((j.data || []).filter((c) => c.status === 1))).catch(() => {});
   }, []);
 
