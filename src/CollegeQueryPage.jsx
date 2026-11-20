@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { marked } from 'marked';
-import PageLayout from './components/PageLayout';
 import AgentIcon from './components/AgentIcon';
 import { getAgentDetail } from './api/agent';
 
@@ -146,7 +145,6 @@ function CollegeQueryPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState(''); // 工具执行进度提示
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const bottomRef = useRef(null);
 
   // —— 打字机速率控制：SSE 收到的内容先入队，再按固定速率逐字刷出 ——
@@ -364,126 +362,113 @@ function CollegeQueryPage() {
   };
 
   return (
-    <PageLayout
-      title="锡锡导员"
-      onBack={() => navigate('/')}
-      isSidebarCollapsed={isSidebarCollapsed}
-      setIsSidebarCollapsed={setIsSidebarCollapsed}
-      activePath="/"
-      footerText="© 锡职大智能体广场    技术支持：信息中心"
-    >
-      <div className="cq-layout">
-        {/* 左侧历史会话栏 */}
-        <aside className="cq-history">
-          <button className="cq-new-btn" onClick={newChat}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            新对话
-          </button>
-          <div className="cq-history-title">历史记录</div>
-          <div className="cq-history-list">
-            {conversations.length === 0 && (
-              <div className="cq-history-empty">暂无历史记录</div>
-            )}
-            {conversations.map(c => (
-              <div
-                key={c.id}
-                className={`cq-history-item${c.id === activeId ? ' cq-history-item--active' : ''}`}
-                onClick={() => setActiveId(c.id)}
-              >
-                <div className="cq-history-item-top">
-                  <span className="cq-history-item-title">{c.title || '新对话'}</span>
-                  <span
-                    className="cq-history-del"
-                    onClick={(e) => deleteConv(e, c.id)}
-                    title="删除"
-                  >
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                  </span>
-                </div>
-                <div className="cq-history-item-meta">
-                  {c.messages.length
-                    ? `${fmtDay(c.createdAt)} · ${c.messages.length} 条`
-                    : '空白对话'}
-                </div>
-                <div className="cq-history-item-preview">
-                  {(c.messages.find(m => m.sender === 'user')?.content || '').slice(0, 24)}
-                </div>
+    <div className="cq-immersive">
+      {/* 左侧历史会话栏 */}
+      <aside className="cq-history">
+        <button className="cq-new-btn" onClick={newChat}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          新对话
+        </button>
+        <div className="cq-history-title">历史记录</div>
+        <div className="cq-history-list">
+          {conversations.length === 0 && (
+            <div className="cq-history-empty">暂无历史记录</div>
+          )}
+          {conversations.map(c => (
+            <div
+              key={c.id}
+              className={`cq-history-item${c.id === activeId ? ' cq-history-item--active' : ''}`}
+              onClick={() => setActiveId(c.id)}
+            >
+              <div className="cq-history-item-top">
+                <span className="cq-history-item-title">{c.title || '新对话'}</span>
+                <span
+                  className="cq-history-del"
+                  onClick={(e) => deleteConv(e, c.id)}
+                  title="删除"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </span>
               </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* 右侧对话区 */}
-        <div className="cq-main">
-          <div className="cq-head">
-            <div className="cq-head-agent">
-              <AgentIcon emoji={agent?.icon || '📊'} category="college" size={36} />
-              <div>
-                <div className="cq-head-name">{agent?.name || '锡锡导员'}</div>
-                <div className="cq-head-sub">通过MCP工具实时查询本学院学生 / 成绩 / 门禁 / 请假 / 消费 / 处分 / 统计等数据</div>
+              <div className="cq-history-item-meta">
+                {c.messages.length
+                  ? `${fmtDay(c.createdAt)} · ${c.messages.length} 条`
+                  : '空白对话'}
+              </div>
+              <div className="cq-history-item-preview">
+                {(c.messages.find(m => m.sender === 'user')?.content || '').slice(0, 24)}
               </div>
             </div>
-          </div>
+          ))}
+        </div>
+        <button className="cq-back-btn" onClick={() => navigate('/plaza')}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          返回广场
+        </button>
+      </aside>
 
-          <div className="cq-chat">
-            <div className="el-chat-messages">
-              {(!activeConv || activeConv.messages.length === 0) && (
-                <div className="cq-welcome">
-                  <div className="cq-welcome-icon">
-                    <AgentIcon emoji={agent?.icon || '📊'} category="college" size={40} />
-                  </div>
-                  <p className="cq-welcome-title">你好，我是{agent?.name || '锡锡导员'}</p>
-                  <p className="cq-welcome-sub">你可以问我：</p>
-                  <div className="cq-sugs">
-                    {SUGGESTIONS.map((s, i) => (
-                      <button key={i} className="cq-sug" onClick={() => send(s)}>{s}</button>
-                    ))}
-                  </div>
+      {/* 右侧：沉浸对话区 */}
+      <div className="cq-main">
+        <div className="cq-chat">
+          <div className="el-chat-messages cq-stream-v2">
+            {(!activeConv || activeConv.messages.length === 0) && (
+              <div className="cq-welcome">
+                <div className="cq-welcome-icon">
+                  <AgentIcon emoji={agent?.icon || '📊'} category="college" size={40} />
                 </div>
-              )}
-              {activeConv?.messages.map((m, idx) => {
-                const isLast = idx === activeConv.messages.length - 1;
-                return (
-                  <div key={m.id} className={`el-chat-message${m.sender === 'user' ? ' el-chat-message--user' : ''}`}>
-                    {m.sender === 'user' ? (
-                      <>
-                        <div className="cq-bubble cq-bubble--user">{m.content}</div>
-                        <span className="cq-avatar cq-avatar--user">我</span>
-                      </>
-                    ) : (
-                      <>
-                        <AgentIcon emoji={agent?.icon || '📊'} category="college" size={28} />
-                        <div className="cq-col">
-                          <div className="cq-bubble cq-bubble--agent">
-                            <AgentReply
-                              content={m.content || ''}
-                              displayContent={stripFollowUpSection(m.content || '')}
-                              streaming={!!m.streaming}
-                              showCursor={!!m.streaming && isLast}
-                            />
-                            {m.streaming && isLast && toolStatus && (
-                              <div className="cq-tool-status">
-                                <span className="cq-tool-spin" />
-                                {toolStatus}
-                              </div>
-                            )}
-                          </div>
-                          {!m.streaming && isLast && (
-                            <FollowUpChips items={extractFollowUps(m.content || '')} onPick={send} />
+                <p className="cq-welcome-title">你好，我是{agent?.name || '锡锡导员'}</p>
+                <p className="cq-welcome-sub">通过 MCP 工具实时查询本学院学生 / 成绩 / 门禁 / 请假 / 消费数据，你可以问我：</p>
+                <div className="cq-sugs">
+                  {SUGGESTIONS.map((s, i) => (
+                    <button key={i} className="cq-sug" onClick={() => send(s)}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {activeConv?.messages.map((m, idx) => {
+              const isLast = idx === activeConv.messages.length - 1;
+              return (
+                <div key={m.id} className={`cq-v2-msg${m.sender === 'user' ? ' cq-v2-msg--user' : ''}`}>
+                  {m.sender === 'user' ? (
+                    <>
+                      <div className="cq-bubble cq-bubble--user cq-v2-bubble-user">{m.content}</div>
+                      <span className="cq-v2-ava cq-v2-ava--user">我</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="cq-v2-ava"><AgentIcon emoji={agent?.icon || '📊'} category="college" size={26} /></span>
+                      <div className="cq-col">
+                        <div className="cq-bubble cq-bubble--agent cq-v2-bubble-agent">
+                          <AgentReply
+                            content={m.content || ''}
+                            displayContent={stripFollowUpSection(m.content || '')}
+                            streaming={!!m.streaming}
+                            showCursor={!!m.streaming && isLast}
+                          />
+                          {m.streaming && isLast && toolStatus && (
+                            <div className="cq-tool-status">
+                              <span className="cq-tool-spin" />
+                              {toolStatus}
+                            </div>
                           )}
                         </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
+                        {!m.streaming && isLast && (
+                          <FollowUpChips items={extractFollowUps(m.content || '')} onPick={send} />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
 
-            <div className="cq-input-bar">
+          <div className="cq-composer-v2">
+            <div className="cq-composer-v2__box">
               <input
                 type="text"
-                placeholder="输入你的查询，例如：各专业学生的平均成绩"
+                placeholder={`向 ${agent?.name || '锡锡导员'} 提问，例如：各专业学生的平均成绩`}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={onKey}
@@ -493,6 +478,7 @@ function CollegeQueryPage() {
                 className={`cq-send-btn${loading ? ' cq-send-btn--disabled' : ''}`}
                 disabled={loading}
                 onClick={() => send()}
+                aria-label="发送"
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13M22 2 15 22l-4-9-9-4z"/></svg>
               </button>
@@ -500,7 +486,7 @@ function CollegeQueryPage() {
           </div>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
 
