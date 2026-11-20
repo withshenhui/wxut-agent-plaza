@@ -285,7 +285,7 @@ function FundingSkeleton() {
 /* 详情弹窗底部：AI数据洞察打字机 + 合规提示（固定高度避免错乱） */
 function DetailAiInsight({ detail }) {
   const lvlText = detail.level === 'hi' ? '红灯（高关注）' : detail.level === 'mid' ? '黄灯（中关注）' : '绿灯（观察）';
-  const msg = `AI数据洞察：该生判定为${lvlText}，同学院同年级消费分位 P${Math.round(Number(detail.pct) || 0)}，观察窗就餐 ${detail.meals} 顿、单顿均价 ${Number(detail.price).toFixed(2)} 元。请辅导员/资助岗结合谈心谈话人工复核后按流程处理，请勿直接向学生提及「被系统识别」。`;
+  const msg = `该生判定为${lvlText}，同学院同年级消费分位 P${Math.round(Number(detail.pct) || 0)}，观察窗就餐 ${detail.meals} 顿、单顿均价 ${Number(detail.price).toFixed(2)} 元。请辅导员/资助岗结合谈心谈话人工复核后按流程处理，请勿直接向学生提及「被系统识别」。`;
   const [shown, setShown] = useState('');
   useEffect(() => {
     setShown('');
@@ -299,6 +299,7 @@ function DetailAiInsight({ detail }) {
   }, [msg]);
   return (
     <div className="dw-ai-block">
+      <div className="dw-ai-head"><img src="./v2-xixi.png" alt="锡锡" className="dw-ai-ava" /><span className="dw-ai-tag">AI数据洞察</span></div>
       <div className="dw-ai-text">{shown}<span className="caret" /></div>
     </div>
   );

@@ -381,7 +381,7 @@ function SceneDetailAI({ detail, cfg, detailData }) {
   if (detailData && detailData.nights) {
     leaveNote = `经请假交叉核验：${detailData.nights.length} 次未归中 ${detailData.matched} 次有请假对应、${detailData.unmatched} 次未请假，请优先核实未请假日期的去向。`;
   }
-  const msg = `AI数据洞察：该生在${cfg.title}中判定为${lvlText}。${cfg.detailSignals(detail).map(([a, b]) => a + ' ' + b).join('，')}。${leaveNote}请辅导员结合谈心谈话人工核实后按流程处理，注意方式方法。`;
+  const msg = `该生在${cfg.title}中判定为${lvlText}。${cfg.detailSignals(detail).map(([a, b]) => a + ' ' + b).join('，')}。${leaveNote}请辅导员结合谈心谈话人工核实后按流程处理，注意方式方法。`;
   const [shown, setShown] = useState('');
   useEffect(() => {
     setShown('');
@@ -391,6 +391,7 @@ function SceneDetailAI({ detail, cfg, detailData }) {
   }, [msg]);
   return (
     <div className="dw-ai-block">
+      <div className="dw-ai-head"><img src="./v2-xixi.png" alt="锡锡" className="dw-ai-ava" /><span className="dw-ai-tag">AI数据洞察</span></div>
       <div className="dw-ai-text">{shown}<span className="caret" /></div>
     </div>
   );
