@@ -293,6 +293,7 @@ export function FundingWorkbench({ onBack, toast }) {
   const [list, setList] = useState(null);
   const [pageNum, setPageNum] = useState(1);
   const [hist, setHist] = useState(null);
+  const histTotal = (hist || []).reduce((a, b) => a + (b.n || 0), 0);
 
   const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
@@ -421,21 +422,32 @@ export function FundingWorkbench({ onBack, toast }) {
             ))}
           </div>
           <div className="v2-card">
-            <div className="ct">单顿均价分位分布</div>
-            <div className="cs">达标人群 · 红=P5 以下 · 黄=P5–15 · 绿=P15–40 · 灰=正常区间</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140, marginTop: 16 }}>
+            <div className="ct">单顿均价分位分布<span style={{ fontSize: 12, fontWeight: 400, color: 'var(--p-t4)', marginLeft: 8 }}>达标 {histTotal} 人</span></div>
+            <div className="cs">每个学生与其同学院同年级同学比较单顿均价 · 越靠左越省 · 红=P5 以下 · 黄=P5–15 · 绿=P15–40</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 150, marginTop: 16 }}>
               {(hist || []).map((b) => {
                 const maxN = Math.max(1, ...(hist || []).map((x) => x.n));
+                const pct = histTotal ? Math.round((b.n / histTotal) * 100) : 0;
                 const color = b.light === 'hi' ? '#E5484D' : b.light === 'mid' ? '#F59E0B' : b.light === 'watch' ? '#10B981' : '#CBD5E1';
                 return (
-                  <div key={b.bucket} style={{ flex: 1, height: `${Math.max(3, (b.n / maxN) * 100)}%`, background: color, opacity: b.light ? 1 : 0.75, borderRadius: 2 }} title={`${b.bucket}：${b.n} 人${b.light ? (b.light === 'hi' ? ' · 红灯' : b.light === 'mid' ? ' · 黄灯' : ' · 绿灯') : ''}`} />
+                  <div key={b.bucket} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}
+                    title={`${b.bucket}：${b.n} 人（${pct}%）${b.light ? (b.light === 'hi' ? ' · 红灯' : b.light === 'mid' ? ' · 黄灯' : ' · 绿灯') : ''}`}>
+                    <div style={{ fontSize: 8.5, color: b.light ? (b.light === 'hi' ? '#C53030' : b.light === 'mid' ? '#B45309' : '#047857') : 'var(--p-t4)', fontVariantNumeric: 'tabular-nums', marginBottom: 2, whiteSpace: 'nowrap' }}>{pct}%</div>
+                    <div style={{ width: '100%', height: `${Math.max(3, (b.n / maxN) * 100)}%`, background: color, opacity: b.light ? 1 : 0.7, borderRadius: 2 }} />
+                  </div>
                 );
               })}
             </div>
             <div style={{ borderTop: '1px dashed #F59E0B', margin: '6px 0 0 15%', position: 'relative' }}>
               <span style={{ position: 'absolute', right: 4, top: -16, fontSize: 10, color: '#B45309', fontWeight: 600 }}>黄/绿分界 P15</span>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--p-t4)', textAlign: 'right', marginTop: 4 }}>横轴：同学院同年级消费分位（越低越省）· 纵轴：人数</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: 'var(--p-t4)', marginTop: 4 }}>
+              <span>P0（最省）</span><span>P25</span><span>P50（中位）</span><span>P75</span><span>P100（最高）</span>
+            </div>
+            <div className="v2-notice warn" style={{ marginTop: 10, fontSize: 11, padding: '7px 11px' }}>
+              <span style={{ flexShrink: 0, marginTop: 1 }}><Icon name="warn" size={13} /></span>
+              <span>读图：柱越靠左表示"吃得越省"。各学院独立计算分位后汇总为全校分布，人数与占比 hover 柱可见；红色区（P0–5）即红灯线索人群。</span>
+            </div>
           </div>
         </div>
 

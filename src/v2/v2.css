@@ -470,10 +470,10 @@ input,select,textarea{font-family:inherit}
 /* 标题右侧口径说明 ⓘ */
 .v2-method-tip{position:relative;display:inline-flex;align-items:center;color:var(--p-t4);cursor:help;outline:none}
 .v2-method-tip:hover, .v2-method-tip:focus{color:var(--el-primary)}
-.v2-method-pop{display:none;position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);
-  width:460px;max-width:80vw;background:var(--aink);color:#E7ECF5;font-size:12px;line-height:1.8;
+.v2-method-pop{display:none;position:absolute;top:calc(100% + 10px);left:0;
+  width:460px;max-width:min(80vw,560px);background:var(--aink);color:#E7ECF5;font-size:12px;line-height:1.8;
   border-radius:12px;padding:14px 16px;z-index:60;box-shadow:0 16px 44px #0f172a55;font-weight:400}
 .v2-method-pop b{color:#fff;font-weight:600}
 .v2-method-tip:hover .v2-method-pop, .v2-method-tip:focus .v2-method-pop{display:block}
-.v2-method-pop::before{content:"";position:absolute;top:-5px;left:50%;width:10px;height:10px;background:var(--aink);
-  transform:translateX(-50%) rotate(45deg)}
+.v2-method-pop::before{content:"";position:absolute;top:-5px;left:10px;width:10px;height:10px;background:var(--aink);
+  transform:rotate(45deg)}
