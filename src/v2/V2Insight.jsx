@@ -73,7 +73,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
         <div className="v2-insight-headbar">
           <div>
             <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--aink)' }}>AI 数据洞察</h2>
-            <p style={{ fontSize: 13, color: 'var(--p-t3)', marginTop: 6 }}>数据驱动的一湖洞察 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
+            <p style={{ fontSize: 13, color: 'var(--p-t3)', marginTop: 6, maxWidth: 1080, lineHeight: 1.7 }}>数据驱动的一湖洞察 · 充分运用AI大模型，自动汇聚分析宿管考勤、门禁、消费、学业等全域数据，智能识别异常线索、生成跟进建议 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
           </div>
         </div>
         <div className="v2-tabs" style={{ margin: '18px 0 20px' }}>
