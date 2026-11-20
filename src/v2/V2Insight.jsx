@@ -1,0 +1,408 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Icon, useToast } from './ui.jsx';
+import { useV2User } from './V2User.jsx';
+
+/* ============================================================
+ * AI 数据洞察（V2 前台频道）
+ * 两层结构：
+ *  1. 公开洞察首页 —— 脱敏聚合图表，全员可见
+ *  2. 业务分析工作台 —— 登录+角色授权（精准资助分析等）
+ * ============================================================ */
+
+/* ---------------- 公开层数据（示例，正式接 /api/v1/insight/overview） ---------------- */
+const OV = {
+  kpi: [
+    { lb: '在校生', vl: '15,103', cmp: '学籍口径 · 数据日期 11-18', bar: 'var(--el-primary)', ic: 'grad' },
+    { lb: '今日智能体对话', vl: '2,580', cmp: '覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)', ic: 'spark' },
+    { lb: '活跃智能体', vl: '56', cmp: '累计访问 11.2 万次', bar: '#8B5CF6', ic: 'robot' },
+    { lb: '平台模型', vl: '12', cmp: '本地部署 + 外部合作', bar: 'var(--p-success)', ic: 'chip' },
+  ],
+  trend: [
+    ['11-14', 2340], ['11-15', 2510], ['11-16', 2680], ['11-17', 2420],
+    ['11-18', 2590], ['11-19', 2610], ['11-20', 2580],
+  ],
+  collegeActivity: [
+    ['机械工程学院', 92], ['物联网工程学院', 85], ['控制工程学院', 78], ['汽车与交通工程学院', 70],
+    ['财经学院', 64], ['集成电路学院', 61], ['管理学院', 58], ['文旅学院', 49],
+    ['设计艺术学院', 46], ['人工智能学院', 74], ['国际教育学院', 38],
+  ],
+  scenes: [
+    ['学生数据查询', 38], ['制度政策问答', 22], ['科研教学查询', 18], ['就业指导', 12], ['其他', 10],
+  ],
+};
+
+/* ---------------- 工作台注册表（正式从后端按角色返回） ---------------- */
+const WORKBENCHES = [
+  {
+    key: 'funding',
+    title: '精准资助分析',
+    ic: 'heart',
+    desc: '基于一卡通消费行为的隐性困难识别 —— 「吃得勤 + 吃得省」多信号模型，输出高/中/观察三档资助工作线索，支持名单筛选与导出。',
+    tags: ['学工/资助中心', '消费行为分析', '名单导出'],
+    role: '资助工作岗',
+    fresh: '消费数据截至 2026-11-19',
+    status: 'ready',
+  },
+  {
+    key: 'safety',
+    title: '学生安全分析',
+    ic: 'warn',
+    desc: '晚归未归、请假异常、行为突变等多源信号融合的安全预警看板，面向学工与保卫条线的日常排查与专项研判。',
+    tags: ['学工/保卫处', '多源信号', '预警看板'],
+    role: '学生安全岗',
+    fresh: '考勤数据截至 2026-11-18',
+    status: 'building',
+  },
+];
+
+/* ================= 频道首页 ================= */
+export function InsightHome({ onOpenWorkbench }) {
+  const { user, casLogin } = useV2User();
+  const maxTrend = Math.max(...OV.trend.map((x) => x[1]));
+  const maxAct = Math.max(...OV.collegeActivity.map((x) => x[1]));
+  const maxScene = Math.max(...OV.scenes.map((x) => x[1]));
+
+  return (
+    <>
+      <div className="v2-sec-head v2-insight-head">
+        <h2>AI 数据洞察</h2>
+        <p>数据驱动的一湖洞察 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
+      </div>
+      <div className="v2-body" style={{ maxWidth: 1240 }}>
+
+        {/* KPI 行 */}
+        <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+          {OV.kpi.map((k) => (
+            <div key={k.lb} className="v2-kpi">
+              <span className="bar" style={{ background: k.bar }} />
+              <div className="lb">{k.lb}</div>
+              <div className="vl">{k.vl}</div>
+              <div className="cmp">{k.cmp}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 图表区 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
+          <div className="v2-card">
+            <div className="ct">近 7 日智能体对话趋势</div>
+            <div className="cs">全校合计 · 数据中台自动统计</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150, marginTop: 18 }}>
+              {OV.trend.map(([d, v], i) => (
+                <div key={d} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 10.5, color: 'var(--p-t4)', fontVariantNumeric: 'tabular-nums' }}>{v.toLocaleString()}</div>
+                  <div style={{ width: '100%', maxWidth: 38, height: `${(v / maxTrend) * 100}%`, background: i === OV.trend.length - 1 ? 'var(--el-primary)' : '#C3D4F7', borderRadius: '4px 4px 0 0' }} />
+                  <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="v2-card">
+            <div className="ct">对话场景分布</div>
+            <div className="cs">按智能体分类聚合</div>
+            {OV.scenes.map(([n, v]) => (
+              <div key={n} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 100 }}>{n}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxScene) * 100}%`, background: 'var(--p-secondary)' }} /></div>
+                <span className="v2-hbar-val">{v}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="v2-card" style={{ marginTop: 14 }}>
+          <div className="ct">各学院智能体活跃度</div>
+          <div className="cs">近 30 日锡锡导员问答次数指数 · 仅聚合统计，不含个体数据</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 28 }}>
+            {OV.collegeActivity.map(([n, v]) => (
+              <div key={n} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 130 }}>{n}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxAct) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                <span className="v2-hbar-val">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 业务分析工作台 */}
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '30px 0 6px' }}>业务分析工作台</div>
+        <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · 使用学校统一身份认证登录，并需具备对应业务角色</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          {WORKBENCHES.map((w) => (
+            <div key={w.key} className="v2-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--el-primary-l9)', color: 'var(--el-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon name={w.ic} size={22} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--aink)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {w.title}
+                    {w.status === 'building' && <span className="v2-tag mid">建设中</span>}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--p-t4)', marginTop: 2 }}>{w.fresh}</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.7 }}>{w.desc}</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {w.tags.map((t) => <span key={t} className="v2-tag blue">{t}</span>)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #F3F6FA' }}>
+                <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>需要角色：{w.role}</span>
+                <button className="v2-btn" disabled={w.status === 'building'} onClick={() => onOpenWorkbench(w)}>
+                  {w.status === 'building' ? '敬请期待' : '进入分析'} →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="v2-notice blue" style={{ marginTop: 18 }}>
+          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+          <span>本页聚合洞察对所有师生开放（仅统计汇总，不涉及个体数据）；业务分析工作台涉及学生个人信息，须使用统一身份认证登录且具备对应业务角色。需要开通请联系信息化与数据服务中心（dcc@wxit.edu.cn）。</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ================= 精准资助分析工作台（原型界面，示例数据） ================= */
+const FUND_KPI = (win) => ({
+  14: { active: 7862, eligible: 6215, hi: 97, mid: 227, watch: 508, range: '11-06 ~ 11-19' },
+  30: { active: 11247, eligible: 9863, hi: 187, mid: 421, watch: 892, range: '10-21 ~ 11-19' },
+  60: { active: 12908, eligible: 11032, hi: 247, mid: 539, watch: 1079, range: '09-22 ~ 11-19' },
+  90: { active: 13415, eligible: 11690, hi: 281, mid: 593, watch: 1176, range: '08-23 ~ 11-19' },
+}[win]);
+
+const FUND_COLLEGES = [
+  { n: '机械', hi: 26, mid: 58, watch: 110 }, { n: '控制', hi: 19, mid: 44, watch: 90 },
+  { n: '物联网', hi: 23, mid: 51, watch: 98 }, { n: '汽车', hi: 17, mid: 39, watch: 83 },
+  { n: '财经', hi: 16, mid: 35, watch: 76 }, { n: '管理', hi: 15, mid: 33, watch: 73 },
+  { n: '文旅', hi: 14, mid: 31, watch: 69 }, { n: '设计', hi: 18, mid: 41, watch: 87 },
+  { n: '人工智能', hi: 20, mid: 46, watch: 96 }, { n: '集成电路', hi: 12, mid: 27, watch: 66 },
+  { n: '国际教育', hi: 7, mid: 16, watch: 44 },
+];
+const FUND_NAMES = ['王雨桐', '李志远', '张梦琪', '刘思远', '陈嘉禾', '杨静怡', '赵文博', '周雅婷', '吴俊熙', '徐若涵',
+  '孙浩然', '马晓芸', '朱天佑', '胡欣然', '郭明轩', '何佳妮', '高子墨', '罗一鸣', '郑舒扬', '梁咏诗'];
+const GRADES = ['2026级', '2025级', '2024级', '2023级'];
+const CCODE = { 机械: '30', 控制: '31', 物联网: '32', 汽车: '33', 财经: '34', 管理: '35', 文旅: '36', 设计: '37', 人工智能: '38', 集成电路: '39', 国际教育: '50' };
+const LVL = { hi: ['高关注', 'hi'], mid: ['中关注', 'mid'], watch: ['观察', 'watch'] };
+const EVI = [
+  { t: '顿数达标 · 均价P6 · 晚间就餐占比高', ev: [['就餐频次', 82], ['单顿均价', 6], ['超市占比', 18]] },
+  { t: '顿数达标 · 均价P9 · 假期留校就餐连续', ev: [['就餐频次', 88], ['单顿均价', 9], ['超市占比', 12]] },
+  { t: '顿数达标 · 均价P4 · 早午餐为主', ev: [['就餐频次', 76], ['单顿均价', 4], ['超市占比', 8]] },
+];
+
+export function FundingWorkbench({ onBack, toast }) {
+  const [win, setWin] = useState(30);
+  const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
+  const [detail, setDetail] = useState(null);
+  const k = FUND_KPI(win);
+
+  const students = useMemo(() => {
+    const list = [];
+    for (let i = 0; i < 40; i++) {
+      const c = FUND_COLLEGES[i % FUND_COLLEGES.length];
+      const g = GRADES[(i * 7) % 4];
+      const lvl = i % 9 === 0 ? 'hi' : (i % 3 === 0 ? 'mid' : 'watch');
+      const meals = lvl === 'hi' ? 52 + (i * 3) % 38 : lvl === 'mid' ? 46 + (i * 5) % 40 : 42 + (i * 7) % 44;
+      const price = lvl === 'hi' ? 4.1 + (i % 8) * 0.12 : lvl === 'mid' ? 5.2 + (i % 9) * 0.14 : 6.3 + (i % 11) * 0.16;
+      list.push({
+        id: CCODE[c.n] + g.slice(2, 4) + String(1000 + ((i * 137) % 9000)).padStart(4, '0') + String((i * 7) % 10) + String((i * 13) % 10),
+        name: FUND_NAMES[i % FUND_NAMES.length], college: c.n, grade: g, level: lvl,
+        meals, price: Math.round(price * 10) / 10, spend: Math.round(meals * price), pct: lvl === 'hi' ? 3 + (i % 9) : lvl === 'mid' ? 8 + (i % 8) : 12 + (i % 10),
+        evi: EVI[i % EVI.length],
+      });
+    }
+    return list;
+  }, []);
+
+  const rows = students.filter((s) =>
+    (!filters.college || s.college === filters.college) &&
+    (!filters.grade || s.grade === filters.grade) &&
+    (!filters.level || s.level === filters.level) &&
+    (!filters.q || s.id.includes(filters.q) || s.name.includes(filters.q)));
+
+  const maxC = Math.max(...FUND_COLLEGES.map((d) => d.hi + d.mid + d.watch));
+  const exportCsv = () => {
+    const head = ['学号', '姓名', '学院', '年级', '档位', '月就餐(顿)', '单顿均价(元)', '月食堂支出(元)', '消费分位', '信号证据'];
+    const csv = ['\uFEFF# 精准资助分析 · 线索名单（原型演示 · 示例数据）', '# 观察窗:' + k.range + ' · 导出时间:' + new Date().toLocaleString('zh-CN'), head.join(',')]
+      .concat(rows.map((s) => [s.id, s.name, s.college, s.grade, LVL[s.level][0], s.meals, s.price.toFixed(1), s.spend, 'P' + s.pct, '"' + s.evi.t + '"'].join(','))).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `精准资助线索名单_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    toast(`已导出 ${rows.length} 条（正式版将写入审计日志）`);
+  };
+
+  return (
+    <>
+      <div className="v2-body" style={{ maxWidth: 1560 }}>
+        <button className="v2-btn ghost" onClick={onBack} style={{ marginBottom: 12 }}>← 返回数据洞察</button>
+        <div className="v2-page-head">
+          <div>
+            <div className="v2-ph-title">精准资助分析</div>
+            <div className="v2-ph-sub">基于一卡通消费行为的隐性困难识别 ·「吃得勤 + 吃得省」多信号模型 · 面向学工/资助中心</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="v2-fresh-pill">数据截至 2026-11-19</span>
+            <div className="v2-tabs">
+              {[14, 30, 60, 90].map((w) => (
+                <div key={w} className={`v2-tab${win === w ? ' on' : ''}`} onClick={() => setWin(w)}>近{w}天</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="v2-notice warn">
+          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
+          <span>本页结果为<b>算法生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
+        </div>
+
+        <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
+          {[
+            { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
+            { lb: '活跃消费人数', vl: k.active.toLocaleString(), cmp: '在校生 15,103', bar: 'var(--p-t4)' },
+            { lb: '就餐达标人数', vl: k.eligible.toLocaleString(), cmp: '月食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
+            { lb: '高关注线索', vl: k.hi, cmp: '多信号低位 · 优先复核', bar: 'var(--abad)' },
+            { lb: '中关注线索', vl: k.mid, cmp: '建议纳入观察', bar: '#FBBF24' },
+            { lb: '观察线索', vl: k.watch, cmp: '低置信 · 参考', bar: 'var(--p-secondary)' },
+          ].map((x) => (
+            <div key={x.lb} className="v2-kpi">
+              <span className="bar" style={{ background: x.bar }} />
+              <div className="lb">{x.lb}</div>
+              <div className="vl">{x.vl}</div>
+              <div className="cmp">{x.cmp}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
+          <div className="v2-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div><div className="ct">各学院线索分布</div><div className="cs">同学院同年级基准分位口径 · 高/中/观察三档</div></div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: 'var(--p-t3)' }}>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--abad)', marginRight: 4 }} />高关注</span>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#FBBF24', marginRight: 4 }} />中关注</span>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--p-secondary)', marginRight: 4 }} />观察</span>
+              </div>
+            </div>
+            {FUND_COLLEGES.map((d) => (
+              <div key={d.n} className="v2-hbar-row">
+                <span className="v2-hbar-name">{d.n}</span>
+                <div className="v2-hbar-track" title={`${d.n}：高${d.hi} / 中${d.mid} / 观察${d.watch}`}>
+                  <div style={{ width: `${(d.hi / maxC) * 100}%`, background: 'var(--abad)' }} />
+                  <div style={{ width: `${(d.mid / maxC) * 100}%`, background: '#FBBF24' }} />
+                  <div style={{ width: `${(d.watch / maxC) * 100}%`, background: 'var(--p-secondary)' }} />
+                </div>
+                <span className="v2-hbar-val">{d.hi + d.mid + d.watch} 人</span>
+              </div>
+            ))}
+          </div>
+          <div className="v2-card">
+            <div className="ct">单顿均价分位分布</div>
+            <div className="cs">达标人群 · 分位越低消费越省</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140, marginTop: 16 }}>
+              {[420, 510, 580, 640, 690, 720, 730, 716, 680, 640, 595, 545, 490, 430, 370, 310, 250, 190, 130, 80].map((v, i) => (
+                <div key={i} style={{ flex: 1, height: `${(v / 730) * 100}%`, background: i < 3 ? 'var(--p-primary)' : '#CBD5E1', opacity: i < 3 ? 1 : 0.75, borderRadius: 2 }} title={`P${i * 5}~P${i * 5 + 5}：${v} 人`} />
+              ))}
+            </div>
+            <div style={{ borderTop: '1px dashed var(--p-accent)', margin: '6px 0 0 11%', position: 'relative' }}>
+              <span style={{ position: 'absolute', right: 4, top: -16, fontSize: 10, color: 'var(--p-accent)', fontWeight: 600 }}>P15 阈值</span>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--p-t4)', textAlign: 'right', marginTop: 4 }}>横轴：同学院同年级消费分位（越低越省）· 纵轴：人数</div>
+          </div>
+        </div>
+
+        <div className="v2-filter-bar" style={{ marginTop: 16 }}>
+          <label>学院</label>
+          <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
+            <option value="">全部学院</option>
+            {FUND_COLLEGES.map((c) => <option key={c.n}>{c.n}</option>)}
+          </select>
+          <label>年级</label>
+          <select className="v2-select" value={filters.grade} onChange={(e) => setFilters({ ...filters, grade: e.target.value })}>
+            <option value="">全部年级</option>
+            {GRADES.map((g) => <option key={g}>{g}</option>)}
+          </select>
+          <label>档位</label>
+          <select className="v2-select" value={filters.level} onChange={(e) => setFilters({ ...filters, level: e.target.value })}>
+            <option value="">全部档位</option>
+            <option value="hi">高关注</option><option value="mid">中关注</option><option value="watch">观察</option>
+          </select>
+          <input className="v2-search" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} placeholder="搜索学号 / 姓名" />
+          <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
+          <span style={{ flex: 1 }} />
+          <button className="v2-btn" onClick={exportCsv}>⤓ 导出名单</button>
+        </div>
+        <div className="v2-tbl-wrap">
+          <table className="v2-table">
+            <thead><tr>
+              <th>学号</th><th>姓名</th><th>学院</th><th>年级</th><th>档位</th>
+              <th style={{ textAlign: 'right' }}>月就餐(顿)</th><th style={{ textAlign: 'right' }}>单顿均价(元)</th>
+              <th style={{ textAlign: 'right' }}>月食堂支出(元)</th><th style={{ textAlign: 'right' }}>消费分位</th>
+              <th>信号证据</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((s) => (
+                <tr key={s.id}>
+                  <td className="num">{s.id}</td><td>{s.name}</td><td>{s.college}</td><td>{s.grade}</td>
+                  <td><span className={`v2-tag ${LVL[s.level][1]}`}>{LVL[s.level][0]}</span></td>
+                  <td className="num" style={{ textAlign: 'right' }}>{s.meals}</td>
+                  <td className="num" style={{ textAlign: 'right' }}>{s.price.toFixed(1)}</td>
+                  <td className="num" style={{ textAlign: 'right' }}>{s.spend}</td>
+                  <td className="num" style={{ textAlign: 'right' }}><b style={{ color: s.level === 'hi' ? 'var(--abad)' : s.level === 'mid' ? '#D97706' : 'var(--p-primary)' }}>P{s.pct}</b></td>
+                  <td style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>{s.evi.t}</td>
+                  <td><button className="v2-link" onClick={() => setDetail(s)}>详情</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="v2-tbl-foot"><span>共 {rows.length} 条线索 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span></div>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 16 }}>原型演示 · 示例数据（正式版数据源：一卡通消费 t_ykt_jkb · 学籍 t_bzks · 请假 xsqjb · 只读数仓）</div>
+      </div>
+
+      {detail && (
+        <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setDetail(null); }}>
+          <div className="v2-modal" style={{ width: 480 }}>
+            <div className="v2-md-head">
+              <div className="t">{detail.name} <span style={{ fontWeight: 400, color: 'var(--p-t4)', fontSize: 13 }}>{detail.id} · {detail.college} · {detail.grade}</span></div>
+              <button className="v2-md-close" onClick={() => setDetail(null)}>✕</button>
+            </div>
+            <div className="v2-md-body">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+                <span className={`v2-tag ${LVL[detail.level][1]}`} style={{ fontSize: 12, padding: '3px 11px' }}>{LVL[detail.level][0]}</span>
+                <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>综合消费分位 <b style={{ color: 'var(--aink)' }}>P{detail.pct}</b> · 同{detail.college}{detail.grade}基准</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
+                {[['月就餐', `${detail.meals} 顿`], ['单顿均价', `${detail.price.toFixed(1)} 元`], ['月支出', `${detail.spend} 元`], ['消费分位', `P${detail.pct}`]].map(([l, v]) => (
+                  <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
+                    <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l}</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', marginTop: 3 }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>信号分解（百分位 = 同学院同年级相对位置）</div>
+              {detail.evi.ev.map(([nm, p]) => (
+                <div key={nm} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12.5 }}>
+                  <span style={{ color: 'var(--p-t2)' }}>{nm}</span>
+                  <span style={{ fontWeight: 600, color: p < 15 ? 'var(--abad)' : p < 40 ? '#D97706' : 'var(--p-success)' }}>P{p}{p < 15 ? ' · 显著偏低' : ''}</span>
+                </div>
+              ))}
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 9px' }}>排除项核验</div>
+              {[['观察窗内请假离校 0 天（无「人不在校」干扰）'], ['消费数据覆盖 29 / 30 天（完整性达标）'], ['无大额异常消费（单笔 ≤ 25 元）']].map((t) => (
+                <div key={t} style={{ display: 'flex', gap: 9, fontSize: 12.5, color: 'var(--p-t2)', padding: '6px 0' }}>
+                  <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>✓</span>{t}
+                </div>
+              ))}
+              <div className="v2-notice warn" style={{ marginTop: 16, fontSize: 11.5 }}>
+                本详情为算法线索，请辅导员/资助岗人工复核后按学校资助流程处理。<b>请勿直接向学生提及「被系统识别」。</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

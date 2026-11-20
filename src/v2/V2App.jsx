@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
+import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -67,6 +68,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
   const NAVS = [
     { key: 'plaza', label: '首页' },
     { key: 'models', label: '模型服务' },
+    { key: 'insight', label: 'AI 数据洞察' },
     { key: 'dev', label: '智能体开发平台' },
     { key: 'kb', label: '知识库中心' },
   ];
@@ -806,6 +808,7 @@ export default function V2App() {
   const location = useLocation();
   const { user, guest, casLogin, logout, requireLogin } = useV2User();
   const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
+  const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
 
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
   useEffect(() => {
@@ -824,8 +827,11 @@ export default function V2App() {
       }
     } else {
       setChatAgent(null);
-      const p = location.pathname.replace(/^\/+/, '').split('/')[0] || 'plaza';
-      setPage(['plaza', 'models', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
+      const segs = location.pathname.replace(/^\/+/, '').split('/');
+      const p = segs[0] || 'plaza';
+      if (p === 'insight' && segs[1] === 'funding') { setPage('insight'); setWorkbench('funding'); return; }
+      setWorkbench(null);
+      setPage(['plaza', 'models', 'insight', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
     }
   }, [location.pathname, agents, navigate]);
 
@@ -873,6 +879,17 @@ export default function V2App() {
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
+      {page === 'insight' && !workbench && (
+        <InsightHome onOpenWorkbench={(w) => {
+          if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
+          if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
+          setWorkbench(w.key);
+          navigate('/insight/' + w.key);
+        }} />
+      )}
+      {page === 'insight' && workbench === 'funding' && (
+        <FundingWorkbench toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
+      )}
       {page === 'dev' && <Dev toast={toast} />}
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
       <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
