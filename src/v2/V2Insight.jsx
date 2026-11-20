@@ -177,7 +177,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 /* AI数据洞察横幅：锡锡 + 打字机 */
 function AiInsightBanner({ k, win }) {
   const msg = useMemo(() => {
-    if (!k || k.err) return '正在接入数仓，获取消费行为洞察…';
+    if (!k || k.err) return '正在接入数仓，正在识别红灯（高关注）与黄灯（中关注）线索…';
     const hi = Number(k.hi) || 0, mid = Number(k.mid) || 0;
     const top = '消费信号已完成分析';
     return `${top}：近 ${win} 天共识别红灯（高关注）线索 ${hi} 人、黄灯（中关注）${mid} 人。红灯人群呈"就餐频次达标 + 单顿均价显著低于同学院同年级"特征，建议优先复核；详细信号分解见名单详情。`;
@@ -240,6 +240,47 @@ function ComboTrendChart({ data }) {
           stroke="var(--p-accent)" stroke-width="1.8" />
       ))}
     </svg>
+  );
+}
+
+
+/* 模糊骨架屏：数据加载完成前占位（AI横幅仍在上方打字） */
+function FundingSkeleton() {
+  return (
+    <div className="v2-skel">
+      <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="v2-kpi"><div className="sk sk-lb" /><div className="sk sk-vl" /><div className="sk sk-cmp" /></div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14, marginTop: 16 }}>
+        <div className="v2-card"><div className="sk sk-t" /><div style={{ marginTop: 14 }}>{Array.from({ length: 8 }).map((_, i) => <div key={i} className="sk sk-bar" />)}</div></div>
+        <div className="v2-card"><div className="sk sk-t" /><div style={{ marginTop: 14 }}>{Array.from({ length: 5 }).map((_, i) => <div key={i} className="sk sk-bar" />)}</div></div>
+      </div>
+      <div className="sk sk-tbl" style={{ marginTop: 16 }} />
+    </div>
+  );
+}
+
+/* 详情弹窗底部：AI数据洞察打字机 + 合规提示（固定高度避免错乱） */
+function DetailAiInsight({ detail }) {
+  const lvlText = detail.level === 'hi' ? '红灯（高关注）' : detail.level === 'mid' ? '黄灯（中关注）' : '绿灯（观察）';
+  const msg = `AI数据洞察：该生判定为${lvlText}，同学院同年级消费分位 P${Math.round(Number(detail.pct) || 0)}，观察窗就餐 ${detail.meals} 顿、单顿均价 ${Number(detail.price).toFixed(2)} 元。请辅导员/资助岗结合谈心谈话人工复核后按流程处理，请勿直接向学生提及「被系统识别」。`;
+  const [shown, setShown] = useState('');
+  useEffect(() => {
+    setShown('');
+    let i = 0;
+    const t = setInterval(() => {
+      i += 2;
+      setShown(msg.slice(0, i));
+      if (i >= msg.length) clearInterval(t);
+    }, 25);
+    return () => clearInterval(t);
+  }, [msg]);
+  return (
+    <div className="dw-ai-block">
+      <div className="dw-ai-text">{shown}<span className="caret" /></div>
+    </div>
   );
 }
 
@@ -313,9 +354,11 @@ export function FundingWorkbench({ onBack, toast }) {
 
         <AiInsightBanner k={k} win={win} />
 
+        {k && k.err && <div className="v2-notice warn" style={{ marginTop: 14 }}><span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span><span>加载失败：{k.err}，请刷新重试</span></div>}
+        {!k && <FundingSkeleton />}
+        {k && !k.err && (<>
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
-          {k && k.err && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-empty">加载失败：{k.err}，请刷新重试</div></div>}
-          {k && !k.err ? [
+          {[
             { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
             { lb: '活跃消费人数', vl: (k.active || 0).toLocaleString(), cmp: '数据日期 ' + k.dataDate, bar: 'var(--p-t4)' },
             { lb: '就餐达标人数', vl: (k.eligible || 0).toLocaleString(), cmp: '观察窗内食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
@@ -329,7 +372,7 @@ export function FundingWorkbench({ onBack, toast }) {
               <div className="vl">{x.vl}</div>
               <div className="cmp">{x.cmp}</div>
             </div>
-          )) : null}
+          ))}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
@@ -430,7 +473,8 @@ export function FundingWorkbench({ onBack, toast }) {
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
           <span>本页结果为<b>AI数据洞察生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 12 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k && k.range ? k.range : ''}</div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 12 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k.range}</div>
+        </>)}
       </div>
 
       {detail && (
@@ -470,9 +514,7 @@ export function FundingWorkbench({ onBack, toast }) {
                   <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>✓</span>{t}
                 </div>
               ))}
-              <div className="v2-notice warn" style={{ marginTop: 16, fontSize: 11.5 }}>
-                本详情为AI数据洞察线索，请辅导员/资助岗人工复核后按学校资助流程处理。<b>请勿直接向学生提及「被系统识别」。</b>
-              </div>
+              <DetailAiInsight detail={detail} />
             </div>
           </div>
         </div>
