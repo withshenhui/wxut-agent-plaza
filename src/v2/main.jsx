@@ -7,7 +7,7 @@ import V2Admin from './V2Admin.jsx';
 import V2Login from './V2Login.jsx';
 import { ToastProvider } from './ui.jsx';
 import { getUserInfo } from '../api/auth';
-import { UserProvider } from '../UserContext';
+import { V2UserProvider } from './V2User.jsx';
 
 /* CAS 回调：#/?token=xxx（与 V1 CasCallback 同协议，V2 风格呈现） */
 function V2CasCallback() {
@@ -74,11 +74,11 @@ function V2Entry() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HashRouter>
-      <UserProvider>
+      <V2UserProvider>
         <ToastProvider>
           <V2Entry />
         </ToastProvider>
-      </UserProvider>
+      </V2UserProvider>
     </HashRouter>
   </React.StrictMode>
 );

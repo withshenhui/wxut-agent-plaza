@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
-import { useUser } from '../UserContext';
+import { useV2User } from './V2User.jsx';
 
 /** 学工号 gzip+base64 编码为 sys.user_id（与 V1 utils/agentLaunch 完全一致） */
 async function encodeUserId(userId) {
@@ -47,7 +47,7 @@ async function launchAgentV2(navigate, agentId, user, onChat) {
 }
 
 /* ============ 顶栏 ============ */
-export function TopNav({ page, onNav, user, onLogin, onLogout }) {
+export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
   const NAVS = [
     { key: 'plaza', label: '首页' },
     { key: 'models', label: '模型服务' },
@@ -78,6 +78,14 @@ export function TopNav({ page, onNav, user, onLogin, onLogout }) {
               <span className="nm">{user.nickname || user.username}</span>
             </div>
             <button className="v2-btn ghost" onClick={onLogout} title="退出登录">退出</button>
+          </>
+        ) : guest ? (
+          <>
+            <div className="v2-user" title="游客模式（免登录演示）">
+              <div className="ava" style={{ background: 'linear-gradient(135deg,#94A3B8,#CBD5E1)' }}>游</div>
+              <span className="nm">游客</span>
+            </div>
+            <button className="v2-btn ghost" onClick={onLogin} title="使用统一身份认证登录">登录</button>
           </>
         ) : (
           <button className="v2-btn ghost" onClick={onLogin}>登录</button>
@@ -601,7 +609,7 @@ export default function V2App() {
   const [loadErr, setLoadErr] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
-  const { user, casLogin, logout } = useUser();
+  const { user, guest, casLogin, logout } = useV2User();
 
   useEffect(() => {
     fetch(`${API_BASE}/agents?size=100`).then((r) => r.json())
@@ -632,14 +640,14 @@ export default function V2App() {
 
   if (chatAgent) return (
     <>
-      <TopNav page="plaza" onNav={nav} user={user} onLogin={casLogin} onLogout={logout} />
+      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
       <ChatPage agent={chatAgent} onBack={() => nav('plaza')} />
     </>
   );
 
   return (
     <>
-      <TopNav page={page} onNav={nav} user={user} onLogin={casLogin} onLogout={logout} />
+      <TopNav page={page} onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={nav} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
