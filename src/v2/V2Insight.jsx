@@ -292,16 +292,21 @@ export function FundingWorkbench({ onBack, toast }) {
   const [colleges, setColleges] = useState(null);
   const [list, setList] = useState(null);
   const [pageNum, setPageNum] = useState(1);
+  const [hist, setHist] = useState(null);
 
   const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
 
   useEffect(() => {
     setK(null);
+    setColleges(null);
+    setHist(null);
     fetch(`${API_BASE}/insight/funding/overview?windowDays=${win}`, { headers: authHeaders })
       .then((r) => r.json()).then((j) => { if (j.code === 200) setK(j.data); else { setK({ err: j.message }); toast('加载失败：' + (j.message || '')); } }).catch((e) => { setK({ err: e.message }); });
     fetch(`${API_BASE}/insight/funding/colleges?windowDays=${win}`, { headers: authHeaders })
       .then((r) => r.json()).then((j) => setColleges(j.data || [])).catch(() => setColleges([]));
+    fetch(`${API_BASE}/insight/funding/histogram?windowDays=${win}`, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => setHist(j.data || [])).catch(() => setHist([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [win]);
 
@@ -339,7 +344,25 @@ export function FundingWorkbench({ onBack, toast }) {
         <button className="v2-btn ghost" onClick={onBack} style={{ marginBottom: 12 }}>← 返回数据洞察</button>
         <div className="v2-page-head">
           <div>
-            <div className="v2-ph-title">精准资助分析</div>
+            <div className="v2-ph-title" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              精准资助分析
+              <span className="v2-method-tip" tabIndex={0}>
+                <Icon name="info" size={15} />
+                <span className="v2-method-pop">
+                  <b>分析维度</b>
+                  基于「暖心饭卡」模式，从一卡通消费行为提取多维信号：
+                  <br />· <b>就餐频次</b>——观察窗内食堂就餐次数（达标门槛 ≥40 顿，确保可比性）
+                  <br />· <b>消费水平</b>——单顿均价、观察窗食堂总支出
+                  <br />· <b>参照基准</b>——同学院、同年级达标人群内的分位排名（PERCENT_RANK，控制院系与年级消费结构差异）
+                  <br />· <b>数据范围</b>——食堂/餐厅终端消费（终端字典识别），金额分→元换算
+                  <br /><b>红黄绿灯规则</b>
+                  <br />· <b>红灯（高关注）</b>：同学院同年级单顿均价分位 <b>P5 以下</b>（最省的 5%），建议优先复核
+                  <br />· <b>黄灯（中关注）</b>：分位 <b>P5 – P15</b>，建议纳入观察
+                  <br />· <b>绿灯（观察）</b>：分位 <b>P15 – P40</b>，低置信，仅供参考
+                  <br /><b>重要提示</b>：结果为AI数据洞察生成的工作线索，不构成困难认定；请务必结合谈心谈话、家庭情况等人工复核。
+                </span>
+              </span>
+            </div>
             <div className="v2-ph-sub">基于一卡通消费行为的隐性困难识别 ·「吃得勤 + 吃得省」多信号模型 · 面向学工/资助中心</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -399,14 +422,18 @@ export function FundingWorkbench({ onBack, toast }) {
           </div>
           <div className="v2-card">
             <div className="ct">单顿均价分位分布</div>
-            <div className="cs">达标人群 · 分位越低消费越省</div>
+            <div className="cs">达标人群 · 红=P5 以下 · 黄=P5–15 · 绿=P15–40 · 灰=正常区间</div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 140, marginTop: 16 }}>
-              {[420, 510, 580, 640, 690, 720, 730, 716, 680, 640, 595, 545, 490, 430, 370, 310, 250, 190, 130, 80].map((v, i) => (
-                <div key={i} style={{ flex: 1, height: `${(v / 730) * 100}%`, background: i < 3 ? 'var(--p-primary)' : '#CBD5E1', opacity: i < 3 ? 1 : 0.75, borderRadius: 2 }} title={`P${i * 5}~P${i * 5 + 5}：${v} 人`} />
-              ))}
+              {(hist || []).map((b) => {
+                const maxN = Math.max(1, ...(hist || []).map((x) => x.n));
+                const color = b.light === 'hi' ? '#E5484D' : b.light === 'mid' ? '#F59E0B' : b.light === 'watch' ? '#10B981' : '#CBD5E1';
+                return (
+                  <div key={b.bucket} style={{ flex: 1, height: `${Math.max(3, (b.n / maxN) * 100)}%`, background: color, opacity: b.light ? 1 : 0.75, borderRadius: 2 }} title={`${b.bucket}：${b.n} 人${b.light ? (b.light === 'hi' ? ' · 红灯' : b.light === 'mid' ? ' · 黄灯' : ' · 绿灯') : ''}`} />
+                );
+              })}
             </div>
-            <div style={{ borderTop: '1px dashed var(--p-accent)', margin: '6px 0 0 11%', position: 'relative' }}>
-              <span style={{ position: 'absolute', right: 4, top: -16, fontSize: 10, color: 'var(--p-accent)', fontWeight: 600 }}>P15 阈值</span>
+            <div style={{ borderTop: '1px dashed #F59E0B', margin: '6px 0 0 15%', position: 'relative' }}>
+              <span style={{ position: 'absolute', right: 4, top: -16, fontSize: 10, color: '#B45309', fontWeight: 600 }}>黄/绿分界 P15</span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--p-t4)', textAlign: 'right', marginTop: 4 }}>横轴：同学院同年级消费分位（越低越省）· 纵轴：人数</div>
           </div>
