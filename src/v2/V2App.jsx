@@ -326,7 +326,7 @@ function ChatPage({ agent, onExit }) {
 
   const welcome = () => ([
     { id: 'w', sender: 'agent', content: gw
-      ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院数据网关，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`
+      ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`
       : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
   ]);
 
@@ -421,7 +421,7 @@ function ChatPage({ agent, onExit }) {
             <div className="d">{agent.description || ''}</div>
           </div>
           <div style={{ flex: 1 }} />
-          <span className="v2-model-chip">{gw ? `${gw} · 学院数据网关` : '平台默认模型'}</span>
+          <span className="v2-model-chip">{gw ? `MCP：${gw}` : '平台默认模型'}</span>
         </div>
         <div className="v2-chat-scroll" ref={scrollRef}>
           {msgs.map((m) => (
@@ -471,7 +471,7 @@ function ChatPage({ agent, onExit }) {
           </div>
           <div style={{ marginTop: 14 }}>
             <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{currentModel || (gw ? '平台默认' : '—')}</span></div>
-            <div className="v2-kvv"><span className="k">对话通道</span><span className="v">{gw ? '学院数据网关' : '平台对话通道'}</span></div>
+            <div className="v2-kvv"><span className="k">MCP 服务</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '—'}</span></div>
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
             <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>
           </div>
