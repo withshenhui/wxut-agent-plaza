@@ -1,139 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import PageLayout from './components/PageLayout';
-import AgentIcon from './components/AgentIcon';
 import { getAgentDetail } from './api/agent';
+import { useUser } from './UserContext';
 
 function ChatPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [agent, setAgent] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const scrollRef = useRef(null);
 
-  // 从后端获取智能体详情
   useEffect(() => {
     getAgentDetail(id)
       .then((data) => {
         setAgent(data);
         setMessages([
-          {
-            id: 1,
-            sender: 'agent',
-            content: `你好！我是${data.name}，有什么可以帮助你的吗？`,
-            timestamp: new Date()
-          }
+          { id: 1, sender: 'agent', content: `你好！我是${data.name}，有什么可以帮助你的吗？`, timestamp: new Date() },
         ]);
       })
       .catch(() => navigate('/'));
   }, [id, navigate]);
 
-  // 发送消息
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages]);
+
   const sendMessage = () => {
     if (!inputMessage.trim() || !agent) return;
-
-    const newMessage = {
-      id: messages.length + 1,
-      sender: 'user',
-      content: inputMessage.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages([...messages, newMessage]);
+    const text = inputMessage.trim();
+    setMessages((prev) => [...prev, { id: prev.length + 1, sender: 'user', content: text, timestamp: new Date() }]);
     setInputMessage('');
-
-    // 模拟智能体回复
     setTimeout(() => {
-      const agentReply = {
-        id: messages.length + 2,
+      setMessages((prev) => [...prev, {
+        id: prev.length + 1,
         sender: 'agent',
-        content: `这是${agent.name}的回复：你刚才说的是"${inputMessage.trim()}"。`,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, agentReply]);
-    }, 1000);
+        content: `这是${agent.name}的回复：你刚才说的是"${text}"。`,
+        timestamp: new Date(),
+      }]);
+    }, 800);
   };
 
-  // 处理键盘事件
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      sendMessage();
-    }
-  };
+  if (!agent) return null;
 
-  if (!agent) {
-    return (
-      <PageLayout
-        title="智能体对话"
-        onBack={() => navigate('/')}
-        isSidebarCollapsed={isSidebarCollapsed}
-        setIsSidebarCollapsed={setIsSidebarCollapsed}
-        activePath=""
-      >
-        <div className="el-section">
-          <p className="el-section__text">加载中...</p>
-        </div>
-      </PageLayout>
-    );
-  }
+  const nickname = user?.nickname || user?.username;
 
   return (
-    <PageLayout
-      title="智能体对话"
-      onBack={() => navigate('/')}
-      isSidebarCollapsed={isSidebarCollapsed}
-      setIsSidebarCollapsed={setIsSidebarCollapsed}
-      activePath=""
-      footerText="© 锡职大智能体广场    技术支持：信息中心"
-    >
-      {/* 智能体详情区域 */}
-      <div className="el-section">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <AgentIcon emoji={agent.icon} category="student" />
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--el-text-color-primary)', marginBottom: '8px', margin: '0 0 8px 0' }}>{agent.name}</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {agent.tags.map((tag, index) => (
-                <span key={index} className="el-tag el-tag--default">{tag}</span>
-              ))}
+    <div className="chat-immersive">
+      {/* 顶部细条：返回 + 智能体身份 */}
+      <header className="chat-top">
+        <button className="chat-back" onClick={() => navigate('/plaza')} aria-label="返回">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        </button>
+        <span className="chat-agent-emoji">{agent.icon || '🤖'}</span>
+        <div className="chat-agent-meta">
+          <b>{agent.name}</b>
+          <span className="chat-agent-desc">{agent.description || (agent.tags || []).slice(0, 3).join(' · ')}</span>
+        </div>
+      </header>
+
+      {/* 消息流：吃满剩余高度 */}
+      <div className="chat-stream" ref={scrollRef}>
+        {messages.map((m) => (
+          <div key={m.id} className={`chat-msg chat-msg--${m.sender}`}>
+            <span className="chat-msg__ava">{m.sender === 'user' ? (nickname?.[0] || '我') : (agent.icon || '🤖')}</span>
+            <div className="chat-msg__body">
+              <div className="chat-msg__name">{m.sender === 'user' ? (nickname || '我') : agent.name}</div>
+              <div className="chat-msg__bubble">{m.content}</div>
             </div>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* 聊天容器 */}
-      <div className="el-chat-container">
-        <div className="el-chat-messages">
-          {messages.map(message => (
-            <div
-              key={message.id}
-              className={`el-chat-message${message.sender === 'user' ? ' el-chat-message--user' : ''}`}
-            >
-              <span className="el-chat-avatar">
-                {message.sender === 'user' ? '👤' : agent.icon}
-              </span>
-              <div>
-                <div className={`el-chat-bubble${message.sender === 'user' ? ' el-chat-bubble--user' : ' el-chat-bubble--agent'}`}>
-                  {message.content}
-                </div>
-                <div className="el-chat-time">{message.timestamp.toLocaleTimeString()}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="el-chat-input-bar">
-          <input
-            type="text"
-            placeholder="输入消息..."
+      {/* 输入区：悬浮胶囊 */}
+      <footer className="chat-composer">
+        <div className="chat-composer__box">
+          <textarea
+            rows={1}
+            placeholder={`向 ${agent.name} 提问…（Enter 发送 / Shift+Enter 换行）`}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+            }}
           />
-          <button className="el-button el-button--primary" onClick={sendMessage}>发送</button>
+          <button
+            className="chat-send"
+            onClick={sendMessage}
+            disabled={!inputMessage.trim()}
+            aria-label="发送"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+          </button>
         </div>
-      </div>
-    </PageLayout>
+      </footer>
+    </div>
   );
 }
 
