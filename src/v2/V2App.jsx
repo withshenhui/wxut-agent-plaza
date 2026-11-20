@@ -284,6 +284,14 @@ function ChatPage({ agent, onExit }) {
   const storageKey = `v2-chat-${agent.id}`;
   const active = convs.find((c) => c.id === activeId);
   const [currentModel, setCurrentModel] = useState('');
+  const [phIdx, setPhIdx] = useState(0);
+
+  // placeholder 推荐问题：优先该智能体的建议，不足补通用问题
+  const phPool = suggestions.length ? suggestions : SUGGEST_ALL;
+  useEffect(() => {
+    const t = setInterval(() => setPhIdx((i) => (i + 1) % phPool.length), 4000);
+    return () => clearInterval(t);
+  }, [phPool.length]);
 
   // 后台"大模型配置"当前生效的模型（脱敏公开端点）
   useEffect(() => {
@@ -442,7 +450,7 @@ function ChatPage({ agent, onExit }) {
             <textarea
               rows={1}
               value={input}
-              placeholder="输入你的问题…"
+              placeholder={`试试问：${phPool[phIdx % phPool.length]}` || '输入你的问题…'}
               onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 110) + 'px'; }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             />
