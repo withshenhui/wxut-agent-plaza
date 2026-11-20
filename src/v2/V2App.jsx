@@ -570,7 +570,95 @@ function Models({ toast }) {
 }
 
 /* ============ 开发平台 landing ============ */
+/* ============ 开发平台使用指南（Dify 真实操作流程） ============ */
+function DevGuide({ onClose, toast }) {
+  const steps = [
+    { no: '01', t: '提交开通申请', ic: 'doclog', body: [
+      ['联系信息化与数据服务中心', '邮箱 dcc@wxit.edu.cn，说明：所在学院/部门、联系人、拟开发的智能体名称与业务场景、预期服务对象。'],
+      ['等待评估', '中心会对场景进行评估（模型资源、数据边界、安全合规），一般 1–3 个工作日回复。'],
+      ['开通账号', '评估通过后，为申请单位开通开发者账号与专属工作空间。'],
+    ]},
+    { no: '02', t: '登录开发平台', ic: 'users', body: [
+      ['打开平台', '浏览器访问 aiagent.wxut.edu.cn/apps（智能体开发平台），建议使用 Chrome / Edge。'],
+      ['统一身份认证', '使用学校统一身份认证登录（工号 + 信息门户密码），与 AI中台账号体系互通。'],
+      ['进入工作室', '登录后进入「工作室」，即可看到本单位的空白应用与已有应用。'],
+    ]},
+    { no: '03', t: '创建应用', ic: 'plus', body: [
+      ['新建空白应用', '工作室 → 「创建空白应用」→ 选择类型：Chatbot（对话助手，最常用）/ Agent（自主调用工具）/ 工作流（多步骤流程）。'],
+      ['填写应用信息', '应用名称建议带学院/业务前缀（如"机械学院-课程答疑"），便于后续审核与上架。'],
+      ['选择编排方式', '基础编排适合简单问答；Chatflow 适合多轮对话与分支场景。'],
+    ]},
+    { no: '04', t: '编排与配置', ic: 'code', body: [
+      ['提示词（Prompt）', '在「编排」页编写系统提示词，定义智能体的角色、回答边界与语气。这是效果的根基，建议写清"你是谁/服务谁/怎么答/不答什么"。'],
+      ['接入模型', '平台默认模型为后台统一配置（当前 deepseek-v4-flash），无需自行申请密钥；高级场景可联系中心调整。'],
+      ['挂载知识库', '「上下文」→ 添加知识库：上传课件/制度文件等（支持 PDF、Word、TXT、Markdown），平台自动分段向量化，让智能体基于你的资料回答。'],
+      ['添加工具', '如需查询学校数据，可联系中心接入 MCP 查询服务（如学院学生数据 query-xxx 系列）。'],
+    ]},
+    { no: '05', t: '调试与预览', ic: 'search', body: [
+      ['右侧预览', '编排页右侧可实时对话调试，逐轮验证回答效果。'],
+      ['查看引用', '挂载知识库后，回答会标注引用来源，点击可核对原文。'],
+      ['迭代提示词', '根据调试结果反复修改提示词与知识库，直到效果稳定。'],
+    ]},
+    { no: '06', t: '发布与上架广场', ic: 'heart', body: [
+      ['发布应用', '调试完成后点「发布」，应用即在平台内可用，可通过链接分享给同事试用。'],
+      ['申请上架广场', '如需面向全校师生，联系信息化与数据服务中心（dcc@wxit.edu.cn）登记：应用名称、图标、分类、一句话描述。'],
+      ['审核上线', '中心审核通过后，应用卡片将出现在 AI中台智能体广场，全校可点开使用。'],
+    ]},
+  ];
+  const faqs = [
+    ['开发平台和 AI中台是什么关系？', 'AI中台（智能体广场）是全校师生的使用入口；开发平台是面向开发者的编排工具。你在开发平台创建的应用，经审核后可上架到广场供全校使用。'],
+    ['我没有编程基础，能用吗？', '可以。平台是可视化编排（写提示词、拖节点），无需写代码；复杂逻辑建议先从 Chatbot + 知识库做起。'],
+    ['能调用学校的数据吗？', '可以。学生/教师/科研等数据查询已封装为 MCP 服务（如各学院 query-xxx），联系中心评估接入；敏感数据有权限边界。'],
+    ['上架广场需要什么条件？', '应用有明确服务对象与场景、回答准确无违规内容、经所在单位同意。中心审核内容与安全性后上架。'],
+    ['费用与资源限制？', '公测期间免费；平台统一提供模型算力，暂不对单个应用限额，如有大流量场景请提前与中心沟通。'],
+  ];
+  return (
+    <div className="v2-body" style={{ maxWidth: 1000 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <button className="v2-btn ghost" onClick={onClose}>← 返回平台介绍</button>
+        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--aink)' }}>使用指南</div>
+      </div>
+      <p style={{ fontSize: 13, color: 'var(--p-t3)', margin: '4px 0 22px' }}>从申请开通到上架广场的完整流程 · 基于智能体开发平台（aiagent.wxut.edu.cn）实际操作整理</p>
+
+      {steps.map((st) => (
+        <div key={st.no} className="v2-card" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--el-primary-l9)', color: 'var(--el-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{st.no}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--aink)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name={st.ic} size={18} /> {st.t}
+            </div>
+          </div>
+          <div style={{ marginTop: 14, display: 'grid', gap: 10 }}>
+            {st.body.map(([k, v], i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, fontSize: 13, lineHeight: 1.75 }}>
+                <span style={{ color: 'var(--el-primary)', fontWeight: 600, whiteSpace: 'nowrap', minWidth: 110 }}>{k}</span>
+                <span style={{ color: 'var(--p-t2)' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--aink)', margin: '30px 0 14px' }}>常见问题</div>
+      <div className="v2-card">
+        {faqs.map(([q, a], i) => (
+          <div key={i} style={{ padding: '13px 0', borderBottom: i < faqs.length - 1 ? '1px solid #F3F6FA' : 'none' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--aink)' }}><span style={{ color: 'var(--el-primary)' }}>Q{i + 1}</span>　{q}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginTop: 6, paddingLeft: 30, lineHeight: 1.75 }}>{a}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="v2-notice blue" style={{ marginTop: 18 }}>
+        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+        <span>本指南基于平台当前版本整理，功能迭代后以平台内实际界面为准；遇到问题可联系信息化与数据服务中心（dcc@wxit.edu.cn）。</span>
+      </div>
+    </div>
+  );
+}
+
 function Dev({ toast }) {
+  const [showGuide, setShowGuide] = useState(false);
   const feats = [
     ['code', '可视化编排', '拖拽节点搭建工作流，条件分支、循环、并行皆可编排，所见即所得。'],
     ['chip', '模型自由选择', '接入平台模型池：本地部署的通用与垂类模型、外部合作模型，按需调用。'],
@@ -585,6 +673,7 @@ function Dev({ toast }) {
     ['03', '开发与调试', '登录平台创建应用，编排工作流、配置提示词与知识库，实时预览调试效果。'],
     ['04', '审核上架', '调试完成后提交审核；审核通过即可上架智能体广场，供全校师生使用。'],
   ];
+  if (showGuide) return <DevGuide onClose={() => setShowGuide(false)} toast={toast} />;
   return (
     <>
       <div className="v2-hero" style={{ background: 'linear-gradient(135deg,#f6f9ff,#fff 55%,#f0f5ff)', textAlign: 'left' }}>
@@ -597,7 +686,7 @@ function Dev({ toast }) {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
               <button className="v2-btn lg" onClick={() => toast('正式版将新窗口打开 https://aiagent.wxut.edu.cn/apps')}>进入开发平台 →</button>
-              <button className="v2-btn ghost lg" onClick={() => toast('查看使用指南')}>使用指南</button>
+              <button className="v2-btn ghost lg" onClick={() => { setShowGuide(true); window.scrollTo(0, 0); }}>使用指南</button>
               <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>已开通账号 · 学校统一身份认证登录</span>
             </div>
           </div>
