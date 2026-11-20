@@ -161,8 +161,8 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
           ))}
         </div>
 
-        <div className="v2-notice blue" style={{ marginTop: 18 }}>
-          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+        <div className="v2-notice warn" style={{ marginTop: 18 }}>
+          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
           <span>本页聚合洞察对所有师生开放（仅统计汇总，不涉及个体数据）；业务分析工作台涉及学生个人信息，须使用统一身份认证登录且具备对应业务角色。需要开通请联系信息化与数据服务中心（dcc@wxit.edu.cn）。</span>
         </div>
         </>)}

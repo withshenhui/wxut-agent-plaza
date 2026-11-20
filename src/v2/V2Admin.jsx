@@ -219,8 +219,8 @@ function AgentsAdmin({ toast }) {
         </table>
         <div className="v2-tbl-foot"><span>共 {rows.length} 个智能体</span></div>
       </div>
-      <div className="v2-notice blue" style={{ marginTop: 14 }}>
-        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+      <div className="v2-notice warn" style={{ marginTop: 14 }}>
+        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>临时下线智能体优先使用「停用」而非「删除」——停用可随时恢复，配置完整保留。删除后卡片从广场即时消失，不可恢复。</span>
       </div>
       {edit && <AgentModal agent={edit} cats={cats} onClose={() => setEdit(null)} onSave={save} />}

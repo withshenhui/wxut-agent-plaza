@@ -670,8 +670,8 @@ function DevGuide({ onClose, toast }) {
         ))}
       </div>
 
-      <div className="v2-notice blue" style={{ marginTop: 18 }}>
-        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+      <div className="v2-notice warn" style={{ marginTop: 18 }}>
+        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>本指南基于平台当前版本整理，功能迭代后以平台内实际界面为准；遇到问题可联系信息化与数据服务中心（dcc@wxit.edu.cn）。</span>
       </div>
     </div>
