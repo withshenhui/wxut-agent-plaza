@@ -2,10 +2,24 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
+import { marked } from 'marked';
+
+// marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
+function escapeHtml2(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+marked.use({
+  breaks: true,
+  gfm: true,
+  renderer: { html(token) { return escapeHtml2(token.text); } },
+});
+function renderMd(text) {
+  try { return marked.parse(text || ''); } catch { return escapeHtml2(text || ''); }
+}
 
 /** 学工号 gzip+base64 编码为 sys.user_id（与 V1 utils/agentLaunch 完全一致） */
 async function encodeUserId(userId) {
@@ -254,44 +268,75 @@ function mdLite(t) {
   return out.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
 }
 
-function ChatPage({ agent, onBack }) {
-  const [messages, setMessages] = useState([]);
+function ChatPage({ agent, onExit }) {
+  const navigate = useNavigate();
+  const [convs, setConvs] = useState(() => loadConvs(agent.id));
+  const [activeId, setActiveId] = useState(() => (loadConvs(agent.id)[0]?.id ?? null));
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState('');
   const scrollRef = useRef(null);
+  const bottomRef = useRef(null);
   const isMascot = useMascot(agent);
   const gw = COLLEGE_MODELS[Number(agent.id)];
   const suggestions = Number(agent.id) === 111 ? SUGGEST_ALL : (agent.categoryKey === 'college' ? SUGGEST_COLLEGE : []);
+  const storageKey = `v2-chat-${agent.id}`;
+  const active = convs.find((c) => c.id === activeId);
 
-  useEffect(() => {
-    setMessages([{
-      id: 1, sender: 'agent',
-      html: gw
-        ? `你好，我是<b>${agent.name}</b>。${agent.description || ''}<br><br>我接入了学院数据网关，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。<br>注意：考勤类数据约有 1–2 天同步延迟。`
-        : `你好，我是<b>${agent.name}</b>。${agent.description || ''}<br><br>该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。`,
-    }]);
-  }, [agent.id]);
+  // 持久化（最多 30 个会话）
+  useEffect(() => { try { localStorage.setItem(storageKey, JSON.stringify(convs.slice(0, 30))); } catch {} }, [convs, storageKey]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, toolStatus]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [active?.messages?.length, toolStatus]);
+
+  const mutate = (convId, updater) => setConvs((prev) => prev.map((c) => (c.id === convId ? updater(c) : c)));
+  const newChat = () => {
+    const conv = { id: Date.now(), title: '新对话', messages: [], createdAt: Date.now() };
+    setConvs((prev) => [conv, ...prev]);
+    setActiveId(conv.id);
+    setInput('');
+    setLoading(false);
+    setToolStatus('');
+  };
+  const delConv = (e, convId) => {
+    e.stopPropagation();
+    const conv = convs.find((c) => c.id === convId);
+    if (conv && conv.messages.length > 0 && !window.confirm('确定删除这段对话历史吗？')) return;
+    setConvs((prev) => {
+      const next = prev.filter((c) => c.id !== convId);
+      if (activeId === convId) setActiveId(next[0]?.id ?? null);
+      return next;
+    });
+  };
+
+  const welcome = () => ([
+    { id: 'w', sender: 'agent', content: gw
+      ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院数据网关，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`
+      : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
+  ]);
+
+  const msgs = active ? (active.messages.length ? active.messages : welcome()) : welcome();
 
   const send = async (text) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
     setInput('');
-    setMessages((m) => [...m, { id: Date.now(), sender: 'user', html: escapeHtml(content) }]);
+    // 无活动会话时自动开一段（首条消息即建会话）
+    let convId = activeId;
+    if (!convId) {
+      convId = Date.now();
+      const conv = { id: convId, title: content.slice(0, 20), messages: [], createdAt: Date.now() };
+      setConvs((prev) => [conv, ...prev]);
+      setActiveId(convId);
+    }
+    const userMsg = { id: Date.now(), sender: 'user', content };
+    mutate(convId, (c) => ({ ...c, title: c.title === '新对话' ? content.slice(0, 20) : c.title, messages: [...c.messages, userMsg] }));
     if (!gw) {
-      setMessages((m) => [...m, {
-        id: Date.now() + 1, sender: 'agent',
-        html: `该智能体的对话引擎正在接入中。你可以在广场选择带<b>「学院数据网关」</b>标识的智能体（如各学院锡锡导员、全校数据查询）进行实时数据问答。`,
-      }]);
+      mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: Date.now() + 1, sender: 'agent', content: '该智能体的对话引擎正在接入中。你可以在广场选择学院锡锡导员或全校数据查询进行实时数据问答。' }] }));
       return;
     }
     setLoading(true); setToolStatus('');
     const genId = Date.now() + 1;
-    setMessages((m) => [...m, { id: genId, sender: 'agent', html: '', streaming: true }]);
+    mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
     try {
       const resp = await fetch(`${GATEWAY_BASE}/v1/chat/completions`, {
         method: 'POST',
@@ -317,25 +362,40 @@ function ChatPage({ agent, onBack }) {
             if (evt.type === 'tool') setToolStatus(evt.data?.message || '正在查询数据库…');
             else if (evt.type === 'text') {
               acc += evt.data ?? '';
-              const html = mdLite(acc);
-              setMessages((m) => m.map((x) => x.id === genId ? { ...x, html } : x));
+              const content2 = acc;
+              mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: content2 } : m)) }));
             }
           }
         }
       }
-      setMessages((m) => m.map((x) => x.id === genId
-        ? { ...x, streaming: false, html: mdLite(acc) + '<div class="v2-note-line">数据来源：学校数据中台 · 实时查询</div>' } : x));
+      const final = acc + '\n\n<div class="v2-note-line">数据来源：学校数据中台 · 实时查询</div>';
+      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: final, streaming: false } : m)) }));
     } catch (e) {
-      setMessages((m) => m.map((x) => x.id === genId ? { ...x, streaming: false, html: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。' } : x));
+      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
     }
     setLoading(false); setToolStatus('');
   };
 
   return (
-    <div className="v2-chat-shell">
+    <div className="v2-chat-shell v2-chat-wide">
+      {/* 左：历史会话 */}
+      <aside className="v2-chat-history">
+        <button className="v2-btn" style={{ width: '100%', marginBottom: 12 }} onClick={newChat}>＋ 新对话</button>
+        <div className="v2-conv-list">
+          {convs.map((c) => (
+            <div key={c.id} className={`v2-conv-item${c.id === activeId ? ' on' : ''}`} onClick={() => setActiveId(c.id)}>
+              <span className="t">{c.title}</span>
+              <button className="rm" onClick={(e) => delConv(e, c.id)} title="删除">✕</button>
+            </div>
+          ))}
+          {!convs.length && <div style={{ fontSize: 11.5, color: 'var(--p-t4)', textAlign: 'center', padding: '12px 0' }}>暂无历史对话</div>}
+        </div>
+        <button className="v2-btn ghost" style={{ width: '100%' }} onClick={() => navigate('/')}>← 返回广场</button>
+      </aside>
+
+      {/* 中：对话 */}
       <div className="v2-chat-col">
         <div className="v2-chat-head">
-          <button className="v2-back" onClick={onBack}><Icon name="back" size={15} />返回广场</button>
           <div className="em"><AgentAvatar agent={agent} size={30} /></div>
           <div>
             <div className="t">{agent.name}</div>
@@ -345,12 +405,12 @@ function ChatPage({ agent, onBack }) {
           <span className="v2-model-chip">{gw ? `${gw} · 学院数据网关` : '平台默认模型'}</span>
         </div>
         <div className="v2-chat-scroll" ref={scrollRef}>
-          {messages.map((m) => (
+          {msgs.map((m) => (
             <div key={m.id} className={`v2-msg ${m.sender === 'user' ? 'user' : 'ai'}`}>
               {m.sender === 'user'
                 ? <div className="who">我</div>
                 : <div className="who"><AgentAvatar agent={agent} size={26} /></div>}
-              <div className="v2-bubble" dangerouslySetInnerHTML={{ __html: m.html || (m.streaming ? '<span class="v2-typing"><i></i><i></i><i></i></span>' : '') }} />
+              <div className="v2-bubble v2-md" dangerouslySetInnerHTML={{ __html: m.sender === 'user' ? escapeHtml2(m.content).replace(/\n/g, '<br>') : (m.content ? renderMd(m.content) : '<span class="v2-typing"><i></i><i></i><i></i></span>') }} />
             </div>
           ))}
           {toolStatus && (
@@ -361,10 +421,11 @@ function ChatPage({ agent, onBack }) {
               </div>
             </div>
           )}
+          <div ref={bottomRef} />
         </div>
         <div className="v2-chat-inputbar">
           <div className="v2-suggests">
-            {suggestions.map((s, i) => <span key={i} className="v2-sug" onClick={() => send(s)}>{s}</span>)}
+            {suggestions.map((q, i) => <span key={i} className="v2-sug" onClick={() => send(q)}>{q}</span>)}
           </div>
           <div className="v2-input-box">
             <textarea
@@ -374,11 +435,13 @@ function ChatPage({ agent, onBack }) {
               onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 110) + 'px'; }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             />
-            <button className="v2-send" onClick={() => send()} title="发送"><Icon name="send" size={17} /></button>
+            <button className="v2-send" onClick={() => send()} disabled={loading} title="发送"><Icon name="send" size={17} /></button>
           </div>
-          <div className="v2-input-hint">Enter 发送 · Shift + Enter 换行 · 内容由 AI 生成，请注意核对</div>
+          <div className="v2-input-hint">Enter 发送 · Shift + Enter 换行 · 内容由 AI 生成，请注意核对{convs.length ? ` · ${convs.length} 段历史（本机保存）` : ''}</div>
         </div>
       </div>
+
+      {/* 右：智能体信息 */}
       <aside className="v2-chat-side">
         <div className="v2-side-card">
           <div className="t">智能体信息</div>
@@ -404,6 +467,10 @@ function ChatPage({ agent, onBack }) {
       </aside>
     </div>
   );
+}
+
+function loadConvs(agentId) {
+  try { return JSON.parse(localStorage.getItem(`v2-chat-${agentId}`) || '[]'); } catch { return []; }
 }
 
 /* ============ 模型服务 ============ */
@@ -609,7 +676,26 @@ export default function V2App() {
   const [loadErr, setLoadErr] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, guest, casLogin, logout } = useV2User();
+
+  // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
+  useEffect(() => {
+    const m = location.pathname.match(/^\/chat\/(\d+)/);
+    if (m) {
+      const id = Number(m[1]);
+      const found = agents.find((a) => a.id === id);
+      if (found) setChatAgent(found);
+      else if (agents.length) {
+        // 列表已加载但找不到（如直接刷 URL）→ 拉详情
+        getAgentDetail(id).then((d) => setChatAgent(d)).catch(() => navigate('/', { replace: true }));
+      }
+    } else {
+      setChatAgent(null);
+      const p = location.pathname.replace(/^\/+/, '').split('/')[0] || 'plaza';
+      setPage(['plaza', 'models', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
+    }
+  }, [location.pathname, agents, navigate]);
 
   useEffect(() => {
     fetch(`${API_BASE}/agents?size=100`).then((r) => r.json())
@@ -625,23 +711,20 @@ export default function V2App() {
     window.scrollTo(0, 0);
   }, [navigate]);
 
-  const enterChat = useCallback((a) => {
-    if (!a) return;
-    setChatAgent(a);
-    setPage('chat');
-    window.scrollTo(0, 0);
-  }, []);
-
   // V1 同款智能体唤起：externalUrl 外跳(带 sys.user_id)/college-query 进 V2 流式对话/其余进 V2 对话
   const launch = useCallback((a) => {
     if (!a) return;
-    launchAgentV2(navigate, a.id, user, enterChat);
-  }, [navigate, user, enterChat]);
+    launchAgentV2(navigate, a.id, user, (detail) => {
+      // 站内对话 → 地址栏路由化 #/chat/{id}
+      navigate(`/chat/${a.id}`);
+    });
+  }, [navigate, user]);
 
+  // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
     <>
       <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
-      <ChatPage agent={chatAgent} onBack={() => nav('plaza')} />
+      <ChatPage agent={chatAgent} onExit={() => nav('plaza')} />
     </>
   );
 

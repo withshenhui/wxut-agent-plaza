@@ -342,3 +342,33 @@ input,select,textarea{font-family:inherit}
 .v2-kv-row .k{width:170px;font-size:13px;color:var(--p-t3);flex-shrink:0;font-variant-numeric:tabular-nums;word-break:break-all}
 .v2-kv-row .v{flex:1;min-width:0}
 .v2-loading{text-align:center;color:var(--p-t4);padding:48px 0;font-size:13px}
+
+/* ============ 对话页 V2：三栏宽布局 + 历史会话 ============ */
+.v2-chat-wide{max-width:1560px;grid-template-columns:220px 1fr 280px;gap:16px}
+.v2-chat-history{display:flex;flex-direction:column;background:var(--p-surface);border:1px solid var(--p-line);
+  border-radius:var(--p-r);padding:14px;position:sticky;top:78px;max-height:calc(100vh - 100px)}
+.v2-conv-list{flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.v2-conv-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:9px;cursor:pointer;
+  font-size:12.5px;color:var(--p-t2);margin-bottom:2px;transition:background .15s}
+.v2-conv-item:hover{background:var(--p-fill)}
+.v2-conv-item.on{background:var(--el-primary-l9);color:var(--el-primary);font-weight:600}
+.v2-conv-item .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2-conv-item .rm{border:none;background:none;color:var(--p-t4);font-size:11px;cursor:pointer;opacity:0;padding:2px}
+.v2-conv-item:hover .rm{opacity:1}
+.v2-conv-item .rm:hover{color:var(--p-danger)}
+@media (max-width:1200px){.v2-chat-wide{grid-template-columns:1fr 280px}.v2-chat-history{display:none}}
+
+/* markdown 消息体 */
+.v2-md p{margin:0 0 8px}
+.v2-md p:last-child{margin-bottom:0}
+.v2-md h1,.v2-md h2,.v2-md h3,.v2-md h4{font-size:14px;font-weight:600;color:var(--aink);margin:12px 0 6px}
+.v2-md ul,.v2-md ol{margin:6px 0;padding-left:20px}
+.v2-md li{margin:3px 0}
+.v2-md code{background:var(--p-fill);border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.v2-md pre{background:#0c1a33;color:#e3c98a;border-radius:10px;padding:12px 14px;overflow-x:auto;margin:8px 0}
+.v2-md pre code{background:none;color:inherit;padding:0}
+.v2-md blockquote{border-left:3px solid var(--p-line2);padding-left:12px;color:var(--p-t3);margin:8px 0}
+.v2-md table{border-collapse:collapse;margin:10px 0 4px;font-size:12.5px;width:100%;background:#FAFBFD;border-radius:8px;overflow:hidden}
+.v2-md th{background:#F0F4FB;color:var(--p-t3);font-weight:600;padding:7px 12px;text-align:left;white-space:nowrap}
+.v2-md td{padding:6px 12px;border-top:1px solid #F3F6FA;color:var(--p-t2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.v2-md hr{border:none;border-top:1px solid var(--p-line);margin:10px 0}
