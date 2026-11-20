@@ -164,10 +164,33 @@ export function Footer({ onNav, toast }) {
 }
 
 /* ============ 首页 hero ============ */
+/* 首页锡锡：气泡文案轮播（打字机 + 换句） */
+const HERO_BUBBLES = [
+  { b: '你好，我是锡锡！', sub: '校园 AI 形象 · 点击和我对话' },
+  { b: '想查学院数据？问我呀', sub: '在校生 · 归寝 · 请假 · 消费 · 科研' },
+  { b: '我接入了全校数仓', sub: '11 个学院 + 教职工 + 领导看板' },
+  { b: '制度文件也可以问我', sub: '党建 / 教学 / 科研 / 人事 8 大类' },
+];
+
 function Hero({ agents, onChat, onSearch, q }) {
   const isXixi = agents.find((a) => Number(a.id) === 111);
   const visits = agents.reduce((s, a) => s + (a.visitCount || 0), 0);
   const college = agents.filter((a) => a.categoryKey === 'college').length;
+  const [bIdx, setBIdx] = useState(0);
+  const [typed, setTyped] = useState('');
+  const cur = HERO_BUBBLES[bIdx];
+  useEffect(() => {
+    setTyped('');
+    let i = 0;
+    const full = cur.b;
+    const t = setInterval(() => {
+      i += 1;
+      setTyped(full.slice(0, i));
+      if (i >= full.length) clearInterval(t);
+    }, 90);
+    const swap = setTimeout(() => setBIdx((n) => (n + 1) % HERO_BUBBLES.length), 4200);
+    return () => { clearInterval(t); clearTimeout(swap); };
+  }, [bIdx]);
   return (
     <div className="v2-hero">
       <div className="v2-hero-inner">
@@ -187,9 +210,10 @@ function Hero({ agents, onChat, onSearch, q }) {
           </div>
         </div>
         <div className="v2-hero-side" onClick={() => onChat(isXixi)} title="点击和锡锡对话">
-          <div className="v2-mascot-bubble" style={{ right: 198, top: 'calc(46% - 4px)' }}>
-            <b>你好，我是锡锡！</b>
-            <div className="sub">校园 AI 形象 · 点击和我对话</div>
+          <div className="v2-mascot-ring" />
+          <div className="v2-mascot-bubble" style={{ right: 198, top: 'calc(46% - 4px)' }} key={bIdx}>
+            <b>{typed}{typed.length < cur.b.length ? <span className="cursor" /> : ''}</b>
+            <div className="sub">{cur.sub}</div>
             <span className="tail" />
           </div>
           <div className="v2-hero-mascot">
