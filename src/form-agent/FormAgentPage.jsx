@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import PageLayout from '../components/PageLayout';
 import { useUser } from '../UserContext';
 import { apiBase } from '../api/request';
@@ -62,7 +61,7 @@ function aiAnswer(q) {
 
 /* ================= 页面 ================= */
 export default function FormAgentPage() {
-  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
   const { user } = useUser();
   const isAdmin = user?.role === 'admin';
 
@@ -72,7 +71,7 @@ export default function FormAgentPage() {
   const [loading, setLoading] = useState(true);
 
   const [templates, setTemplates] = useState([]);
-  const [guideOn, setGuideOn] = useState(() => !localStorage.getItem('fa_guide_closed'));
+  const [templateError, setTemplateError] = useState(false);
 
   // 上传解析弹层
   const [upModal, setUpModal] = useState(null); // {fileName, meta, step, result:{id,name,fieldCount}}
@@ -101,8 +100,8 @@ export default function FormAgentPage() {
   /* ---------- 模板加载 ---------- */
   const loadTemplates = useCallback(() => {
     return listTemplates(true)
-      .then((list) => setTemplates(list || []))
-      .catch((e) => toast(`模板加载失败：${e.message}`));
+      .then((list) => { setTemplateError(false); setTemplates(list || []); })
+      .catch(() => setTemplateError(true));
   }, [toast]);
 
   useEffect(() => {
@@ -132,7 +131,8 @@ export default function FormAgentPage() {
 
   useEffect(() => () => { if (esRef.current) esRef.current.close(); }, []);
 
-  const goto = (v) => { setView(v); window.scrollTo({ top: 0 }); };
+  const pageRef = useRef(null);
+  const goto = (v) => { setView(v); pageRef.current?.closest('.el-content')?.scrollTo({ top: 0 }); window.scrollTo({ top: 0 }); };
 
   const startWizard = (tpl) => {
     setDrawer(null);
@@ -346,14 +346,22 @@ export default function FormAgentPage() {
 
   /* ---------- 记录 ---------- */
   const [rec, setRec] = useState({ page: 1, size: 10, keyword: '', status: '', tplName: '', rows: [], total: 0 });
+  const [recordError, setRecordError] = useState(false);
+  const recordRequest = useRef(0);
   const loadRecords = useCallback((patch = {}) => {
+    const requestId = ++recordRequest.current;
     const st = { ...rec, ...patch };
+    setRec(s => ({ ...s, ...patch }));
     return pageRecords({ page: st.page, size: st.size, keyword: st.keyword || undefined, status: st.status || undefined, tplName: st.tplName || undefined })
-      .then((r) => setRec((s) => ({ ...s, ...patch, rows: r.records || [], total: r.total || 0 })))
-      .catch((e) => toast(`记录加载失败：${e.message}`));
+      .then((r) => {
+        if (recordRequest.current !== requestId) return;
+        setRecordError(false);
+        setRec(s => ({ ...s, rows: r.records || [], total: r.total || 0 }));
+      })
+      .catch(() => { if (recordRequest.current === requestId) setRecordError(true); });
   }, [rec, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (view === 'records') loadRecords({ page: 1 }); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (view === 'records' || view === 'home') loadRecords({ page: 1, keyword: '', tplName: '', status: '' }); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openRec = (row) => {
     getRecord(row.id).then((detail) => {
@@ -404,7 +412,7 @@ export default function FormAgentPage() {
     const custom = t.source === 'custom' || t.source === 'upload';
     const active = t.status === 0 ? false : true;
     return (
-      <div className="tpl-card" onClick={() => (ctx === 'lib' && isAdmin ? openEdit(t) : startWizard({ id: t.id, name: t.name }))}>
+      <div className="tpl-card" onClick={() => (ctx === 'lib' && isAdmin ? openEdit(t) : startWizard(t))}>
         {t.status === 0 && <span className="badge-new" style={{ color: 'var(--ink3)', background: 'var(--fill)' }}>已停用</span>}
         {t.tag === 'hot' && <span className="badge-new">高频</span>}
         <div className="tc-top">
@@ -426,7 +434,7 @@ export default function FormAgentPage() {
           ) : (
             <span style={{ fontSize: 11.5, color: 'var(--ink3)' }}>{t.fileType ? `源文件 ${String(t.fileType).toUpperCase()}` : ''}</span>
           )}
-          <span className="use">用此模板填报 <Ic n="arrowL" style={{ transform: 'rotate(180deg)' }} /></span>
+          <span className="use">{ctx === 'lib' && isAdmin ? '管理模板' : '用此模板填报'} <Ic n="arrowL" style={{ transform: 'rotate(180deg)' }} /></span>
         </div>
       </div>
     );
@@ -499,12 +507,14 @@ export default function FormAgentPage() {
   const shownTemplates = templates.filter((t) => isAdmin || t.status !== 0);
   const presetT = shownTemplates.filter((t) => t.source !== 'custom' && t.source !== 'upload');
   const customT = shownTemplates.filter((t) => t.source === 'custom' || t.source === 'upload');
-  const totalGen = rec.total;
+  const recordFailure = <div className="empty"><Ic n="hist" /><b>填报记录加载失败</b><button className="btn sm" onClick={() => loadRecords()}>重新加载</button></div>;
+  const templateEmpty = <div className="empty"><Ic n="form" /><b>{templateError ? '模板加载失败' : '暂无可用模板'}</b>
+    {templateError ? <button className="btn sm" onClick={loadTemplates}>重新加载</button> : <span>管理员上传并启用后，将在这里显示。</span>}</div>;
 
   return (
-    <PageLayout title="智能填报" activePath="/form-agent">
+    <PageLayout title="智能填报" activePath="/form-agent" isSidebarCollapsed={collapsed} setIsSidebarCollapsed={setCollapsed}>
       <FaIconDefs />
-      <div className="fa-page posrel">
+      <div className="fa-page posrel" ref={pageRef}>
         {/* 骨架 */}
         <div className={`skload${loading ? ' on' : ''}`}>
           <div className="sk" style={{ width: 180, height: 26, marginBottom: 18 }} />
@@ -515,45 +525,21 @@ export default function FormAgentPage() {
           <div className="sk" style={{ width: '100%', height: 300 }} />
         </div>
 
+        {view !== 'wizard' && <nav className="work-nav" aria-label="智能填报导航">
+          {[['home', '工作台'], ['templates', '选择模板'], ['library', '模板库'], ['records', '填报记录']].map(([id, label]) => <button key={id} aria-current={view === id ? 'page' : undefined} onClick={() => goto(id)}>{label}</button>)}
+          <button className="work-help" onClick={() => setHelpOn(true)}><Ic n="info" />填报帮助</button>
+        </nav>}
         {/* ============ 首页 ============ */}
         <div className={`fview${view === 'home' ? ' on' : ''}`}>
-          {guideOn && (
-            <div className="guide">
-              <div className="gi done"><b>1</b>选择模板</div>
-              <span className="g-arrow"><Ic n="chevR" /></span>
-              <div className="gi"><b>2</b>AI 自动检索数仓并填写</div>
-              <span className="g-arrow"><Ic n="chevR" /></span>
-              <div className="gi"><b>3</b>核对补充后导出成品</div>
-              <span className="g-arrow"><Ic n="chevR" /></span>
-              <div className="gi" style={{ color: 'var(--pri)', fontWeight: 700 }}>首次使用约需 3 分钟</div>
-              <button className="g-x" title="关闭引导" onClick={() => { setGuideOn(false); localStorage.setItem('fa_guide_closed', '1'); }}><Ic n="x" /></button>
+          <header className="work-hero">
+            <div><div className="work-kicker">无锡职业技术大学 · 教师服务</div>
+              <h2>智能填报工作台</h2>
+              <p>选择一份模板，自动带入校内数据，核对后即可导出。</p>
+              <button className="work-start" onClick={() => goto('templates')}><Ic n="plus" />新建填报</button>
             </div>
-          )}
-          <div className="hero">
-            <div className="h-k">教师数据智能填报服务</div>
-            <h1>把重复填报的时间，还给教学与科研</h1>
-            <p>上传或选择表格模板，系统自动识别填报字段，从校内数据仓检索您的真实数据完成填写，叙述性内容由大模型起草，全程可核对、可修改、留痕可导出。</p>
-            <div className="h-cta">
-              <button className="btn pri" onClick={() => goto('templates')}><Ic n="wand" />开始填报</button>
-              <button className="btn" onClick={() => goto('library')}><Ic n="file" />浏览模板库</button>
-              <button className="btn" onClick={() => goto('records')}><Ic n="hist" />填报记录</button>
-            </div>
-            <div className="h-stats">
-              <div className="hs"><b className="num">{presetT.length || '—'}</b><span>预置模板</span></div>
-              <div className="hs"><b className="num">{DSRC.length - 1}</b><span>已接入数据源</span></div>
-              <div className="hs"><b className="num">{totalGen}</b><span>累计生成材料</span></div>
-              <div className="hs"><b className="num">~40<span style={{ fontSize: 13, fontWeight: 600 }}> 分钟</span></b><span>单份平均节省</span></div>
-            </div>
-          </div>
-          <div className="grid4" style={{ marginBottom: 20 }}>
-            {DSRC.map((d) => (
-              <div className="dsrc" key={d.t}>
-                <div className="ds-ic" style={{ background: d.bg, color: d.c }}><Ic n={d.icon} /></div>
-                <div style={{ minWidth: 0, flex: 1 }}><b>{d.t}</b><span className="dsub">{d.s}</span></div>
-                <span className="pill g">{d.st}</span>
-              </div>
-            ))}
-          </div>
+            <div className="work-paper" aria-hidden="true"><Ic n="form" /><i /><i /><i /><span><Ic n="check" /></span></div>
+          </header>
+          <div className="work-flow"><b>填报流程</b><span>选择模板</span><Ic n="chevR" /><span>确认填报人</span><Ic n="chevR" /><span>AI 填写</span><Ic n="chevR" /><span>核对与导出</span></div>
           <div className="grid2">
             <div className="card" style={{ padding: '20px 22px' }}>
               <div className="ch">
@@ -561,18 +547,18 @@ export default function FormAgentPage() {
                 <div><div className="t">常用模板</div><div className="sub">选用后立即开始 AI 填报</div></div>
                 <button className="more" onClick={() => goto('library')}>全部模板<Ic n="chevR" /></button>
               </div>
-              {presetT.length
-                ? <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>{presetT.slice(0, 4).map((t) => <TplCard key={t.id} t={t} ctx="home" />)}</div>
-                : <div className="empty"><Ic n="form" /><b>暂无预置模板</b><span>管理员可在模板库上传</span></div>}
+              {presetT.some(t => t.status !== 0)
+                ? <div className="work-templates">{presetT.filter(t => t.status !== 0).slice(0, 4).map((t) => <TplCard key={t.id} t={t} ctx="home" />)}</div>
+                : templateEmpty}
             </div>
             <div className="card" style={{ padding: '20px 22px' }}>
               <div className="ch">
                 <div className="chip-ic"><Ic n="hist" /></div>
-                <div><div className="t">最近填报</div><div className="sub">继续未完成的填报任务</div></div>
+                <div><div className="t">最近填报</div><div className="sub">查看近期材料的完成度与填报详情</div></div>
                 <button className="more" onClick={() => goto('records')}>查看全部<Ic n="chevR" /></button>
               </div>
               <div className="rec-strip">
-                {rec.rows.length ? rec.rows.slice(0, 5).map((r) => {
+                {recordError ? recordFailure : rec.rows.length ? rec.rows.slice(0, 5).map((r) => {
                   const [c, txt] = STMAP[r.status] || ['n', r.status];
                   return (
                     <div className="rec-row" key={r.id} onClick={() => openRec(r)}>
@@ -585,15 +571,16 @@ export default function FormAgentPage() {
                       <span className="rr-time">{String(r.createdAt || '').slice(5, 10)}</span>
                     </div>
                   );
-                }) : <div className="empty"><Ic n="hist" /><b>暂无填报记录</b><span>从「开始填报」创建第一份材料</span></div>}
+                }) : <div className="empty"><Ic n="hist" /><b>暂无填报记录</b><span>点击「新建填报」创建第一份材料</span></div>}
               </div>
             </div>
           </div>
+          <section className="source-panel"><h3>校内数据来源</h3><div className="source-list">{DSRC.filter(d => d.t !== '自定义模板').map(d => <div key={d.t}><Ic n={d.icon} /><div><b>{d.t}</b><small>{d.s}</small></div></div>)}</div></section>
         </div>
 
         {/* ============ 模板选择 ============ */}
         <div className={`fview${view === 'templates' ? ' on' : ''}`}>
-          <div className="card" style={{ padding: '22px 24px', marginBottom: 18 }}>
+          {isAdmin && <div className="card" style={{ padding: '22px 24px', marginBottom: 18 }}>
             <div className="ch" style={{ marginBottom: 16 }}>
               <div className="chip-ic deep"><Ic n="upload" /></div>
               <div><div className="t">上传自定义模板</div><div className="sub">支持 Word / Excel / PDF，系统将自动解析表格结构并建立字段映射{isAdmin ? '' : '（请联系管理员上传）'}</div></div>
@@ -615,15 +602,15 @@ export default function FormAgentPage() {
               </div>
             </div>
             <input ref={fileRef} type="file" accept=".docx,.xlsx,.pdf" style={{ display: 'none' }} onChange={(e) => { onFile(e.target.files[0]); e.target.value = ''; }} />
-          </div>
+          </div>}
           <div className="card" style={{ padding: '22px 24px' }}>
             <div className="ch">
               <div className="chip-ic"><Ic n="star" /></div>
-              <div><div className="t">预置模板</div><div className="sub">由信息中心维护，字段映射与数据口径已校准</div></div>
+              <div><div className="t">选择填报模板</div><div className="sub">选用模板后，确认本次材料的填报人</div></div>
             </div>
             <div className="grid4">
-              {presetT.length ? presetT.map((t) => <TplCard key={t.id} t={t} ctx="tpl" />)
-                : <div className="empty" style={{ gridColumn: '1/-1' }}><Ic n="form" /><b>暂无预置模板</b><span>管理员上传后将显示在此处</span></div>}
+              {shownTemplates.some(t => t.status !== 0) ? shownTemplates.filter(t => t.status !== 0).map((t) => <TplCard key={t.id} t={t} ctx="tpl" />)
+                : <div style={{ gridColumn: '1/-1' }}>{templateEmpty}</div>}
             </div>
           </div>
         </div>
@@ -835,9 +822,9 @@ export default function FormAgentPage() {
                 </select>
               </div>
             </div>
-            {rec.rows.length ? (
+            {recordError ? recordFailure : rec.rows.length ? (
               <>
-                <table className="table">
+                <div className="table-scroll"><table className="table">
                   <thead>
                     <tr><th>任务名称</th><th>模板</th><th>填报人</th><th style={{ textAlign: 'center' }}>完成度</th><th>状态</th><th>导出</th><th>时间</th><th style={{ textAlign: 'right' }}>操作</th></tr>
                   </thead>
@@ -861,7 +848,7 @@ export default function FormAgentPage() {
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
                 <div className="pager">
                   <span className="pg-info">共 {rec.total} 条记录</span>
                   <button disabled={rec.page <= 1} onClick={() => loadRecords({ page: rec.page - 1 })}><Ic n="chevR" style={{ transform: 'rotate(180deg)', width: 13, height: 13 }} /></button>
@@ -889,6 +876,7 @@ export default function FormAgentPage() {
               {isAdmin && <button className="btn pri sm" style={{ marginLeft: 'auto' }} onClick={() => { goto('templates'); setTimeout(() => fileRef.current?.click(), 400); }}><Ic n="upload" />上传新模板</button>}
             </div>
             <div className="grid4" style={{ marginTop: 6 }}>
+              {!shownTemplates.length && <div style={{ gridColumn: '1/-1' }}>{templateEmpty}</div>}
               {[...presetT, ...customT].map((t) => <TplCard key={t.id} t={t} ctx="lib" />)}
             </div>
           </div>

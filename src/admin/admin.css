@@ -1,0 +1,113 @@
+/* ============================================================
+   AI 管理后台设计层（scope: .admin-scope）
+   与前台同源的品牌蓝 #4A6CF7；浅色中性面板、细分隔线、低阴影
+   ============================================================ */
+.admin-scope{
+  --apri:#4A6CF7;--apri-d:#3B5AE6;--apri-l7:#B5C8FF;--apri-l9:#ECF0FF;
+  --aok:#12B76A;--aok-bg:#E9F9F1;
+  --awarn:#D97706;--awarn-bg:#FCF3E3;
+  --abad:#E5484D;--abad-bg:#FEECEB;
+  --apur:#7C5CFC;--apur-bg:#F3EFFF;
+  --acy:#0891B2;--acy-bg:#E3F6FA;
+  --aink:#182234;--aink2:#4A5568;--aink3:#8892A6;
+  --aline:#E6E9F2;--aline2:#EFF1F7;
+  --abg:#F5F6FA;--acard:#FFFFFF;
+}
+.admin-scope .ant-layout{background:var(--abg)}
+.admin-scope .ant-layout-content{background:var(--abg)}
+/* ============ 侧栏 ============ */
+.admin-scope .adm-sider{background:var(--acard)!important;border-right:1px solid var(--aline)}
+.admin-scope .adm-sider .ant-layout-sider-children{display:flex;flex-direction:column;height:100%}
+.admin-scope .adm-brand{height:64px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--aline2);overflow:hidden;white-space:nowrap}
+.admin-scope .adm-brand img{height:34px;width:34px;border-radius:9px;flex:none}
+.admin-scope .adm-brand .bt{font-size:15px;font-weight:800;color:var(--aink);letter-spacing:.2px;line-height:1.2}
+.admin-scope .adm-brand .be{font-size:10px;color:var(--aink3);letter-spacing:.8px;margin-top:1px}
+.admin-scope .adm-sider .ant-menu{border-inline-end:0!important;background:transparent;padding:10px 10px 6px!important}
+.admin-scope .adm-sider .ant-menu-item,.admin-scope .adm-sider .ant-menu-submenu-title{border-radius:10px!important;margin-inline:2px!important;width:auto!important}
+.admin-scope .adm-sider .ant-menu-item-selected{background:var(--apri-l9)!important;color:var(--apri-d)!important;font-weight:600;box-shadow:inset 3px 0 0 var(--apri)}
+.admin-scope .adm-group{font-size:10.5px;letter-spacing:.14em;color:var(--aink3);font-weight:600;padding:16px 14px 6px;text-transform:uppercase}
+.admin-scope .adm-sider-collapsed .ant-menu{padding:10px 6px!important}
+.admin-scope .adm-side-foot{margin-top:auto;padding:12px;border-top:1px solid var(--aline2)}
+.admin-scope .adm-side-user{display:flex;align-items:center;gap:10px;background:var(--aline2);border-radius:12px;padding:8px 10px}
+.admin-scope .adm-side-user .av{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4A6CF7,#6B8AFF);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.admin-scope .adm-side-user .n{font-size:12.5px;font-weight:600;color:var(--aink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-scope .adm-side-user .r{font-size:10.5px;color:var(--aink3)}
+/* ============ 顶栏 ============ */
+.admin-scope .adm-header{height:60px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--aline);display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:20}
+.admin-scope .adm-header .ttl{font-size:15.5px;font-weight:700;color:var(--aink);letter-spacing:-.2px}
+.admin-scope .adm-header .crumb{font-size:12px;color:var(--aink3)}
+.admin-scope .adm-header .sp{flex:1}
+.admin-scope .adm-ghost-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--aline);background:#fff;color:var(--aink2);font-size:12.5px;cursor:pointer;transition:all .15s}
+.admin-scope .adm-ghost-btn:hover{color:var(--apri);border-color:var(--apri-l7)}
+/* ============ 内容容器 ============ */
+.admin-scope .adm-page{padding:22px 24px 48px;max-width:1460px}
+.admin-scope .adm-page-head{display:flex;align-items:flex-end;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.admin-scope .adm-page-head h2{font-size:21px;font-weight:800;letter-spacing:-.3px;color:var(--aink);margin:0}
+.admin-scope .adm-page-head .sub{font-size:12.5px;color:var(--aink3);margin-top:3px}
+.admin-scope .adm-page-head .acts{margin-left:auto;display:flex;gap:10px;align-items:center}
+/* ============ 卡片与面板 ============ */
+.admin-scope .adm-card{background:var(--acard);border:1px solid var(--aline2);border-radius:16px;box-shadow:0 2px 10px rgba(24,34,52,.04)}
+.admin-scope .adm-card .pad{padding:18px 20px}
+.admin-scope .adm-card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.admin-scope .adm-card-h b{font-size:14.5px;font-weight:700;color:var(--aink)}
+.admin-scope .adm-card-h .sub{font-size:11.5px;color:var(--aink3)}
+.admin-scope .adm-card-h .more{margin-left:auto;font-size:12px;color:var(--apri);font-weight:600;cursor:pointer;background:none;border:0;padding:0}
+/* ============ KPI 卡 ============ */
+.admin-scope .adm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+@media(max-width:1080px){.admin-scope .adm-kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.admin-scope .adm-kpis{grid-template-columns:1fr}}
+.admin-scope .adm-kpi{background:var(--acard);border:1px solid var(--aline2);border-radius:16px;box-shadow:0 2px 10px rgba(24,34,52,.04);padding:16px 18px;display:flex;gap:13px;align-items:center;transition:all .18s;cursor:default}
+.admin-scope .adm-kpi:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(24,34,52,.09)}
+.admin-scope .adm-kpi .ic{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;font-size:19px}
+.admin-scope .adm-kpi .ic svg{width:20px;height:20px}
+.admin-scope .adm-kpi b{display:block;font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--aink);font-variant-numeric:tabular-nums;line-height:1.15}
+.admin-scope .adm-kpi em{font-style:normal;font-size:11.5px;color:var(--aink3);display:block;margin-top:2px}
+.admin-scope .adm-kpi .meta{font-size:11px;color:var(--ink3,var(--aink3));margin-top:2px}
+/* ============ 条形排行 ============ */
+.admin-scope .adm-hbar{display:flex;flex-direction:column;gap:12px}
+.admin-scope .adm-hbar .row{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.admin-scope .adm-hbar .row .rk{width:20px;height:20px;border-radius:7px;background:var(--aline2);color:var(--aink3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.admin-scope .adm-hbar .row:nth-child(1) .rk{background:var(--apri);color:#fff}
+.admin-scope .adm-hbar .row:nth-child(2) .rk{background:#6B8AFF;color:#fff}
+.admin-scope .adm-hbar .row:nth-child(3) .rk{background:var(--apri-l7);color:#fff}
+.admin-scope .adm-hbar .row .nm{width:132px;color:var(--aink2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.admin-scope .adm-hbar .row .tk{flex:1;height:9px;border-radius:99px;background:var(--aline2);overflow:hidden}
+.admin-scope .adm-hbar .row .tk i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4A6CF7,#6B8AFF);transition:width .6s ease}
+.admin-scope .adm-hbar .row .vv{width:64px;text-align:right;font-weight:700;font-size:12px;color:var(--aink);font-variant-numeric:tabular-nums;flex:none}
+/* ============ 分类分布 ============ */
+.admin-scope .adm-dist{display:flex;flex-direction:column;gap:10px}
+.admin-scope .adm-dist .row{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.admin-scope .adm-dist .dot{width:9px;height:9px;border-radius:3px;flex:none}
+.admin-scope .adm-dist .nm{flex:1;color:var(--aink2);font-weight:600}
+.admin-scope .adm-dist .ct{color:var(--aink3);font-size:11.5px}
+.admin-scope .adm-dist .vv{font-weight:700;color:var(--aink);font-variant-numeric:tabular-nums;width:36px;text-align:right}
+/* ============ 最近更新列表 ============ */
+.admin-scope .adm-feed{display:flex;flex-direction:column}
+.admin-scope .adm-feed .row{display:flex;align-items:center;gap:11px;padding:10px 6px;border-bottom:1px solid var(--aline2);cursor:pointer;border-radius:10px;transition:background .12s}
+.admin-scope .adm-feed .row:last-child{border-bottom:0}
+.admin-scope .adm-feed .row:hover{background:var(--aline2)}
+.admin-scope .adm-feed .ic{width:34px;height:34px;border-radius:10px;background:var(--apri-l9);color:var(--apri);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.admin-scope .adm-feed .bd{flex:1;min-width:0}
+.admin-scope .adm-feed .bd b{font-size:13px;font-weight:600;color:var(--aink);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-scope .adm-feed .bd span{font-size:11px;color:var(--aink3)}
+.admin-scope .adm-feed .tm{font-size:11px;color:var(--aink3);flex:none}
+/* ============ 快捷操作 ============ */
+.admin-scope .adm-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.admin-scope .adm-quick .q{display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--aline);border-radius:13px;cursor:pointer;transition:all .15s;background:#fff}
+.admin-scope .adm-quick .q:hover{border-color:var(--apri-l7);background:var(--apri-l9);transform:translateY(-1px)}
+.admin-scope .adm-quick .q .ic{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px}
+.admin-scope .adm-quick .q b{font-size:12.5px;color:var(--aink);display:block}
+.admin-scope .adm-quick .q span{font-size:10.5px;color:var(--aink3)}
+/* ============ 网格 ============ */
+.admin-scope .adm-grid{display:grid;gap:16px}
+.admin-scope .adm-grid.c2{grid-template-columns:1.4fr 1fr}
+.admin-scope .adm-grid.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:1080px){.admin-scope .adm-grid.c2,.admin-scope .adm-grid.c3{grid-template-columns:1fr}}
+/* ============ antd 细节打磨 ============ */
+.admin-scope .ant-table{border-radius:14px}
+.admin-scope .ant-table-thead>tr>th{background:#F7F8FC!important;font-weight:600;color:var(--aink2);font-size:12.5px}
+.admin-scope .ant-pagination{margin-bottom:0!important}
+.admin-scope .ant-card{border-radius:16px;border:1px solid var(--aline2);box-shadow:0 2px 10px rgba(24,34,52,.04)}
+.admin-scope ::-webkit-scrollbar{width:8px;height:8px}
+.admin-scope ::-webkit-scrollbar-thumb{background:#D3D8E6;border-radius:99px}
+.admin-scope ::-webkit-scrollbar-track{background:transparent}

@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import { useSiteConfig } from './SiteConfigContext';
 import { useUser } from '../UserContext';
 
-function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarCollapsed, activePath, footerText }) {
+function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarCollapsed, activePath, footerText, contentClassName = '' }) {
   const { siteFooter } = useSiteConfig();
   const { user, casLogin, logout } = useUser();
 
@@ -23,7 +23,8 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
                 ‹
               </button>
             )}
-            <h1 className="el-header-title">{title}</h1>
+            {/* title 为空时整条不占位：首页仪表盘不再重复站点名 */}
+            {title ? <h1 className="el-header-title">{title}</h1> : null}
           </div>
           <div className="el-header-right">
             <button
@@ -74,7 +75,7 @@ function PageLayout({ children, title, onBack, isSidebarCollapsed, setIsSidebarC
             ))}
           </div>
         </header>
-        <div className="el-content">
+        <div className={`el-content ${contentClassName}`}>
           {children}
         </div>
         <footer className="el-footer">

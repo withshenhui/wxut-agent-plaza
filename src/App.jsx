@@ -29,6 +29,7 @@ import DifyChatPage from './DifyChatPage';
 import SqlBotPage from './SqlBotPage';
 import CollegeQueryPage from './CollegeQueryPage';
 import FormAgentPage from './form-agent/FormAgentPage';
+import GuidePage from './GuidePage';
 import { UserProvider } from './UserContext';
 
 function AdminLoginRoute() {
@@ -65,7 +66,7 @@ function App() {
         <Route path="/model-management" element={<ModelManagement />} />
         <Route path="/openclaw" element={<OpenClaw />} />
         <Route path="/guide" element={<UnderConstruction pageType="campus" />} />
-        <Route path="/manual" element={<UnderConstruction pageType="manual" />} />
+        <Route path="/manual" element={<GuidePage />} />
         <Route path="/dify-chat" element={<DifyChatPage />} />
         <Route path="/sql-bot" element={<SqlBotPage />} />
         <Route path="/college-query/:id" element={<CollegeQueryPage />} />

@@ -1039,7 +1039,7 @@ body {
   align-items: center;
   gap: 32px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, #4A6CF7 0%, #1B2A4A 100%);
+  background: var(--campus-hero-background);
   border-radius: var(--el-border-radius-base);
   padding: 40px 32px;
   color: #fff;
@@ -1498,3 +1498,58 @@ body {
   .cq-history { width: 100%; max-height: 200px; }
 }
 
+/* AI 中台整体视觉：冷白画布、墨蓝文字、克制的蓝色强调 */
+:root {
+  --el-color-primary: #3478df;
+  --el-color-primary-light-3: #6c9dea;
+  --el-color-primary-light-5: #a2c0f1;
+  --el-color-primary-light-7: #c8daf7;
+  --el-color-primary-light-9: #edf4ff;
+  --el-color-primary-dark-2: #205fbd;
+  --el-text-color-primary: #14233b;
+  --el-text-color-regular: #52627a;
+  --el-text-color-secondary: #8190a5;
+  --el-border-color: #e4eaf2;
+  --el-border-color-light: #eaf0f6;
+  --el-border-color-lighter: #eef2f7;
+  --el-bg-color-page: #f5f7fb;
+  --sidebar-width: 248px;
+  --sidebar-width-collapsed: 76px;
+  --sidebar-bg-color: #fbfcfe;
+  --sidebar-text-color: #68788e;
+  --sidebar-active-text-color: #2769ca;
+  --sidebar-active-icon-color: #2769ca;
+  --sidebar-hover-bg-color: #f1f5fa;
+  --sidebar-active-bg-color: #eaf2ff;
+  --sidebar-border-color: #e9eef5;
+}
+.el-layout { background: #f5f7fb; }
+.el-sidebar { border-right: 1px solid #e9eef5; box-shadow: 2px 0 14px rgba(26, 49, 82, .025); }
+.el-sidebar-logo { height: 76px; padding: 0 22px; border-bottom-color: #eef2f7; }
+.el-sidebar-logo img { height: 40px; }
+.el-sidebar-logo-text { color: #1a2a43; font-size: 18px; letter-spacing: .025em; }
+.el-menu { padding: 19px 12px; gap: 5px; }
+.el-menu-item { height: 46px; padding: 0 14px; gap: 13px; border-radius: 11px; font-size: 13.5px; }
+.el-menu-item.active { background: #eaf2ff; }
+.el-menu-item.active::before { width: 3px; height: 18px; left: 0; }
+.el-sidebar-toggle { right: 9px; top: auto; bottom: 17px; transform: none; }
+.el-sidebar-toggle button { width: 34px; height: 34px; border-radius: 10px; background: #f1f5fa; }
+.el-main-container { min-width: 0; background: #f5f7fb; }
+.el-header { height: 68px; padding: 0 32px; border-bottom-color: #e9eef5; box-shadow: none; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); }
+.el-header-dashboard-btn { padding: 8px 13px; border: 1px solid #e1e9f4; border-radius: 10px; background: #fff; color: #52627a; font-weight: 550; letter-spacing: 0; box-shadow: none; }
+.el-header-dashboard-btn:hover { color: #2769ca; border-color: #bfd3f1; background: #f5f9ff; box-shadow: none; filter: none; }
+.el-header-user { padding: 4px 8px 4px 5px; }
+.el-header-avatar { width: 33px; height: 33px; background: linear-gradient(145deg, #4c8fe9, #2d67be); }
+.el-content { padding: 28px 32px; }
+.el-footer { padding: 13px 24px; background: transparent; border-top: 0; color: #a0aaba; font-size: 12px; }
+.el-hero { border-radius: 18px; overflow: hidden; box-shadow: 0 12px 30px rgba(24, 48, 82, .1); }
+.el-agent-card { border-color: #e6ebf2; border-radius: 15px; box-shadow: 0 3px 12px rgba(24, 48, 82, .04); transition: transform .2s, box-shadow .2s, border-color .2s; }
+.el-agent-card:hover { transform: translateY(-3px); border-color: #d6e3f3; box-shadow: 0 14px 30px rgba(24, 48, 82, .1); }
+.el-button, .el-search-bar input, .el-search-bar button, .el-tab-pill { border-radius: 10px; }
+@media (max-width: 900px) { .el-header { padding: 0 20px; }.el-content { padding: 22px 20px; } }
+@media (max-width: 640px) { .el-sidebar { display: none; }.el-header { height: 60px; padding: 0 15px; }.el-header-dashboard-btn { display: none; }.el-content { padding: 17px 14px; }.el-footer { padding: 10px 14px; } }
+
+
+:root {
+  --campus-hero-background: linear-gradient(135deg, #4A6CF7, #1B2A4A);
+}
