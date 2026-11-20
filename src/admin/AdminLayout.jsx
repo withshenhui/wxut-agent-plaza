@@ -96,7 +96,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const { user, logout } = useAdmin();
 
-  const [openKeys, setOpenKeys] = useState(['settings']);
+  const [openKeys, setOpenKeys] = useState([]);
 
   const [title, sub] = PAGE_TITLES[location.pathname] || ['管理后台', ''];
   const nickname = user?.nickname || user?.username || '管理员';
