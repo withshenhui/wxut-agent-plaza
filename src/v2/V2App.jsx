@@ -144,6 +144,7 @@ export function Footer({ onNav, toast }) {
             <div className="lnk" onClick={() => onNav('dev')}>智能体开发平台</div>
             <div className="lnk" onClick={() => onNav('guide')}>上架广场指引</div>
             <div className="lnk" onClick={() => onNav('kb')}>知识库（文档问答）</div>
+            <div className="lnk" onClick={() => { window.location.hash = '#/admin/login'; window.scrollTo(0, 0); }}>AI中台管理后台</div>
           </div>
           <div className="v2-foot-col">
             <div className="h">联系我们</div>
