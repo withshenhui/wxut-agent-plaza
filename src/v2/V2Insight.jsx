@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, useToast, XixiLoading } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
@@ -319,6 +319,8 @@ export function FundingWorkbench({ onBack, toast }) {
   const [k, setK] = useState(null);
   const [colleges, setColleges] = useState(null);
   const [list, setList] = useState(null);
+  const [listLoading, setListLoading] = useState(false);
+  const listFresh = useRef(true);
   const [pageNum, setPageNum] = useState(1);
   const [hist, setHist] = useState(null);
   const histTotal = (hist || []).reduce((a, b) => a + (b.n || 0), 0);
@@ -330,6 +332,7 @@ export function FundingWorkbench({ onBack, toast }) {
     setK(null);
     setColleges(null);
     setHist(null);
+    listFresh.current = true;
     fetch(`${API_BASE}/insight/funding/overview?windowDays=${win}`, { headers: authHeaders })
       .then((r) => r.json()).then((j) => { if (j.code === 200) setK(j.data); else { setK({ err: j.message }); toast('加载失败：' + (j.message || '')); } }).catch((e) => { setK({ err: e.message }); });
     fetch(`${API_BASE}/insight/funding/colleges?windowDays=${win}`, { headers: authHeaders })
@@ -340,13 +343,18 @@ export function FundingWorkbench({ onBack, toast }) {
   }, [win]);
 
   useEffect(() => {
-    setList(null);
+    // 仅首次/切窗清空显示大 loading；翻页/筛选保留旧表叠加加载态
+    setList((prev) => (listFresh.current ? null : prev));
     const p = new URLSearchParams({ windowDays: win, page: pageNum, size: 20 });
     if (filters.level) p.set('level', filters.level);
     if (filters.college) p.set('college', filters.college);
     if (filters.q) p.set('q', filters.q);
+    const fresh = listFresh.current;
+    listFresh.current = false;
     fetch(`${API_BASE}/insight/funding/students?` + p, { headers: authHeaders })
-      .then((r) => r.json()).then((j) => setList(j.data || { records: [], total: 0 })).catch(() => setList({ records: [], total: 0 }));
+      .then((r) => r.json()).then((j) => { setList(j.data || { records: [], total: 0 }); setListLoading(false); })
+      .catch(() => { setList({ records: [], total: 0 }); setListLoading(false); });
+    if (!fresh) setListLoading(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [win, filters.level, filters.college, filters.q, pageNum]);
 
@@ -516,9 +524,10 @@ export function FundingWorkbench({ onBack, toast }) {
           </div>
         </div>
         {!list ? (
-          <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" sub="数仓查询中" /></div>
+          <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" /></div>
         ) : (
-        <div className="v2-tbl-wrap">
+        <div className={'v2-tbl-wrap' + (listLoading ? ' v2-tbl-loading' : '')}>
+          {listLoading && <div className="v2-tbl-mask"><span className="bar" /><span className="bar" /><span className="bar" /></div>}
           <table className="v2-table">
             <thead><tr>
               <th>学号</th><th>姓名</th><th>学院</th><th>年级</th><th>档位</th>

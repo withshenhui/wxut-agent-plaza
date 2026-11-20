@@ -434,10 +434,10 @@ input,select,textarea{font-family:inherit}
   border:1px solid var(--el-primary-l8);border-radius:var(--p-r);padding:16px 20px;margin-bottom:16px}
 .v2-ai-banner .xab-avatar{width:52px;height:52px;flex-shrink:0}
 .v2-ai-banner .xab-avatar img{width:100%;height:100%;object-fit:contain;animation:xixi-bob 2.4s ease-in-out infinite}
-.v2-ai-banner .xab-body{flex:1;min-width:0}
+.v2-ai-banner .xab-body{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
 .v2-ai-banner .xab-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--el-primary);
   background:var(--el-primary-l9);border-radius:5px;padding:2px 9px;letter-spacing:1px;margin-bottom:6px}
-.v2-ai-banner .xab-text{font-size:13.5px;color:var(--p-t2);line-height:1.7;min-height:23px}
+.v2-ai-banner .xab-text{font-size:13.5px;color:var(--p-t2);line-height:1.7;min-height:23px;text-align:center}
 .v2-ai-banner .xab-text .caret{display:inline-block;width:2px;height:14px;background:var(--el-primary);margin-left:2px;
   vertical-align:-2px;animation:xixi-caret .8s steps(1) infinite}
 @keyframes xixi-caret{50%{opacity:0}}
@@ -528,3 +528,14 @@ body.v2-modal-open{overflow:hidden}
   font-size:12.5px;color:var(--p-t2);padding:9px 11px;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left}
 .v2-exp-menu button:hover{background:var(--el-primary-l9);color:var(--el-primary)}
 .v2-exp-menu .hint{font-size:10.5px;color:var(--p-t4);padding:6px 11px 4px;border-top:1px solid var(--p-line);margin-top:4px}
+
+
+/* 翻页/筛选：表格半透明遮罩+顶部细进度条（保留旧表内容） */
+.v2-tbl-loading{position:relative}
+.v2-tbl-loading .v2-table{opacity:.45;transition:opacity .2s;pointer-events:none}
+.v2-tbl-mask{position:absolute;left:0;right:0;top:0;height:3px;overflow:hidden;background:transparent}
+.v2-tbl-mask .bar{position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--el-primary));animation:tbl-sweep 1s ease-in-out infinite}
+.v2-tbl-mask .bar:nth-child(2){animation-delay:.18s}
+.v2-tbl-mask .bar:nth-child(3){animation-delay:.36s}
+@keyframes tbl-sweep{0%{left:-40%}100%{left:110%}}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Icon, XixiLoading } from './ui.jsx';
 import { exportCsv, exportExcel } from './exportUtil.js';
 
@@ -88,6 +88,8 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [pageNum, setPageNum] = useState(1);
   const [detail, setDetail] = useState(null);
+  const [listLoading, setListLoading] = useState(false);
+  const listFresh = useRef(true);
   useEffect(() => {
     document.body.classList.toggle('v2-modal-open', !!detail);
     return () => document.body.classList.remove('v2-modal-open');
@@ -101,7 +103,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const base = `${API_BASE}/insight/scene/${sceneKey}`;
 
   useEffect(() => {
-    setK(null); setColleges(null);
+    setK(null); setColleges(null); listFresh.current = true;
     const qs = hasWindow ? `?windowDays=${win}` : '';
     fetch(base + '/overview' + qs, { headers: authHeaders }).then((r) => r.json())
       .then((j) => { if (j.code === 200) setK(j.data); else setK({ err: j.message }); }).catch((e) => setK({ err: e.message }));
@@ -111,14 +113,19 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   }, [win, sceneKey]);
 
   useEffect(() => {
-    setList(null);
+    // 仅首次/切场景/切窗清空显示大 loading；翻页/筛选保留旧表叠加加载态
+    setList((prev) => (listFresh.current ? null : prev));
     const p = new URLSearchParams({ page: pageNum, size: 20 });
     if (hasWindow) p.set('windowDays', win);
     if (filters.level) p.set('level', filters.level);
     if (filters.college) p.set('college', filters.college);
     if (filters.q) p.set('q', filters.q);
+    const fresh = listFresh.current;
+    listFresh.current = false;
     fetch(base + '/students?' + p, { headers: authHeaders }).then((r) => r.json())
-      .then((j) => setList(j.data || { records: [], total: 0 })).catch(() => setList({ records: [], total: 0 }));
+      .then((j) => { setList(j.data || { records: [], total: 0 }); setListLoading(false); })
+      .catch(() => { setList({ records: [], total: 0 }); setListLoading(false); });
+    if (!fresh) setListLoading(true);
     // eslint-disable-next-line
   }, [win, sceneKey, filters.level, filters.college, filters.q, pageNum]);
   useEffect(() => { setPageNum(1); }, [win, filters.level, filters.college, filters.q]);
@@ -276,9 +283,10 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
         </div>
 
         {!list ? (
-          <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" sub="数仓查询中" /></div>
+          <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" /></div>
         ) : (
-        <div className="v2-tbl-wrap">
+        <div className={'v2-tbl-wrap' + (listLoading ? ' v2-tbl-loading' : '')}>
+          {listLoading && <div className="v2-tbl-mask"><span className="bar" /><span className="bar" /><span className="bar" /></div>}
           <table className="v2-table">
             <thead><tr>
               <th>学号</th><th>姓名</th><th>学院</th><th>年级</th><th>档位</th>
