@@ -376,6 +376,6 @@ input,select,textarea{font-family:inherit}
 /* 对话页左上返回广场 */
 .v2-back-plaza{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--p-t2);
   background:var(--p-surface);border:1px solid var(--p-line);border-radius:10px;padding:8px 14px;cursor:pointer;
-  transition:all .15s;margin-bottom:12px;flex-shrink:0;width:100%;justify-content:center;box-sizing:border-box}
+  transition:all .15s;margin-bottom:12px;flex-shrink:0;width:100%;justify-content:flex-start;box-sizing:border-box}
 .v2-back-plaza:hover{border-color:var(--el-primary-l3);color:var(--el-primary)}
 .v2-back-plaza svg{width:14px;height:14px}
