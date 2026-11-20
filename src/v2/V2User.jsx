@@ -27,9 +27,8 @@ export function V2UserProvider({ children }) {
     if (new URLSearchParams(query).has('guest')) {
       try { sessionStorage.setItem(GUEST_KEY, '1'); } catch {}
     }
-    let isGuest = false;
-    try { isGuest = sessionStorage.getItem(GUEST_KEY) === '1'; } catch {}
-    setGuest(isGuest);
+    // 游客 = 未登录。?guest 参数保留兼容（显式进入游客态不再跳 CAS）
+    setGuest(true);
 
     const isCasCallback = hash.includes('cas-callback');
     const isAdminPage = hash.includes('/admin');
@@ -40,13 +39,13 @@ export function V2UserProvider({ children }) {
         .then((info) => setUser(info))
         .catch(() => {
           localStorage.removeItem('user_token');
-          if (casEnabled && !isCasCallback && !isAdminPage && !isGuest) casLogin();
+          // token 失效：回到游客态（V2 默认游客预览，敏感操作时再引导登录）
+          if (!isCasCallback && !isAdminPage && casEnabled && !isGuest) casLogin();
           else setLoading(false);
         })
         .finally(() => setLoading(false));
-    } else if (casEnabled && !isCasCallback && !isAdminPage && !isGuest) {
-      casLogin();
     } else {
+      // V2 策略：默认游客预览，不强制跳 CAS；对话/知识库/开发平台等操作触发 requireLogin
       setLoading(false);
     }
   }, []);
@@ -70,7 +69,6 @@ export function V2UserProvider({ children }) {
   };
 
   const enterGuest = () => {
-    try { sessionStorage.setItem(GUEST_KEY, '1'); } catch {}
     setGuest(true);
     setLoading(false);
   };
@@ -97,8 +95,14 @@ export function V2UserProvider({ children }) {
     window.location.href = `${window.location.origin}${window.location.pathname}`;
   };
 
+  // guest 派生：未登录即游客
+  const isGuest = !user;
+
+  // 敏感操作鉴权：游客时返回 false 由调用方弹引导框，已登录直接放行
+  const requireLogin = () => !!user;
+
   return (
-    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest, enterGuest, exitGuest }}>
+    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest: isGuest, enterGuest, exitGuest, requireLogin }}>
       {children}
     </V2UserCtx.Provider>
   );

@@ -804,11 +804,16 @@ export default function V2App() {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, guest, casLogin, logout } = useV2User();
+  const { user, guest, casLogin, logout, requireLogin } = useV2User();
+  const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
 
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
   useEffect(() => {
     const m = location.pathname.match(/^\/chat\/(\d+)/);
+    if (m && !user && agents.length) {
+      // 游客直接访问对话链接 → 引导登录（一次性提示，不重复弹）
+      setLoginPrompt((prev) => prev || '使用智能体对话需要登录');
+    }
     if (m) {
       const id = Number(m[1]);
       const found = agents.find((a) => a.id === id);
@@ -841,11 +846,18 @@ export default function V2App() {
   // V1 同款智能体唤起：externalUrl 外跳(带 sys.user_id)/college-query 进 V2 流式对话/其余进 V2 对话
   const launch = useCallback((a) => {
     if (!a) return;
+    // 游客使用智能体：引导登录
+    if (!requireLogin()) { setLoginPrompt('使用智能体对话需要登录'); return; }
     launchAgentV2(navigate, a.id, user, (detail) => {
-      // 站内对话 → 地址栏路由化 #/chat/{id}
       navigate(`/chat/${a.id}`);
     });
-  }, [navigate, user]);
+  }, [navigate, user, requireLogin]);
+
+  // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）
+  const guardNav = useCallback((p, label) => {
+    if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
+    nav(p);
+  }, [nav, requireLogin]);
 
   // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
@@ -857,13 +869,32 @@ export default function V2App() {
 
   return (
     <>
-      <TopNav page={page} onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
+      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={nav} toast={toast} />}
+      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'dev' && <Dev toast={toast} />}
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
-      <Footer onNav={nav} toast={toast} />
+      <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
+
+      {loginPrompt && (
+        <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setLoginPrompt(''); }}>
+          <div className="v2-modal" style={{ width: 400 }}>
+            <div className="v2-md-head"><div className="t">需要登录</div><button className="v2-md-close" onClick={() => setLoginPrompt('')}>✕</button></div>
+            <div className="v2-md-body" style={{ paddingBottom: 8 }}>
+              <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
+                <img src="./v2-logo.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
+              </div>
+              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{loginPrompt}</p>
+              <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>使用学校统一身份认证登录后即可继续<br />（游客可以浏览广场与模型服务）</p>
+            </div>
+            <div className="v2-md-foot" style={{ justifyContent: 'center', gap: 10 }}>
+              <button className="v2-btn ghost" onClick={() => setLoginPrompt('')}>继续浏览</button>
+              <button className="v2-btn" onClick={() => { setLoginPrompt(''); casLogin(); }}>统一身份认证登录</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
