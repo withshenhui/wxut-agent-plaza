@@ -72,7 +72,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
         <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-        <div><div className="t1">锡职大 AI中台 <span style={{ fontSize: 10, color: 'var(--el-primary)', fontWeight: 700 }}>V2 Beta</span></div><div className="t2">AGENT PLAZA</div></div>
+        <div><div className="t1">锡职大 AI中台</div><div className="t2">AGENT PLAZA</div></div>
       </a>
       <div className="v2-nav-links">
         {NAVS.map((n) => (
@@ -84,7 +84,6 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
         ))}
       </div>
       <div className="v2-nav-right">
-        <span className="v2-badge">V2 Beta</span>
         {user ? (
           <>
             <div className="v2-user" title="统一身份认证账号">

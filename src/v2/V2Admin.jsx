@@ -62,7 +62,6 @@ export default function V2Admin({ user, onLogout }) {
         <header className="v2-admin-header">
           <div className="v2-hd-left"><span className="crumb">管理后台 /</span> {TITLES[page]}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span className="v2-badge">V2 Beta</span>
             <div className="v2-user" onClick={() => navigate('/')}>
               <div className="ava">{(user?.nickname || user?.username || '管').slice(0, 1)}</div>
               <span className="nm">{user?.nickname || user?.username}</span>
