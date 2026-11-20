@@ -121,7 +121,7 @@ export function Footer({ onNav, toast }) {
               <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
               <div><div className="t1">锡职大 AI中台</div><div className="t2">AGENT PLAZA</div></div>
             </div>
-            <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。一个中台、全员受益 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
+            <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
           </div>
           <div className="v2-foot-col">
             <div className="h">平台服务</div>
@@ -169,7 +169,7 @@ function Hero({ agents, onChat, onSearch, q }) {
         <div className="v2-hero-copy">
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
           <h1>锡职大 <span className="accent">AI中台</span> · 智能体广场</h1>
-          <div className="sub">全校统一的智能体入口 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
+          <div className="sub">让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
             <input value={q} onChange={(e) => onSearch(e.target.value)} placeholder="搜索智能体名称 / 描述 / 标签…" />
