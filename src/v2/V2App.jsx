@@ -378,11 +378,12 @@ function ChatPage({ agent, onExit }) {
 
   return (
     <div className="v2-chat-shell v2-chat-wide">
-      {/* 左：历史会话 */}
-      <aside className="v2-chat-history">
+      {/* 左：返回广场（独立于历史栏）+ 历史会话 */}
+      <div className="v2-chat-left">
         <button className="v2-back-plaza" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> 返回广场
         </button>
+        <aside className="v2-chat-history">
         <button className="v2-btn" style={{ width: '100%', marginBottom: 12 }} onClick={newChat}>＋ 新对话</button>
         <div className="v2-conv-list">
           {convs.map((c) => (
@@ -393,7 +394,8 @@ function ChatPage({ agent, onExit }) {
           ))}
           {!convs.length && <div style={{ fontSize: 11.5, color: 'var(--p-t4)', textAlign: 'center', padding: '12px 0' }}>暂无历史对话</div>}
         </div>
-      </aside>
+        </aside>
+      </div>
 
       {/* 中：对话 */}
       <div className="v2-chat-col">

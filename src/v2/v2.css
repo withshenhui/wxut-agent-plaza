@@ -358,7 +358,7 @@ input,select,textarea{font-family:inherit}
 .v2-conv-item .rm{border:none;background:none;color:var(--p-t4);font-size:11px;cursor:pointer;opacity:0;padding:2px}
 .v2-conv-item:hover .rm{opacity:1}
 .v2-conv-item .rm:hover{color:var(--p-danger)}
-@media (max-width:1200px){.v2-chat-wide{grid-template-columns:1fr 280px}.v2-chat-history{display:none}}
+@media (max-width:1200px){.v2-chat-wide{grid-template-columns:1fr 280px}.v2-chat-left{display:none}}
 
 /* markdown 消息体 */
 .v2-md p{margin:0 0 8px}
@@ -384,3 +384,8 @@ input,select,textarea{font-family:inherit}
 
 /* 流式加载行（typing + 工具状态合一显示在占位气泡内） */
 .v2-loading-inline{display:flex;align-items:center;gap:8px;color:var(--p-t3);font-size:12.5px;min-height:22px}
+
+/* 对话页左列：返回按钮独立在历史栏外 */
+.v2-chat-left{display:flex;flex-direction:column;min-height:0}
+.v2-chat-left .v2-chat-history{flex:1 1 0;min-height:0}
+.v2-back-plaza{margin-bottom:10px}
