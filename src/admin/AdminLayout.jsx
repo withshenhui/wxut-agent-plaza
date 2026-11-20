@@ -14,6 +14,9 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   HomeOutlined,
+  CommentOutlined,
+  ApiOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from './AdminContext';
 import './admin.css';
@@ -31,9 +34,9 @@ const menuItems = [
   {
     key: 'settings', icon: <SettingOutlined />, label: '系统设置',
     children: [
-      { key: '/admin/xixi', label: '锡锡导员管理' },
-      { key: '/admin/llm-config', label: '大模型配置' },
-      { key: '/admin/configs', label: '基础配置' },
+      { key: '/admin/xixi', icon: <CommentOutlined />, label: '锡锡导员管理' },
+      { key: '/admin/llm-config', icon: <ApiOutlined />, label: '大模型配置' },
+      { key: '/admin/configs', icon: <ToolOutlined />, label: '基础配置' },
     ],
   },
   { key: '/admin/files', icon: <FileOutlined />, label: '文件管理' },
