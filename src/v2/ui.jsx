@@ -136,7 +136,7 @@ export function Pager({ page, total, size, onPage }) {
 
 
 /* ================= 锡锡 Loading（全站统一数据加载态） ================= */
-export function XixiLoading({ text = '锡锡正在思考…', sub }) {
+export function XixiLoading({ text = 'AI分析中…', sub }) {
   return (
     <div className="v2-xixi-loading">
       <div className="xl-avatar">

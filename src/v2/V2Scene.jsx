@@ -243,7 +243,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
         </div>
 
         {!list ? (
-          <div className="v2-tbl-wrap"><XixiLoading text="锡锡正在翻阅名单…" sub="数仓查询中" /></div>
+          <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" sub="数仓查询中" /></div>
         ) : (
         <div className="v2-tbl-wrap">
           <table className="v2-table">

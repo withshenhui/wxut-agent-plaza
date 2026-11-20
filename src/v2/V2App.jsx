@@ -510,7 +510,7 @@ function Models({ toast }) {
     fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json())
       .then((j) => setMv(j.data?.records || [])).catch(() => setMv([]));
   }, []);
-  if (!mg || !mv) return <div className="v2-body"><XixiLoading text="锡锡正在获取模型数据…" /></div>;
+  if (!mg || !mv) return <div className="v2-body"><XixiLoading text="AI加载数据中…" /></div>;
   const all = tab === 'general' ? mg : mv;
   const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
   const provLogo = (m) => {
@@ -605,7 +605,7 @@ function DevGuide({ onClose, toast }) {
     ]},
     { no: '02', t: '登录开发平台', ic: 'users', body: [
       ['打开平台', '浏览器访问 aiagent.wxut.edu.cn/apps（智能体开发平台），建议使用 Chrome / Edge。'],
-      ['统一身份认证', '使用学校统一身份认证登录（工号 + 信息门户密码），与 AI中台账号体系互通。'],
+      ['账号登录', '使用信息中心审核开通的开发者账号登录；未开通账号者无法进入开发平台。'],
       ['进入工作室', '登录后进入「工作室」，即可看到本单位的空白应用与已有应用。'],
     ]},
     { no: '03', t: '创建应用', ic: 'plus', body: [
@@ -708,7 +708,7 @@ function Dev({ toast }) {
               面向全校师生的智能体可视化编排平台 —— 无需编程，像搭积木一样创建属于自己的 AI 应用：编排流程、配置提示词、挂载知识库、调试预览，一步到位。
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
-              <button className="v2-btn lg" onClick={() => toast('正式版将新窗口打开 https://aiagent.wxut.edu.cn/apps')}>进入开发平台 →</button>
+              <button className="v2-btn lg" onClick={() => window.open('https://aiagent.wxut.edu.cn/apps', '_blank')}>进入开发平台 →</button>
               <button className="v2-btn ghost lg" onClick={() => { setShowGuide(true); window.scrollTo(0, 0); }}>使用指南</button>
               <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>已开通账号 · 学校统一身份认证登录</span>
             </div>
@@ -766,7 +766,7 @@ function Dev({ toast }) {
         <div style={{ background: 'linear-gradient(135deg,#1e3a8a,#3B82F6)', borderRadius: 18, padding: 36, textAlign: 'center', color: '#fff', marginTop: 40 }}>
           <div style={{ fontSize: 20, fontWeight: 700 }}>准备好创建你的第一个智能体了吗？</div>
           <div style={{ fontSize: 13, opacity: .85, marginTop: 8 }}>联系信息化与数据服务中心开通账号 · dcc@wxit.edu.cn</div>
-          <button className="v2-btn lg" style={{ marginTop: 18, background: '#fff', color: 'var(--el-primary-d2)' }} onClick={() => toast('正式版将新窗口打开 https://aiagent.wxut.edu.cn/apps')}>进入开发平台 →</button>
+          <button className="v2-btn lg" style={{ marginTop: 18, background: '#fff', color: 'var(--el-primary-d2)' }} onClick={() => window.open('https://aiagent.wxut.edu.cn/apps', '_blank')}>进入开发平台 →</button>
         </div>
       </div>
     </>

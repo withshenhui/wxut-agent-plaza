@@ -664,6 +664,26 @@ function BasicAdmin({ toast }) {
         </div>
         <div style={{ marginTop: 16 }}><button className="v2-btn" onClick={save}>保存配置</button></div>
       </div>
+      <div className="v2-card" style={{ maxWidth: 760, marginTop: 14 }}>
+        <div className="v2-kv-form">
+          <div className="v2-kv-row">
+            <span className="k" style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>游客模式</span>
+            <span className="v">
+              <div className="v2-guest-switch">
+                <button type="button" className={'v2-sw' + ((vals['guest.mode'] ?? 'on') !== 'off' ? ' on' : '')} aria-label="游客模式开关"
+                  onClick={() => {
+                    const next = (vals['guest.mode'] ?? 'on') === 'off' ? 'on' : 'off';
+                    configApi.updateConfig('guest.mode', next)
+                      .then(() => { setVals({ ...vals, 'guest.mode': next }); toast(next === 'off' ? '已关闭游客模式：访问任意页面均需登录' : '已开启游客模式：游客可免登录浏览'); })
+                      .catch((e) => toast('保存失败：' + e.message));
+                  }} />
+                <span style={{ fontSize: 12.5, color: 'var(--p-t2)' }}>{(vals['guest.mode'] ?? 'on') !== 'off' ? '已开启：游客可免登录浏览广场与模型服务' : '已关闭：访问任意页面均需统一身份认证登录'}</span>
+              </div>
+              <div className="v2-fm-hint">guest.mode：开启后游客免登录浏览；关闭后全站强制登录，未登录用户（含演示场景）无法进入任何页面</div>
+            </span>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

@@ -35,7 +35,7 @@ input,select,textarea{font-family:inherit}
 .chip-new{font-size:9px;font-weight:700;color:#fff;background:var(--p-accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.5px;vertical-align:1px}
 .v2-user{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:10px}
 .v2-user:hover{background:var(--p-fill)}
-.v2-user .ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.v2-user .ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#4A6CF7,#6B8AFF);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .v2-user .nm{font-size:13px;color:var(--p-text)}
 
 /* ============ 按钮 ============ */
@@ -138,7 +138,7 @@ input,select,textarea{font-family:inherit}
 .v2-msg .who img{width:26px;height:26px;object-fit:contain;display:block}
 .v2-msg.ai .who{background:var(--el-primary-l9);color:var(--el-primary)}
 .v2-msg.user{flex-direction:row-reverse}
-.v2-msg.user .who{background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;font-size:12px;font-weight:600}
+.v2-msg.user .who{background:linear-gradient(135deg,#4A6CF7,#6B8AFF);color:#fff;font-size:12px;font-weight:600}
 .v2-bubble{max-width:92%;border-radius:14px;padding:12px 16px;font-size:13.5px;line-height:1.75;word-break:break-word}
 .v2-bubble table{table-layout:auto}
 .v2-bubble th,.v2-bubble td{white-space:normal;min-width:56px}
@@ -488,3 +488,10 @@ input,select,textarea{font-family:inherit}
 
 /* 弹窗打开时锁定背景滚动 */
 body.v2-modal-open{overflow:hidden}
+
+/* 游客模式开关（后台基础配置） */
+.v2-guest-switch{display:flex;align-items:center;gap:10px}
+.v2-sw{width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;position:relative;transition:background .2s;background:#CBD5E1;padding:0;flex-shrink:0}
+.v2-sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(15,23,42,.25)}
+.v2-sw.on{background:var(--el-primary)}
+.v2-sw.on::after{left:23px}

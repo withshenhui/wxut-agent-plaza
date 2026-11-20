@@ -34,6 +34,17 @@ export function V2UserProvider({ children }) {
     const isAdminPage = hash.includes('/admin');
     const token = localStorage.getItem('user_token');
 
+    // 游客模式开关（后台「基础配置」guest.mode：on 允许游客免登录浏览 / off 全站需登录）
+    fetch(`${apiBase}/configs/guest.mode`)
+      .then((r) => r.json())
+      .then((j) => {
+        const mode = (j && j.data && j.data.configValue) || 'on';
+        if (mode === 'off' && !localStorage.getItem('user_token') && !isCasCallback && casEnabled) {
+          casLogin();
+        }
+      })
+      .catch(() => {});
+
     if (token) {
       getUserInfo()
         .then((info) => setUser(info))
