@@ -1,0 +1,37 @@
+.science {max-width:1380px;margin:auto;color:#1d334a}
+.science-cover {position:relative;isolation:isolate;overflow:hidden;display:flex;justify-content:space-between;align-items:center;min-height:194px;padding:clamp(25px,3.5vw,50px);background:#e6f1fc;border:1px solid #cddfed;border-radius:14px}
+.science-cover p,.science-article header small {font-size:13px;font-weight:600;color:#36668f;letter-spacing:.07em}
+.science-cover h2 {font-size:clamp(27px,3vw,41px);letter-spacing:-.035em;color:#073e79;margin:10px 0}
+.science-cover span {font-size:15px;color:#445f77;line-height:1.8}
+.science-orbit {position:relative;flex:none;width:180px;height:138px;margin:0 6%}
+.science-orbit i {position:absolute;inset:36px 0;border:2px solid #76a5d1;border-radius:50%;transform:rotate(-27deg)}
+.science-orbit i:nth-child(2){transform:rotate(33deg)}.science-orbit i:nth-child(3){transform:rotate(93deg)}
+.science-orbit b {position:absolute;left:calc(50% - 11px);top:calc(50% - 11px);width:22px;height:22px;background:#00529f;border-radius:50%;box-shadow:72px -42px 0 -5px #3684c8}
+.science-layout {display:grid;grid-template-columns:minmax(165px,220px) minmax(0,1fr);gap:24px;align-items:start;margin-top:22px}
+.science-menu,.science-article {border:1px solid #dee6ee;border-radius:12px;background:white}
+.science-menu {padding:18px 10px;position:sticky;top:12px}
+.science-menu h3 {font-size:14px;margin:0 14px 12px}
+.science-menu button {display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:0;border-radius:6px;background:transparent;text-align:left;font:inherit;font-size:14px;cursor:pointer;color:#475d70}
+.science-menu button span {font:12px ui-monospace,monospace;color:#71869b}
+.science-menu button[aria-current],.science-menu button:hover {background:#edf5fd;color:#0052a0}
+.science-menu button[aria-current] {font-weight:700}
+.science-article {padding:clamp(22px,3.2vw,48px);line-height:1.85}
+.science-article h2 {font-size:clamp(22px,2.2vw,31px);line-height:1.45;margin:7px 0 12px;scroll-margin:24px}
+.science-article h3 {font-size:19px;margin:26px 0 14px}
+.science-article p,.science-article dd {color:#506477;font-size:15px;line-height:1.85;margin:0;max-width:75ch}
+.science-example {margin:22px 0;padding:15px 20px;background:#f2f7fc;border-left:3px solid #498ac8;border-radius:0 8px 8px 0}
+.science-example strong {color:#13558d;font-size:14px}
+.science-timeline {list-style:none;padding:0 0 0 18px;margin:12px 0}
+.science-timeline li {position:relative;border-left:1px solid #bdd3e7;padding:0 0 18px 20px}
+.science-timeline li:last-child {border-color:transparent;padding-bottom:0}
+.science-timeline li:before {content:'';position:absolute;left:-5px;top:10px;width:9px;height:9px;border-radius:50%;background:#2977b8;box-shadow:0 0 0 4px #eef5fb}
+.science-timeline h4 {display:inline;font-size:16px}.science-timeline small {color:#54738c;margin-left:12px}
+.science-article details {border-top:1px solid #e0e7ee;padding:16px 0}
+.science-article summary {font-weight:650;cursor:pointer}
+.science-article dl {margin:12px 0 0}.science-article dt {font-weight:600;font-size:14px}.science-article dd {margin:0 0 10px}
+.science-next,.science-article a {display:inline-block;margin-top:20px;background:#edf5fc;border:0;border-radius:6px;padding:9px 14px;color:#00529e;font:inherit;font-size:14px;cursor:pointer;text-decoration:none}
+.science-gallery {display:flex;flex-wrap:wrap;gap:10px}
+.science-figure {width:min(180px,100%);border:1px solid #dfe7ee;border-radius:6px;background:white;color:#345;cursor:zoom-in}
+.science-figure img {width:100%;height:105px;object-fit:contain}.science-dialog {max-width:94vw;border:0;padding:14px;border-radius:10px;margin:auto}.science-dialog img{display:block;max-width:88vw;max-height:75vh}.science-dialog button{display:block;margin-left:auto;cursor:pointer}.science-dialog::backdrop{background:#13273dc9}
+@media(max-width:850px){.science-layout{grid-template-columns:1fr;gap:12px}.science-menu{position:static;display:flex;flex-wrap:wrap;gap:4px;padding:8px}.science-menu h3{display:none}.science-menu button{width:auto;padding:8px}.science-orbit{width:115px;margin:0 2%}}
+@media(max-width:640px){.science-cover{min-height:0}.science-orbit{display:none}.science-menu button{font-size:13px}.science-menu button span{display:none}}

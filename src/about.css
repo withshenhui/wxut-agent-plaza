@@ -1,0 +1,296 @@
+/* ============================================================
+   关于我们 · 页面样式
+   与首页同一套语言：白底画布 + 蓝 #3B82F6 / 橙 #F97316 + 大字号大气
+   ============================================================ */
+
+.about {
+  --a-primary: #3B82F6;
+  --a-accent: #F97316;
+  --a-success: #10B981;
+  --a-warning: #F59E0B;
+  --a-violet: #8B5CF6;
+  --a-cyan: #0E7490;
+
+  --a-text: #0F172A;
+  --a-t2: #475569;
+  --a-t3: #64748B;
+  --a-t4: #94A3B8;
+  --a-line: #EDF1F6;
+  --a-line-2: #E3E9F2;
+  --a-fill: #F1F5F9;
+  --a-r: 14px;
+  --a-mono: ui-monospace, "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+
+  color: var(--a-text);
+  animation: ab-in .25s ease both;
+}
+@keyframes ab-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 页头 ---------- */
+.about-head { margin-bottom: 40px; }
+.about-eyebrow {
+  font-family: var(--a-mono);
+  font-size: 13px;
+  color: var(--a-t4);
+  letter-spacing: .06em;
+  margin-bottom: 14px;
+}
+.about-title {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.15;
+  margin: 0 0 16px;
+  color: var(--a-text);
+}
+.about-lead {
+  font-size: 16.5px;
+  line-height: 1.85;
+  color: var(--a-t2);
+  max-width: 900px;
+  margin: 0;
+}
+.about-lead b { color: var(--a-text); font-weight: 600; }
+
+/* ---------- 区块 ---------- */
+.about-sect { margin-bottom: 48px; }
+.about-sect__h { margin-bottom: 22px; }
+.about-sect__t {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -.015em;
+  margin: 0;
+  color: var(--a-text);
+}
+.about-sect__d { font-size: 14px; color: var(--a-t3); margin: 7px 0 0; line-height: 1.75; max-width: 820px; }
+
+/* ---------- 数据条 ---------- */
+.about-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.about-kpi {
+  background: #fff;
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.about-kpi__ico {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.about-kpi__ico svg { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.about-kpi__val {
+  font-family: var(--a-mono);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.about-kpi__lab { font-size: 14.5px; color: var(--a-t3); margin-top: 8px; }
+
+/* ---------- 能力卡 ---------- */
+.about-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.about-card {
+  background: #fff;
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  transition: box-shadow .25s, transform .25s;
+}
+.about-card:hover { box-shadow: 0 12px 28px -10px rgba(15, 23, 42, .16); transform: translateY(-2px); }
+.about-card__ico {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.about-card__ico svg { width: 23px; height: 23px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.about-card__t { font-size: 17px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+.about-card__d { font-size: 13.8px; line-height: 1.75; color: var(--a-t3); margin: 0; flex: 1; }
+.about-card__f { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
+.about-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--a-fill);
+  color: var(--a-t3);
+  white-space: nowrap;
+}
+.about-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--a-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.about-go:hover { color: #2563EB; }
+.about-go svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- 使命 / 愿景 ---------- */
+.about-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.about-quote {
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  padding: 34px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  position: relative;
+  overflow: hidden;
+}
+.about-quote::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.about-quote--mission::before { background: var(--a-primary); }
+.about-quote--vision::before { background: var(--a-accent); }
+.about-quote__t {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 16px;
+}
+.about-quote__t span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.about-quote--mission .about-quote__t span { background: var(--a-primary); }
+.about-quote--vision .about-quote__t span { background: var(--a-accent); }
+.about-quote__d { font-size: 16px; line-height: 1.9; color: var(--a-t2); margin: 0; }
+
+/* ---------- 团队 ---------- */
+.about-teams { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.about-team {
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 26px;
+}
+.about-team__n {
+  font-family: var(--a-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--a-primary);
+  background: rgba(59, 130, 246, .10);
+  border-radius: 8px;
+  padding: 4px 10px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.about-team__t { font-size: 16px; font-weight: 650; margin: 0 0 9px; letter-spacing: -.01em; }
+.about-team__d { font-size: 13.5px; line-height: 1.75; color: var(--a-t3); margin: 0; }
+
+/* ---------- 通用白盒（联系信息等） ---------- */
+.about-box {
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  padding: 34px;
+}
+
+/* ---------- 联系 ---------- */
+.about-kv { display: grid; gap: 16px; }
+.about-kv__r { display: flex; align-items: baseline; gap: 16px; font-size: 15px; }
+.about-kv__r i {
+  font-style: normal;
+  color: var(--a-t4);
+  width: 64px;
+  flex: none;
+  font-size: 13.5px;
+}
+.about-kv__r b { font-weight: 500; color: var(--a-text); }
+.about-kv__r a { color: var(--a-primary); text-decoration: none; font-weight: 500; }
+.about-kv__r a:hover { text-decoration: underline; }
+
+/* ---------- 条款 ---------- */
+.about-faq { display: grid; gap: 14px; }
+.about-acc {
+  border: 1px solid var(--a-line-2);
+  border-radius: var(--a-r);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+  overflow: hidden;
+}
+.about-acc__s {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 26px;
+  font-size: 15.5px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.about-acc__s::-webkit-details-marker { display: none; }
+.about-acc__s::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-right: 2px solid var(--a-t4);
+  border-bottom: 2px solid var(--a-t4);
+  transform: rotate(45deg);
+  transition: transform .2s;
+  margin-top: -4px;
+}
+.about-acc[open] .about-acc__s::after { transform: rotate(-135deg); margin-top: 4px; }
+.about-acc__b {
+  padding: 0 26px 22px;
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--a-t2);
+  margin: 0;
+  border-top: 1px solid var(--a-line);
+  padding-top: 18px;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1280px) {
+  .about-cards, .about-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1024px) {
+  .about-two { grid-template-columns: 1fr; }
+  .about-kpi { padding: 24px; gap: 18px; }
+  .about-kpi__ico { width: 52px; height: 52px; border-radius: 14px; }
+  .about-kpi__val { font-size: 34px; }
+}
+@media (max-width: 720px) {
+  .about-title { font-size: 28px; }
+  .about-kpis { grid-template-columns: 1fr; }
+  .about-cards, .about-teams { grid-template-columns: 1fr; }
+  .about-kpi { padding: 24px; }
+  .about-kpi__val { font-size: 34px; }
+  .about-quote, .about-card, .about-team { padding: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .about { animation: none !important; }
+}
