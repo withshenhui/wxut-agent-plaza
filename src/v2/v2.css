@@ -303,6 +303,11 @@ input,select,textarea{font-family:inherit}
 .v2-kpi .vl small{font-size:12px;font-weight:500;color:var(--p-t4);margin-left:2px}
 .v2-kpi .cmp{font-size:11px;color:var(--p-t4);margin-top:5px}
 .v2-kpi .bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+.v2-ov-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0 4px}
+.v2-ov-stat{background:#F7F9FC;border:1px solid #EEF2F8;border-radius:12px;padding:11px 13px}
+.v2-ov-stat .n{font-size:19px;font-weight:700;color:var(--aink);font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap}
+.v2-ov-stat .l{font-size:11px;color:var(--p-t3);margin-top:3px}
+@media (max-width:1280px){.v2-ov-stats{grid-template-columns:repeat(3,1fr)}}
 .v2-card{background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-r);padding:18px 20px}
 .v2-card .ct{font-size:14.5px;font-weight:600;color:var(--aink)}
 .v2-card .cs{font-size:11.5px;color:var(--p-t4);margin-top:2px}

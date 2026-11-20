@@ -17,12 +17,6 @@ const LVL = { hi: ['红灯', 'hi'], mid: ['黄灯', 'mid'], watch: ['绿灯', 'w
 
 /* ---------------- 公开层数据（示例，正式接 /api/v1/insight/overview） ---------------- */
 const OV = {
-  kpi: [
-    { lb: '在校生', vl: '15,103', cmp: '学籍口径 · 数据日期 11-18', bar: 'var(--el-primary)', ic: 'grad' },
-    { lb: '今日智能体对话', vl: '2,580', cmp: '覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)', ic: 'spark' },
-    { lb: '活跃智能体', vl: '56', cmp: '累计访问 11.2 万次', bar: '#8B5CF6', ic: 'robot' },
-    { lb: '平台模型', vl: '12', cmp: '本地部署 + 外部合作', bar: 'var(--p-success)', ic: 'chip' },
-  ],
   trend: [
     ['11-14', 2340], ['11-15', 2510], ['11-16', 2680], ['11-17', 2420],
     ['11-18', 2590], ['11-19', 2610], ['11-20', 2580],
@@ -81,35 +75,86 @@ const WORKBENCHES = [
   },
 ];
 
-/* ================= 频道首页 ================= */
-export function InsightHome({ onOpenWorkbench, tab, setTab }) {
-  const { user, casLogin } = useV2User();
+/* ---------------- 公开洞察：平台生态统计（/agents + /models 实时聚合） ---------------- */
+function OverviewTab() {
+  const [agents, setAgents] = useState(null);
+  const [models, setModels] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
+      .then((j) => setAgents(j.data?.records || [])).catch(() => setAgents([]));
+    Promise.all([
+      fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()).catch(() => ({})),
+      fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()).catch(() => ({})),
+    ]).then(([g, v]) => setModels([...(g.data?.records || []), ...(v.data?.records || [])]))
+      .catch(() => setModels([]));
+  }, []);
+
+  const st = useMemo(() => {
+    const list = agents || [];
+    const online = list.filter((a) => a.isBuilding !== 1);
+    const building = list.filter((a) => a.isBuilding === 1);
+    const visits = list.reduce((s, a) => s + (a.visitCount || 0), 0);
+    const catMap = new Map();
+    list.forEach((a) => {
+      const c = catMap.get(a.categoryName) || { n: 0, v: 0 };
+      c.n += 1; c.v += a.visitCount || 0;
+      catMap.set(a.categoryName, c);
+    });
+    const cats = [...catMap.entries()].sort((x, y) => y[1].n - x[1].n);
+    const top = [...online].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 10);
+    const rec = list.filter((a) => a.isRecommended === 1).length;
+
+    const ms = models || [];
+    const local = ms.filter((m) => (m.tags || []).includes('本地部署'));
+    const free = ms.filter((m) => (m.tags || []).includes('校园免费'));
+    const provMap = new Map();
+    ms.forEach((m) => provMap.set(m.provider, (provMap.get(m.provider) || 0) + 1));
+    const provs = [...provMap.entries()].sort((x, y) => y[1] - x[1]);
+    const typeMap = new Map();
+    ms.forEach((m) => typeMap.set(m.type, (typeMap.get(m.type) || 0) + 1));
+    const types = [...typeMap.entries()].sort((x, y) => y[1] - x[1]);
+    const generalN = ms.filter((m) => m.category === 'general').length;
+
+    const kb = online.filter((a) => a.categoryName === '制度建设')
+      .map((a) => [String(a.name || '').replace(/制度智能体$/, ''), a.visitCount || 0])
+      .sort((x, y) => y[1] - x[1]);
+    const kbVisits = kb.reduce((s, [, v]) => s + v, 0);
+
+    return { list, online, building, visits, cats, top, rec, ms, local, free, provs, types, generalN, kb, kbVisits };
+  }, [agents, models]);
+
+  if (agents === null || models === null) {
+    return <div style={{ padding: '60px 0' }}><XixiLoading text="AI加载数据中" /></div>;
+  }
+
   const maxTrend = Math.max(...OV.trend.map((x) => x[1]));
-  const maxAct = Math.max(...OV.collegeActivity.map((x) => x[1]));
   const maxScene = Math.max(...OV.scenes.map((x) => x[1]));
+  const maxAct = Math.max(...OV.collegeActivity.map((x) => x[1]));
+  const maxTop = Math.max(1, ...st.top.map((a) => a.visitCount || 0));
+  const maxCat = Math.max(1, ...st.cats.map(([, c]) => c.n));
+  const maxProv = Math.max(1, ...st.provs.map(([, v]) => v));
+  const maxType = Math.max(1, ...st.types.map(([, v]) => v));
+  const maxKb = Math.max(1, ...st.kb.map(([, v]) => v));
+  const fmt = (n) => (n || 0).toLocaleString();
+  const pct = (n, d) => (d ? Math.round((n / d) * 100) + '%' : '0%');
+  const subT = { fontSize: 12.5, fontWeight: 600, color: 'var(--p-t2)', margin: '10px 0 2px' };
 
-  return (
-    <>
-      <div className="v2-body v2-insight-wrap" style={{ maxWidth: 1240, paddingTop: 40 }}>
-        <div className="v2-insight-headbar">
-          <div>
-            <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--aink)' }}>AI 数据洞察</h2>
-            <p style={{ fontSize: 13, color: 'var(--p-t3)', marginTop: 6, maxWidth: 1080, lineHeight: 1.7 }}>数据驱动的一湖洞察 · 充分运用AI大模型，自动汇聚分析宿管考勤、门禁、消费、学业等全域数据，智能识别异常线索、生成跟进建议 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
-          </div>
-        </div>
-        <div className="v2-tabs" style={{ margin: '18px 0 20px' }}>
-          <div className={'v2-tab' + (tab === 'overview' ? ' on' : '')} onClick={() => setTab('overview')}>公开洞察</div>
-          <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>AI场景分析</div>
-        </div>
-
-        {tab === 'overview' && (<>
+  return (<>
         {/* KPI 行 */}
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-          {OV.kpi.map((k) => (
+          {[
+            { lb: '在校生', vl: '15,103', cmp: '学籍口径 · 数据日期 11-18', bar: 'var(--el-primary)' },
+            { lb: '今日智能体对话', vl: '2,580', cmp: '覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)' },
+            { lb: '智能体广场', vl: `${fmt(st.list.length)}<small>个</small>`, cmp: `已上线 ${st.online.length} · 建设中 ${st.building.length} · 累计访问 ${fmt(st.visits)} 次`, bar: '#8B5CF6', html: true },
+            { lb: '平台模型', vl: `${fmt(st.ms.length)}<small>个</small>`, cmp: `本地部署 ${st.local.length} · 云端合作 ${st.ms.length - st.local.length} · 校园免费 ${st.free.length}`, bar: 'var(--p-success)', html: true },
+          ].map((k) => (
             <div key={k.lb} className="v2-kpi">
               <span className="bar" style={{ background: k.bar }} />
               <div className="lb">{k.lb}</div>
-              <div className="vl">{k.vl}</div>
+              {k.html
+                ? <div className="vl" dangerouslySetInnerHTML={{ __html: k.vl }} />
+                : <div className="vl">{k.vl}</div>}
               <div className="cmp">{k.cmp}</div>
             </div>
           ))}
@@ -135,6 +180,121 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
           </div>
         </div>
 
+        {/* 智能体生态 */}
+        <div className="v2-card" style={{ marginTop: 14 }}>
+          <div className="ct">智能体广场生态</div>
+          <div className="cs">平台实时数据聚合 · 智能体上线结构、分类分布与访问热度</div>
+          <div className="v2-ov-stats">
+            {[
+              ['智能体总数', fmt(st.list.length)], ['已上线', fmt(st.online.length)], ['建设中', fmt(st.building.length)],
+              ['覆盖分类', fmt(st.cats.length)], ['推荐位', fmt(st.rec)], ['累计访问', fmt(st.visits)],
+            ].map(([n, l]) => (
+              <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 26 }}>
+            <div>
+              <div style={subT}>智能体访问热度 TOP 10</div>
+              {st.top.map((a) => (
+                <div key={a.id} className="v2-hbar-row">
+                  <span className="v2-hbar-name" style={{ width: 136 }}>{a.name}</span>
+                  <div className="v2-hbar-track"><div style={{ width: `${((a.visitCount || 0) / maxTop) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                  <span className="v2-hbar-val">{fmt(a.visitCount)} 次</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={subT}>分类分布</div>
+              {st.cats.map(([name, c]) => (
+                <div key={name} className="v2-hbar-row">
+                  <span className="v2-hbar-name" style={{ width: 92 }}>{name}</span>
+                  <div className="v2-hbar-track"><div style={{ width: `${(c.n / maxCat) * 100}%`, background: 'var(--p-secondary)' }} /></div>
+                  <span className="v2-hbar-val">{c.n} 个 · {pct(c.n, st.list.length)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 模型服务能力 */}
+        <div className="v2-card" style={{ marginTop: 14 }}>
+          <div className="ct">模型服务能力</div>
+          <div className="cs">本地部署 + 云端合作统一纳管 · 通用模型与专业垂类模型</div>
+          <div className="v2-ov-stats">
+            {[
+              ['接入模型', fmt(st.ms.length)], ['通用模型', fmt(st.generalN)], ['垂类模型', fmt(st.ms.length - st.generalN)],
+              ['供应商', fmt(st.provs.length)], ['本地部署', fmt(st.local.length)], ['校园免费', fmt(st.free.length)],
+            ].map(([n, l]) => (
+              <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 26 }}>
+            <div>
+              <div style={subT}>供应商构成</div>
+              {st.provs.map(([name, v]) => (
+                <div key={name} className="v2-hbar-row">
+                  <span className="v2-hbar-name" style={{ width: 104 }}>{name || '—'}</span>
+                  <div className="v2-hbar-track"><div style={{ width: `${(v / maxProv) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                </div>
+              ))}
+              <div style={subT}>部署方式</div>
+              {[
+                ['本地部署（校园智算一体机）', st.local.length],
+                ['云端合作', st.ms.length - st.local.length],
+              ].map(([name, v]) => (
+                <div key={name} className="v2-hbar-row">
+                  <span className="v2-hbar-name" style={{ width: 104 }}>{name}</span>
+                  <div className="v2-hbar-track"><div style={{ width: `${(v / Math.max(1, st.ms.length)) * 100}%`, background: 'var(--p-success)' }} /></div>
+                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={subT}>模型能力类型分布</div>
+              {st.types.map(([name, v]) => (
+                <div key={name} className="v2-hbar-row">
+                  <span className="v2-hbar-name" style={{ width: 76 }}>{name || '—'}</span>
+                  <div className="v2-hbar-track"><div style={{ width: `${(v / maxType) * 100}%`, background: 'var(--p-secondary)' }} /></div>
+                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 12, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Icon name="chip" size={15} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
+                <span>校园智算一体机：5×NVIDIA L20（240G 显存）本地算力，承载 DeepSeek-R1-70B 等模型，数据不出校园、免费调用。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 知识库与制度问答 */}
+        <div className="v2-card" style={{ marginTop: 14 }}>
+          <div className="ct">知识库与制度问答</div>
+          <div className="cs">制度知识已通过智能体问答服务全校 · 域覆盖与访问情况</div>
+          <div className="v2-ov-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+            {[
+              [fmt(st.kb.length), '制度知识域'],
+              [fmt(st.kb.length), '制度问答智能体'],
+              [`${fmt(st.kbVisits)} 次`, '制度问答累计访问'],
+              ['建设中', '知识库中心'],
+            ].map(([n, l]) => (
+              <div key={l} className="v2-ov-stat"><div className="n" style={l === '知识库中心' ? { fontSize: 15 } : undefined}>{n}</div><div className="l">{l}</div></div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 28 }}>
+            {st.kb.map(([name, v]) => (
+              <div key={name} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 110 }}>{name}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxKb) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                <span className="v2-hbar-val">{fmt(v)} 次</span>
+              </div>
+            ))}
+          </div>
+          <div className="v2-notice warn" style={{ marginTop: 16 }}>
+            <span><b>知识库中心正在建设中：</b>建成后各部门公开制度库将统一汇聚、由部门自维护，支持对话式检索与原文引用，制度知识更新不再依赖信息中心代管。</span>
+          </div>
+        </div>
+
         <div className="v2-card" style={{ marginTop: 14 }}>
           <div className="ct">各学院智能体活跃度</div>
           <div className="cs">近 30 日锡锡导员问答次数指数 · 仅聚合统计，不含个体数据</div>
@@ -149,7 +309,28 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
           </div>
         </div>
 
-        </>)}
+  </>);
+}
+
+/* ================= 频道首页 ================= */
+export function InsightHome({ onOpenWorkbench, tab, setTab }) {
+  const { user, casLogin } = useV2User();
+
+  return (
+    <>
+      <div className="v2-body v2-insight-wrap" style={{ maxWidth: 1240, paddingTop: 40 }}>
+        <div className="v2-insight-headbar">
+          <div>
+            <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--aink)' }}>AI 数据洞察</h2>
+            <p style={{ fontSize: 13, color: 'var(--p-t3)', marginTop: 6, maxWidth: 1080, lineHeight: 1.7 }}>数据驱动的一湖洞察 · 充分运用AI大模型，自动汇聚分析宿管考勤、门禁、消费、学业等全域数据，智能识别异常线索、生成跟进建议 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
+          </div>
+        </div>
+        <div className="v2-tabs" style={{ margin: '18px 0 20px' }}>
+          <div className={'v2-tab' + (tab === 'overview' ? ' on' : '')} onClick={() => setTab('overview')}>公开洞察</div>
+          <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>AI场景分析</div>
+        </div>
+
+        {tab === 'overview' && <OverviewTab />}
         {tab === 'workbench' && (<>
         <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>AI场景分析</div>
         <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · 使用学校统一身份认证登录，并需具备对应业务角色</p>
