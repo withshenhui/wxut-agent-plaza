@@ -5,7 +5,7 @@ import { useV2User } from './V2User.jsx';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 
-const LVL = { hi: ['高关注', 'hi'], mid: ['中关注', 'mid'], watch: ['观察', 'watch'] };
+const LVL = { hi: ['红灯', 'hi'], mid: ['黄灯', 'mid'], watch: ['绿灯', 'watch'] };
 
 /* ============================================================
  * AI 数据洞察（V2 前台频道）
@@ -42,7 +42,7 @@ const WORKBENCHES = [
     key: 'funding',
     title: '精准资助分析',
     ic: 'heart',
-    desc: '基于一卡通消费行为的隐性困难识别 —— 「吃得勤 + 吃得省」多信号模型，输出高/中/观察三档资助工作线索，支持名单筛选与导出。',
+    desc: '基于一卡通消费行为的隐性困难识别 —— 「吃得勤 + 吃得省」多信号模型，输出红/黄/绿三档资助工作线索，支持名单筛选与导出。',
     tags: ['学工/资助中心', '消费行为分析', '名单导出'],
     role: '资助工作岗',
     fresh: '消费数据截至 2026-11-19',
@@ -250,6 +250,7 @@ export function FundingWorkbench({ onBack, toast }) {
   const [k, setK] = useState(null);
   const [colleges, setColleges] = useState(null);
   const [list, setList] = useState(null);
+  const [pageNum, setPageNum] = useState(1);
 
   const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
@@ -265,14 +266,16 @@ export function FundingWorkbench({ onBack, toast }) {
 
   useEffect(() => {
     setList(null);
-    const p = new URLSearchParams({ windowDays: win, page: 1, size: 100 });
+    const p = new URLSearchParams({ windowDays: win, page: pageNum, size: 20 });
     if (filters.level) p.set('level', filters.level);
     if (filters.college) p.set('college', filters.college);
     if (filters.q) p.set('q', filters.q);
     fetch(`${API_BASE}/insight/funding/students?` + p, { headers: authHeaders })
       .then((r) => r.json()).then((j) => setList(j.data || { records: [], total: 0 })).catch(() => setList({ records: [], total: 0 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [win, filters.level, filters.college, filters.q]);
+  }, [win, filters.level, filters.college, filters.q, pageNum]);
+
+  useEffect(() => { setPageNum(1); }, [win, filters.level, filters.college, filters.q]);
 
   const rows = ((list && list.records) || []).filter((r) => !filters.grade || r.grade === filters.grade);
   const collegeNames = (colleges || []).map((c) => c.n);
@@ -311,15 +314,14 @@ export function FundingWorkbench({ onBack, toast }) {
         <AiInsightBanner k={k} win={win} />
 
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
-          {!k && <div className="v2-kpi" style={{ gridColumn: 'span 6', padding: 0, border: 'none' }}><XixiLoading text="锡锡正在分析消费数据…" sub="数仓实时查询，约需 5–15 秒" /></div>}
           {k && k.err && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-empty">加载失败：{k.err}，请刷新重试</div></div>}
           {k && !k.err ? [
             { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
             { lb: '活跃消费人数', vl: (k.active || 0).toLocaleString(), cmp: '数据日期 ' + k.dataDate, bar: 'var(--p-t4)' },
             { lb: '就餐达标人数', vl: (k.eligible || 0).toLocaleString(), cmp: '观察窗内食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
-            { lb: '高关注线索', vl: (k.hi || 0).toLocaleString(), cmp: '同学院同年级 P5 以下', bar: 'var(--abad)' },
-            { lb: '中关注线索', vl: (k.mid || 0).toLocaleString(), cmp: 'P5 – P15', bar: '#FBBF24' },
-            { lb: '观察线索', vl: (k.watch || 0).toLocaleString(), cmp: 'P15 – P40 · 参考', bar: 'var(--p-secondary)' },
+            { lb: '红灯线索', vl: (k.hi || 0).toLocaleString(), cmp: '同学院同年级 P5 以下', bar: 'var(--abad)' },
+            { lb: '黄灯线索', vl: (k.mid || 0).toLocaleString(), cmp: 'P5 – P15', bar: '#FBBF24' },
+            { lb: '绿灯线索', vl: (k.watch || 0).toLocaleString(), cmp: 'P15 – P40 · 参考', bar: 'var(--p-success)' },
           ].map((x) => (
             <div key={x.lb} className="v2-kpi">
               <span className="bar" style={{ background: x.bar }} />
@@ -333,7 +335,7 @@ export function FundingWorkbench({ onBack, toast }) {
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
           <div className="v2-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div><div className="ct">各学院线索分布</div><div className="cs">同学院同年级基准分位口径 · 高/中/观察三档</div></div>
+              <div><div className="ct">各学院线索分布</div><div className="cs">同学院同年级基准分位口径 · 红/黄/绿三档</div></div>
               <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: 'var(--p-t3)' }}>
                 <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--abad)', marginRight: 4 }} />高关注</span>
                 <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#FBBF24', marginRight: 4 }} />中关注</span>
@@ -400,7 +402,7 @@ export function FundingWorkbench({ onBack, toast }) {
               {rows.map((s) => (
                 <tr key={s.id}>
                   <td className="num">{s.id}</td><td>{s.name}</td><td>{s.college}</td><td>{s.grade}</td>
-                  <td><span className={`v2-tag ${LVL[s.level][1]}`}>{LVL[s.level][0]}</span></td>
+                  <td><span className={`v2-light ${s.level}`}><i className="bulb" /><span className="lt">{LVL[s.level][0]}</span></span></td>
                   <td className="num" style={{ textAlign: 'right' }}>{s.meals}</td>
                   <td className="num" style={{ textAlign: 'right' }}>{Number(s.price).toFixed(2)}</td>
                   <td className="num" style={{ textAlign: 'right' }}>{s.spend}</td>
@@ -411,7 +413,18 @@ export function FundingWorkbench({ onBack, toast }) {
               ))}
             </tbody>
           </table>
-          <div className="v2-tbl-foot"><span>共 {list ? list.total : '…'} 条线索 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span></div>
+          <div className="v2-tbl-foot">
+            <span>共 {list ? list.total : '…'} 条线索 · 默认按 红 → 黄 → 绿 排序 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span>
+            <div className="v2-pager">
+              <button disabled={pageNum <= 1} onClick={() => setPageNum(pageNum - 1)}>‹</button>
+              <button className={pageNum === 1 ? 'on' : ''} onClick={() => setPageNum(1)}>1</button>
+              {list && list.total > 20 && <button className={pageNum === 2 ? 'on' : ''} onClick={() => setPageNum(2)}>2</button>}
+              {list && list.total > 40 && <button className={pageNum === 3 ? 'on' : ''} onClick={() => setPageNum(3)}>3</button>}
+              {list && list.total > 60 && <span className="v2-pager-more">…</span>}
+              {list && list.total > 60 && <button className={pageNum === Math.ceil(list.total / 20) ? 'on' : ''} onClick={() => setPageNum(Math.ceil(list.total / 20))}>{Math.ceil(list.total / 20)}</button>}
+              <button disabled={!list || pageNum >= Math.ceil((list.total || 1) / 20)} onClick={() => setPageNum(pageNum + 1)}>›</button>
+            </div>
+          </div>
         </div>
         <div className="v2-notice warn" style={{ marginTop: 16 }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
@@ -429,7 +442,7 @@ export function FundingWorkbench({ onBack, toast }) {
             </div>
             <div className="v2-md-body">
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
-                <span className={`v2-tag ${LVL[detail.level][1]}`} style={{ fontSize: 12, padding: '3px 11px' }}>{LVL[detail.level][0]}</span>
+                <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level][0]}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>综合消费分位 <b style={{ color: 'var(--aink)' }}>P{detail.pct}</b> · 同{detail.college}{detail.grade}基准</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
