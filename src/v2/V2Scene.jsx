@@ -87,6 +87,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [pageNum, setPageNum] = useState(1);
   const [detail, setDetail] = useState(null);
+  const [detailData, setDetailData] = useState(null);
 
   const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
@@ -115,6 +116,16 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
     // eslint-disable-next-line
   }, [win, sceneKey, filters.level, filters.college, filters.q, pageNum]);
   useEffect(() => { setPageNum(1); }, [win, filters.level, filters.college, filters.q]);
+
+  useEffect(() => {
+    if (!detail || (sceneKey !== 'safety' && sceneKey !== 'mental')) { setDetailData(null); return; }
+    setDetailData(null);
+    const p = new URLSearchParams({ studentId: detail.id });
+    if (hasWindow) p.set('windowDays', win);
+    fetch(`${API_BASE}/insight/scene/detail?` + p, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => setDetailData(j.data)).catch(() => setDetailData(null));
+    // eslint-disable-next-line
+  }, [detail]);
 
   const rows = ((list && list.records) || []).filter((r) => !filters.grade || r.grade === filters.grade);
   const collegeNames = (colleges || []).map((c) => c.n);
@@ -296,7 +307,32 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
                   <span style={{ fontWeight: 600, color: low ? 'var(--abad)' : 'var(--aink)' }}>{v}{low ? ' · 显著异常' : ''}</span>
                 </div>
               ))}
-              <SceneDetailAI detail={detail} cfg={cfg} />
+              {(sceneKey === 'safety' || sceneKey === 'mental') && detailData && (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 6px' }}>
+                    未归寝明细（{detailData.nights.length} 次 · 请假对应 {detailData.matched} 次 / 未请假 {detailData.unmatched} 次）
+                  </div>
+                  <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '4px 10px' }}>
+                    {detailData.nights.map((n) => (
+                      <div key={String(n.date)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12 }}>
+                        <span style={{ color: 'var(--p-t2)' }}>{String(n.date).slice(0, 10)}{n.state !== '6' ? ' · 晚归 ' + String(n.time).slice(0, 5) : ''}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: n.onLeave ? 'var(--p-success)' : 'var(--abad)' }}>{n.onLeave ? '✓ 已请假' : '✗ 未请假'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {detailData.leaves.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--aink)', margin: '10px 0 4px' }}>观察窗内请假记录</div>
+                      {detailData.leaves.map((l, i) => (
+                        <div key={i} style={{ fontSize: 11.5, color: 'var(--p-t3)', padding: '3px 0', lineHeight: 1.6 }}>
+                          · {String(l.start_date).slice(0, 10)} ~ {String(l.end_date).slice(0, 10)}（{l.qjlx}）{l.reason ? '：' + l.reason : ''}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <SceneDetailAI detail={detail} cfg={cfg} detailData={detailData} />
             </div>
           </div>
         </div>
@@ -325,9 +361,13 @@ function SceneBanner({ k, cfg, win }) {
   );
 }
 
-function SceneDetailAI({ detail, cfg }) {
+function SceneDetailAI({ detail, cfg, detailData }) {
   const lvlText = detail.level === 'hi' ? '红灯（高关注）' : detail.level === 'mid' ? '黄灯（中关注）' : '绿灯（观察）';
-  const msg = `AI数据洞察：该生在${cfg.title}中判定为${lvlText}。${cfg.detailSignals(detail).map(([a, b]) => a + ' ' + b).join('，')}。请辅导员结合谈心谈话人工核实后按流程处理，注意方式方法。`;
+  let leaveNote = '';
+  if (detailData && detailData.nights) {
+    leaveNote = `经请假交叉核验：${detailData.nights.length} 次未归中 ${detailData.matched} 次有请假对应、${detailData.unmatched} 次未请假，请优先核实未请假日期的去向。`;
+  }
+  const msg = `AI数据洞察：该生在${cfg.title}中判定为${lvlText}。${cfg.detailSignals(detail).map(([a, b]) => a + ' ' + b).join('，')}。${leaveNote}请辅导员结合谈心谈话人工核实后按流程处理，注意方式方法。`;
   const [shown, setShown] = useState('');
   useEffect(() => {
     setShown('');
