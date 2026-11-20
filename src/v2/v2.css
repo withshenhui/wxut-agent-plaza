@@ -218,6 +218,8 @@ input,select,textarea{font-family:inherit}
 .v2-tag.off{color:var(--p-t4);background:var(--p-fill)}
 .v2-dot-on{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--p-t3)}
 .v2-dot-on i{width:6px;height:6px;border-radius:50%;background:var(--p-success)}
+.v2-dot-off{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--p-t4)}
+.v2-dot-off i{width:6px;height:6px;border-radius:50%;background:#94A3B8}
 .v2-model-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 @media (max-width:1280px){.v2-model-grid{grid-template-columns:repeat(3,1fr)}}
 .v2-mdl-card{background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-r);padding:20px;transition:all .18s}
@@ -229,6 +231,10 @@ input,select,textarea{font-family:inherit}
 .v2-mdl-top .nm{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13.5px;font-weight:600;color:var(--aink);word-break:break-all}
 .v2-mdl-card .ds{font-size:12px;color:var(--p-t3);margin-top:10px;line-height:1.65;min-height:38px}
 .v2-mdl-card .ft{display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:12px;border-top:1px solid #F3F6FA;gap:8px;flex-wrap:wrap}
+.v2-mdl-card.building{border-style:dashed;border-color:#C7D2E4;background:#FAFBFD}
+.v2-mdl-card.building:hover{box-shadow:none;transform:none}
+.v2-mdl-card.building .nm{color:var(--p-t3)}
+.v2-mdl-card.building .ds{color:var(--p-t4)}
 
 /* ============ 页脚 ============ */
 .v2-site-foot{border-top:1px solid var(--p-line);background:var(--p-surface);padding:0 30px}

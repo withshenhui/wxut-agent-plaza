@@ -599,8 +599,9 @@ function Models({ toast }) {
         <div className="v2-model-grid" style={{ marginTop: 16 }}>
           {list.length ? list.map((m) => {
             const logo = provLogo(m);
+            const bld = (m.tags || []).includes('建设中');
             return (
-              <div key={m.id} className="v2-mdl-card">
+              <div key={m.id} className={`v2-mdl-card${bld ? ' building' : ''}`}>
                 <div className="v2-mdl-top">
                   <span className="pv">{logo
                     ? <img src={logo} alt={m.provider || ''} onError={(e) => { e.target.style.display = 'none'; }} />
@@ -609,10 +610,12 @@ function Models({ toast }) {
                 </div>
                 <div className="ds">{m.description || ''}</div>
                 <div className="v2-ft" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid #F3F6FA', gap: 8, flexWrap: 'wrap' }}>
-                  <span>{(m.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : 'blue'}`}>{t}</span>)}</span>
+                  <span>{(m.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 11, color: 'var(--p-t4)' }}>{m.provider || '—'} · {m.type || ''}</span>
-                    <span className="v2-dot-on"><i />{(m.tags || []).includes('接入中') ? '接入中' : '服务中'}</span>
+                    {bld
+                      ? <span className="v2-dot-off"><i />建设中</span>
+                      : <span className="v2-dot-on"><i />{(m.tags || []).includes('接入中') ? '接入中' : '服务中'}</span>}
                   </span>
                 </div>
               </div>
