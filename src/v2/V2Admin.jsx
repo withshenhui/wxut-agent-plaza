@@ -167,7 +167,7 @@ function AgentsAdmin({ toast }) {
   const [q, setQ] = useState('');
   const [edit, setEdit] = useState(null); // {} 新增 / agent 编辑
   const load = () => {
-    agentApi.searchAgents({ size: 100 }).then((d) => setList(d.records || [])).catch((e) => { setList([]); toast('加载失败：' + e.message); });
+    agentApi.searchAgents({ size: 100, includeBuilding: 1 }).then((d) => setList(d.records || [])).catch((e) => { setList([]); toast('加载失败：' + e.message); });
     catApi.listCategories().then(setCats).catch(() => {});
   };
   useEffect(load, []);
@@ -197,16 +197,17 @@ function AgentsAdmin({ toast }) {
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
-          <thead><tr><th>图标</th><th>名称</th><th>分类</th><th>描述</th><th style={{ textAlign: 'right' }}>访问</th><th>推荐</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>图标</th><th>名称</th><th>分类</th><th>描述</th><th style={{ textAlign: 'right' }}>访问</th><th>推荐</th><th>建设中</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             {rows.map((a) => (
               <tr key={a.id}>
                 <td><span className="v2-ag-ic"><AgentAvatar agent={a} size={30} /></span></td>
-                <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{a.name}</td>
+                <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{a.name}{a.isBuilding === 1 && <span className="v2-tag mid" style={{ marginLeft: 6 }}>建设中</span>}</td>
                 <td><span className="v2-tag blue">{a.categoryName}</span></td>
                 <td style={{ whiteSpace: 'normal', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.description}</td>
                 <td className="num" style={{ textAlign: 'right' }}>{(a.visitCount || 0).toLocaleString()}</td>
                 <td><Switch on={a.isRecommended === 1} onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isRecommended: v ? 1 : 0 }); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
+                <td><Switch on={a.isBuilding === 1} title="建设中：广场不展示" onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isBuilding: v ? 1 : 0 }); toast(v ? `「${a.name}」已标记为建设中，广场不再展示` : `「${a.name}」已上架广场`); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
                 <td><span className={`v2-tag ${a.status === 1 ? 'ok' : 'off'}`}>{a.status === 1 ? '启用' : '停用'}</span></td>
                 <td>
                   <button className="v2-link" onClick={() => setEdit(a)}>编辑</button>
@@ -268,6 +269,10 @@ function AgentModal({ agent, cats, onClose, onSave }) {
       <div className="v2-fm-row">
         <span className="v2-fm-label">推荐</span>
         <div className="v2-fm-body"><div style={{ padding: '7px 0' }}><Switch on={f.isRecommended === 1} onChange={(v) => set('isRecommended', v ? 1 : 0)} /><span className="v2-fm-hint" style={{ display: 'inline-block', marginLeft: 9 }}>开启后在广场优先展示</span></div></div>
+      </div>
+      <div className="v2-fm-row">
+        <span className="v2-fm-label">建设中</span>
+        <div className="v2-fm-body"><div style={{ padding: '7px 0' }}><Switch on={f.isBuilding === 1} onChange={(v) => set('isBuilding', v ? 1 : 0)} /><span className="v2-fm-hint" style={{ display: 'inline-block', marginLeft: 9 }}>开启后智能体广场不展示该智能体（后台仍可见可编辑），建设完成关闭即可上架</span></div></div>
       </div>
       <div className="v2-fm-row">
         <span className="v2-fm-label">排序</span>

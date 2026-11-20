@@ -18,8 +18,8 @@ request.interceptors.response.use(
 );
 
 // 搜索智能体（支持分类和关键词）
-export function searchAgents({ categoryId, keyword, page = 1, size = 100 } = {}) {
-  return request.get('/agents', { params: { categoryId, keyword, page, size } });
+export function searchAgents({ categoryId, keyword, page = 1, size = 100, includeBuilding } = {}) {
+  return request.get('/agents', { params: { categoryId, keyword, page, size, includeBuilding } });
 }
 
 // 获取推荐智能体
