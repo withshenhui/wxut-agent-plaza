@@ -7,6 +7,7 @@ import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGE
 import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
+import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -507,7 +508,7 @@ function Models({ toast }) {
     fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json())
       .then((j) => setMv(j.data?.records || [])).catch(() => setMv([]));
   }, []);
-  if (!mg || !mv) return <div className="v2-body"><div className="v2-loading">模型数据加载中…</div></div>;
+  if (!mg || !mv) return <div className="v2-body"><XixiLoading text="锡锡正在获取模型数据…" /></div>;
   const all = tab === 'general' ? mg : mv;
   const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
   const provLogo = (m) => {

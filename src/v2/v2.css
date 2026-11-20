@@ -397,3 +397,33 @@ input,select,textarea{font-family:inherit}
 .v2-sec-head.v2-models-head{position:relative;z-index:1;
   background:linear-gradient(180deg,rgba(236,240,255,.85) 0%,rgba(245,246,250,0) 100%);padding-top:56px;padding-bottom:26px;margin-top:-16px}
 .v2-models-head ~ .v2-body{position:relative;z-index:1}
+
+/* ============ 锡锡 Loading ============ */
+.v2-xixi-loading{display:flex;align-items:center;gap:18px;padding:36px 24px;justify-content:center}
+.v2-xixi-loading .xl-avatar{position:relative;width:72px;height:72px;flex-shrink:0}
+.v2-xixi-loading .xl-avatar img{width:100%;height:100%;object-fit:contain;animation:xixi-bob 1.8s ease-in-out infinite}
+@keyframes xixi-bob{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-5px) rotate(-2deg)}75%{transform:translateY(-2px) rotate(2deg)}}
+.v2-xixi-loading .xl-bubble{position:absolute;right:-46px;top:-4px;background:var(--p-surface);border:1.5px solid var(--p-line2);
+  border-radius:12px;padding:7px 11px;display:flex;gap:5px;box-shadow:0 6px 18px #1a31521a}
+.v2-xixi-loading .xl-bubble::after{content:"";position:absolute;left:-5px;bottom:10px;width:9px;height:9px;background:var(--p-surface);
+  border-left:1.5px solid var(--p-line2);border-bottom:1.5px solid var(--p-line2);transform:rotate(45deg)}
+.v2-xixi-loading .xl-bubble i{width:7px;height:7px;border-radius:50%;background:var(--el-primary-l3);animation:xixi-dot 1.2s infinite}
+.v2-xixi-loading .xl-bubble i:nth-child(2){animation-delay:.18s}
+.v2-xixi-loading .xl-bubble i:nth-child(3){animation-delay:.36s}
+@keyframes xixi-dot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.v2-xixi-loading .xl-text{text-align:left}
+.v2-xixi-loading .xl-t{font-size:15px;font-weight:600;color:var(--aink)}
+.v2-xixi-loading .xl-s{font-size:12px;color:var(--p-t4);margin-top:3px}
+
+/* AI 洞察横幅（资助页顶） */
+.v2-ai-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#f6f9ff,#fff);
+  border:1px solid var(--el-primary-l8);border-radius:var(--p-r);padding:16px 20px;margin-bottom:16px}
+.v2-ai-banner .xab-avatar{width:52px;height:52px;flex-shrink:0}
+.v2-ai-banner .xab-avatar img{width:100%;height:100%;object-fit:contain;animation:xixi-bob 2.4s ease-in-out infinite}
+.v2-ai-banner .xab-body{flex:1;min-width:0}
+.v2-ai-banner .xab-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--el-primary);
+  background:var(--el-primary-l9);border-radius:5px;padding:2px 9px;letter-spacing:1px;margin-bottom:6px}
+.v2-ai-banner .xab-text{font-size:13.5px;color:var(--p-t2);line-height:1.7;min-height:23px}
+.v2-ai-banner .xab-text .caret{display:inline-block;width:2px;height:14px;background:var(--el-primary);margin-left:2px;
+  vertical-align:-2px;animation:xixi-caret .8s steps(1) infinite}
+@keyframes xixi-caret{50%{opacity:0}}

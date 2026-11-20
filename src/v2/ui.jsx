@@ -129,3 +129,20 @@ export function Pager({ page, total, size, onPage }) {
     </div>
   );
 }
+
+
+/* ================= 锡锡 Loading（全站统一数据加载态） ================= */
+export function XixiLoading({ text = '锡锡正在思考…', sub }) {
+  return (
+    <div className="v2-xixi-loading">
+      <div className="xl-avatar">
+        <img src="./v2-xixi.png" alt="锡锡" />
+        <span className="xl-bubble"><i /><i /><i /></span>
+      </div>
+      <div className="xl-text">
+        <div className="xl-t">{text}</div>
+        {sub ? <div className="xl-s">{sub}</div> : null}
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon, useToast } from './ui.jsx';
+import { Icon, useToast, XixiLoading } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
@@ -98,16 +98,8 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
           <div className="v2-card">
             <div className="ct">近 7 日智能体对话趋势</div>
-            <div className="cs">全校合计 · 数据中台自动统计</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 150, marginTop: 18 }}>
-              {OV.trend.map(([d, v], i) => (
-                <div key={d} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <div style={{ fontSize: 10.5, color: 'var(--p-t4)', fontVariantNumeric: 'tabular-nums' }}>{v.toLocaleString()}</div>
-                  <div style={{ width: '100%', maxWidth: 38, height: `${(v / maxTrend) * 100}%`, background: i === OV.trend.length - 1 ? 'var(--el-primary)' : '#C3D4F7', borderRadius: '4px 4px 0 0' }} />
-                  <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>{d}</div>
-                </div>
-              ))}
-            </div>
+            <div className="cs">全校合计 · 数据中台自动统计 · 柱=当日对话量 · 折线=趋势走向</div>
+            <ComboTrendChart data={OV.trend} />
           </div>
           <div className="v2-card">
             <div className="ct">对话场景分布</div>
@@ -181,6 +173,76 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 
 /* ================= 精准资助分析工作台（原型界面，示例数据） ================= */
 
+
+/* AI 洞察横幅：锡锡 + 打字机 */
+function AiInsightBanner({ k, win }) {
+  const msg = useMemo(() => {
+    if (!k || k.err) return '正在接入数仓，获取消费行为洞察…';
+    const hi = Number(k.hi) || 0, mid = Number(k.mid) || 0;
+    const top = '消费信号已完成分析';
+    return `${top}：近 ${win} 天共识别高关注线索 ${hi} 人、中关注 ${mid} 人。高关注人群呈"就餐频次达标 + 单顿均价显著低于同学院同年级"特征，建议优先复核；详细信号分解见名单详情。`;
+  }, [k, win]);
+  const [shown, setShown] = useState('');
+  useEffect(() => {
+    setShown('');
+    let i = 0;
+    const t = setInterval(() => {
+      i += 2;
+      setShown(msg.slice(0, i));
+      if (i >= msg.length) clearInterval(t);
+    }, 30);
+    return () => clearInterval(t);
+  }, [msg]);
+  return (
+    <div className="v2-ai-banner">
+      <div className="xab-avatar"><img src="./v2-xixi.png" alt="锡锡" /></div>
+      <div className="xab-body">
+        <span className="xab-label"><Icon name="spark" size={11} /> AI 洞察</span>
+        <div className="xab-text">{shown}<span className="caret" /></div>
+      </div>
+    </div>
+  );
+}
+
+
+/* 柱状 + 折线组合图（SVG） */
+function ComboTrendChart({ data }) {
+  const W = 560, H = 210, padL = 8, padR = 8, padT = 26, padB = 26;
+  const max = Math.max(...data.map((x) => x[1])) * 1.12;
+  const min = Math.min(...data.map((x) => x[1])) * 0.85;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const n = data.length;
+  const bw = Math.min(34, (iw / n) * 0.52);
+  const xOf = (i) => padL + (iw / n) * (i + 0.5);
+  const yOf = (v) => padT + ih - ((v - min) / (max - min)) * ih;
+  const pts = data.map((x, i) => `${xOf(i).toFixed(1)},${yOf(x[1]).toFixed(1)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', marginTop: 12, display: 'block' }}>
+      {data.map((x, i) => {
+        const bx = xOf(i) - bw / 2, by = yOf(x[1]);
+        const isLast = i === n - 1;
+        return (
+          <g key={x[0]}>
+            <rect x={bx.toFixed(1)} y={by.toFixed(1)} width={bw.toFixed(1)} height={(padT + ih - by).toFixed(1)} rx="4"
+              fill={isLast ? 'var(--el-primary)' : '#C3D4F7'} opacity={isLast ? 1 : 0.9}>
+              <title>{x[0]}：{x[1].toLocaleString()} 次</title>
+            </rect>
+            <text x={xOf(i).toFixed(1)} y={(by - 7).toFixed(1)} font-size="10" fill={isLast ? 'var(--el-primary)' : '#94A3B8'}
+              text-anchor="middle" font-weight={isLast ? 700 : 400}>{x[1].toLocaleString()}</text>
+            <text x={xOf(i).toFixed(1)} y={(H - 8).toFixed(1)} font-size="10" fill="#94A3B8" text-anchor="middle">{x[0]}</text>
+          </g>
+        );
+      })}
+      <polyline points={pts} fill="none" stroke="var(--p-accent)" stroke-width="2.2"
+        stroke-linejoin="round" stroke-linecap="round" opacity="0.9" />
+      {data.map((x, i) => (
+        <circle key={x[0] + 'c'} cx={xOf(i).toFixed(1)} cy={yOf(x[1]).toFixed(1)} r="3.4" fill="#fff"
+          stroke="var(--p-accent)" stroke-width="1.8" />
+      ))}
+    </svg>
+  );
+}
+
 export function FundingWorkbench({ onBack, toast }) {
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
@@ -246,13 +308,10 @@ export function FundingWorkbench({ onBack, toast }) {
           </div>
         </div>
 
-        <div className="v2-notice warn">
-          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
-          <span>本页结果为<b>算法生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
-        </div>
+        <AiInsightBanner k={k} win={win} />
 
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
-          {!k && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-loading">统计加载中（数仓查询约 5–15 秒）…</div></div>}
+          {!k && <div className="v2-kpi" style={{ gridColumn: 'span 6', padding: 0, border: 'none' }}><XixiLoading text="锡锡正在分析消费数据…" sub="数仓实时查询，约需 5–15 秒" /></div>}
           {k && k.err && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-empty">加载失败：{k.err}，请刷新重试</div></div>}
           {k && !k.err ? [
             { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
@@ -354,7 +413,11 @@ export function FundingWorkbench({ onBack, toast }) {
           </table>
           <div className="v2-tbl-foot"><span>共 {list ? list.total : '…'} 条线索 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span></div>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 16 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k && k.range ? k.range : ''}</div>
+        <div className="v2-notice warn" style={{ marginTop: 16 }}>
+          <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
+          <span>本页结果为<b>算法生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 12 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k && k.range ? k.range : ''}</div>
       </div>
 
       {detail && (
