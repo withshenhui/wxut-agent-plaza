@@ -45,7 +45,7 @@ const WORKBENCHES = [
     desc: '基于一卡通消费行为的隐性困难识别 —— 「吃得勤 + 吃得省」多信号模型，输出红/黄/绿三档资助工作线索，支持名单筛选与导出。',
     tags: ['学工/资助中心', '消费行为分析', '名单导出'],
     role: '资助工作岗',
-    fresh: '消费数据截至 2026-11-19',
+    fresh: '消费数据每日更新',
     status: 'ready',
   },
   {
@@ -55,8 +55,28 @@ const WORKBENCHES = [
     desc: '晚归未归、请假异常、行为突变等多源信号融合的安全预警看板，面向学工与保卫条线的日常排查与专项研判。',
     tags: ['学工/保卫处', '多源信号', '预警看板'],
     role: '学生安全岗',
-    fresh: '考勤数据截至 2026-11-18',
-    status: 'building',
+    fresh: '考勤数据每日更新',
+    status: 'ready',
+  },
+  {
+    key: 'academic',
+    title: '学业预警分析',
+    ic: 'grad',
+    desc: '基于成绩数据的挂科门数与平均分识别，红黄绿三档预警，辅助学业帮扶与教务干预决策。',
+    tags: ['学工/教务处', '成绩分析', '预警帮扶'],
+    role: '学业预警岗',
+    fresh: '取最新完整学期',
+    status: 'ready',
+  },
+  {
+    key: 'mental',
+    title: '学生心理健康关怀',
+    ic: 'spark',
+    desc: '消费骤降与归寝异常的多信号组合识别，仅作关怀线索参考，辅助辅导员以温和方式主动关怀。',
+    tags: ['学工/心理中心', '多信号组合', '关怀参考'],
+    role: '心理关怀岗',
+    fresh: '消费+考勤每日更新',
+    status: 'ready',
   },
 ];
 
@@ -78,7 +98,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
         </div>
         <div className="v2-tabs" style={{ margin: '18px 0 20px' }}>
           <div className={'v2-tab' + (tab === 'overview' ? ' on' : '')} onClick={() => setTab('overview')}>公开洞察</div>
-          <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>业务分析工作台</div>
+          <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>AI场景分析</div>
         </div>
 
         {tab === 'overview' && (<>
@@ -130,7 +150,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 
         </>)}
         {tab === 'workbench' && (<>
-        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>业务分析工作台</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>AI场景分析</div>
         <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · 使用学校统一身份认证登录，并需具备对应业务角色</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {WORKBENCHES.map((w) => (

@@ -7,6 +7,7 @@ import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGE
 import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
+import { SceneWorkbench } from './V2Scene.jsx';
 import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
@@ -832,7 +833,7 @@ export default function V2App() {
       setChatAgent(null);
       const segs = location.pathname.replace(/^\/+/, '').split('/');
       const p = segs[0] || 'plaza';
-      if (p === 'insight' && segs[1] === 'funding') { setPage('insight'); setWorkbench('funding'); return; }
+      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) { setPage('insight'); setWorkbench(segs[1]); return; }
       setWorkbench(null);
       setPage(['plaza', 'models', 'insight', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
     }
@@ -892,6 +893,9 @@ export default function V2App() {
       )}
       {page === 'insight' && workbench === 'funding' && (
         <FundingWorkbench toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
+      )}
+      {page === 'insight' && ['safety', 'academic', 'mental'].includes(workbench) && (
+        <SceneWorkbench sceneKey={workbench} toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
       {page === 'dev' && <Dev toast={toast} />}
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
