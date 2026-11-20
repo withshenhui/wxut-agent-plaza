@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Icon, useToast } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
 
+const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
+
+const LVL = { hi: ['高关注', 'hi'], mid: ['中关注', 'mid'], watch: ['观察', 'watch'] };
+
 /* ============================================================
  * AI 数据洞察（V2 前台频道）
  * 两层结构：
@@ -65,15 +69,17 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 
   return (
     <>
-      <div className="v2-sec-head v2-insight-head">
-        <h2>AI 数据洞察</h2>
-        <p>数据驱动的一湖洞察 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
-        <div className="v2-tabs" style={{ marginTop: 16 }}>
+      <div className="v2-body v2-insight-wrap" style={{ maxWidth: 1240, paddingTop: 40 }}>
+        <div className="v2-insight-headbar">
+          <div>
+            <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--aink)' }}>AI 数据洞察</h2>
+            <p style={{ fontSize: 13, color: 'var(--p-t3)', marginTop: 6 }}>数据驱动的一湖洞察 · 全校运行态势与业务分析工作台 · 敏感分析经授权后使用</p>
+          </div>
+        </div>
+        <div className="v2-tabs" style={{ margin: '18px 0 20px' }}>
           <div className={'v2-tab' + (tab === 'overview' ? ' on' : '')} onClick={() => setTab('overview')}>公开洞察</div>
           <div className={'v2-tab' + (tab === 'workbench' ? ' on' : '')} onClick={() => setTab('workbench')}>业务分析工作台</div>
         </div>
-      </div>
-      <div className="v2-body" style={{ maxWidth: 1240 }}>
 
         {tab === 'overview' && (<>
         {/* KPI 行 */}
@@ -174,67 +180,46 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 }
 
 /* ================= 精准资助分析工作台（原型界面，示例数据） ================= */
-const FUND_KPI = (win) => ({
-  14: { active: 7862, eligible: 6215, hi: 97, mid: 227, watch: 508, range: '11-06 ~ 11-19' },
-  30: { active: 11247, eligible: 9863, hi: 187, mid: 421, watch: 892, range: '10-21 ~ 11-19' },
-  60: { active: 12908, eligible: 11032, hi: 247, mid: 539, watch: 1079, range: '09-22 ~ 11-19' },
-  90: { active: 13415, eligible: 11690, hi: 281, mid: 593, watch: 1176, range: '08-23 ~ 11-19' },
-}[win]);
-
-const FUND_COLLEGES = [
-  { n: '机械', hi: 26, mid: 58, watch: 110 }, { n: '控制', hi: 19, mid: 44, watch: 90 },
-  { n: '物联网', hi: 23, mid: 51, watch: 98 }, { n: '汽车', hi: 17, mid: 39, watch: 83 },
-  { n: '财经', hi: 16, mid: 35, watch: 76 }, { n: '管理', hi: 15, mid: 33, watch: 73 },
-  { n: '文旅', hi: 14, mid: 31, watch: 69 }, { n: '设计', hi: 18, mid: 41, watch: 87 },
-  { n: '人工智能', hi: 20, mid: 46, watch: 96 }, { n: '集成电路', hi: 12, mid: 27, watch: 66 },
-  { n: '国际教育', hi: 7, mid: 16, watch: 44 },
-];
-const FUND_NAMES = ['王雨桐', '李志远', '张梦琪', '刘思远', '陈嘉禾', '杨静怡', '赵文博', '周雅婷', '吴俊熙', '徐若涵',
-  '孙浩然', '马晓芸', '朱天佑', '胡欣然', '郭明轩', '何佳妮', '高子墨', '罗一鸣', '郑舒扬', '梁咏诗'];
-const GRADES = ['2026级', '2025级', '2024级', '2023级'];
-const CCODE = { 机械: '30', 控制: '31', 物联网: '32', 汽车: '33', 财经: '34', 管理: '35', 文旅: '36', 设计: '37', 人工智能: '38', 集成电路: '39', 国际教育: '50' };
-const LVL = { hi: ['高关注', 'hi'], mid: ['中关注', 'mid'], watch: ['观察', 'watch'] };
-const EVI = [
-  { t: '顿数达标 · 均价P6 · 晚间就餐占比高', ev: [['就餐频次', 82], ['单顿均价', 6], ['超市占比', 18]] },
-  { t: '顿数达标 · 均价P9 · 假期留校就餐连续', ev: [['就餐频次', 88], ['单顿均价', 9], ['超市占比', 12]] },
-  { t: '顿数达标 · 均价P4 · 早午餐为主', ev: [['就餐频次', 76], ['单顿均价', 4], ['超市占比', 8]] },
-];
 
 export function FundingWorkbench({ onBack, toast }) {
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [detail, setDetail] = useState(null);
-  const k = FUND_KPI(win);
+  const [k, setK] = useState(null);
+  const [colleges, setColleges] = useState(null);
+  const [list, setList] = useState(null);
 
-  const students = useMemo(() => {
-    const list = [];
-    for (let i = 0; i < 40; i++) {
-      const c = FUND_COLLEGES[i % FUND_COLLEGES.length];
-      const g = GRADES[(i * 7) % 4];
-      const lvl = i % 9 === 0 ? 'hi' : (i % 3 === 0 ? 'mid' : 'watch');
-      const meals = lvl === 'hi' ? 52 + (i * 3) % 38 : lvl === 'mid' ? 46 + (i * 5) % 40 : 42 + (i * 7) % 44;
-      const price = lvl === 'hi' ? 4.1 + (i % 8) * 0.12 : lvl === 'mid' ? 5.2 + (i % 9) * 0.14 : 6.3 + (i % 11) * 0.16;
-      list.push({
-        id: CCODE[c.n] + g.slice(2, 4) + String(1000 + ((i * 137) % 9000)).padStart(4, '0') + String((i * 7) % 10) + String((i * 13) % 10),
-        name: FUND_NAMES[i % FUND_NAMES.length], college: c.n, grade: g, level: lvl,
-        meals, price: Math.round(price * 10) / 10, spend: Math.round(meals * price), pct: lvl === 'hi' ? 3 + (i % 9) : lvl === 'mid' ? 8 + (i % 8) : 12 + (i % 10),
-        evi: EVI[i % EVI.length],
-      });
-    }
-    return list;
-  }, []);
+  const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
+  const authHeaders = token ? { Authorization: 'Bearer ' + token } : {};
 
-  const rows = students.filter((s) =>
-    (!filters.college || s.college === filters.college) &&
-    (!filters.grade || s.grade === filters.grade) &&
-    (!filters.level || s.level === filters.level) &&
-    (!filters.q || s.id.includes(filters.q) || s.name.includes(filters.q)));
+  useEffect(() => {
+    setK(null);
+    fetch(`${API_BASE}/insight/funding/overview?windowDays=${win}`, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => { if (j.code === 200) setK(j.data); else { setK({ err: j.message }); toast('加载失败：' + (j.message || '')); } }).catch((e) => { setK({ err: e.message }); });
+    fetch(`${API_BASE}/insight/funding/colleges?windowDays=${win}`, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => setColleges(j.data || [])).catch(() => setColleges([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [win]);
 
-  const maxC = Math.max(...FUND_COLLEGES.map((d) => d.hi + d.mid + d.watch));
+  useEffect(() => {
+    setList(null);
+    const p = new URLSearchParams({ windowDays: win, page: 1, size: 100 });
+    if (filters.level) p.set('level', filters.level);
+    if (filters.college) p.set('college', filters.college);
+    if (filters.q) p.set('q', filters.q);
+    fetch(`${API_BASE}/insight/funding/students?` + p, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => setList(j.data || { records: [], total: 0 })).catch(() => setList({ records: [], total: 0 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [win, filters.level, filters.college, filters.q]);
+
+  const rows = ((list && list.records) || []).filter((r) => !filters.grade || r.grade === filters.grade);
+  const collegeNames = (colleges || []).map((c) => c.n);
+
+  const maxC = Math.max(1, ...(colleges || []).map((d) => (d.hi || 0) + (d.mid || 0) + (d.watch || 0)));
   const exportCsv = () => {
     const head = ['学号', '姓名', '学院', '年级', '档位', '月就餐(顿)', '单顿均价(元)', '月食堂支出(元)', '消费分位', '信号证据'];
     const csv = ['\uFEFF# 精准资助分析 · 线索名单（原型演示 · 示例数据）', '# 观察窗:' + k.range + ' · 导出时间:' + new Date().toLocaleString('zh-CN'), head.join(',')]
-      .concat(rows.map((s) => [s.id, s.name, s.college, s.grade, LVL[s.level][0], s.meals, s.price.toFixed(1), s.spend, 'P' + s.pct, '"' + s.evi.t + '"'].join(','))).join('\n');
+      .concat(rows.map((s) => [s.id, s.name, s.college, s.grade, LVL[s.level][0], s.meals, Number(s.price).toFixed(2), s.spend, 'P' + s.pct, '"同学院同年级均价P' + Math.round(Number(s.pct) || 0) + '"'].join(','))).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = `精准资助线索名单_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -267,13 +252,15 @@ export function FundingWorkbench({ onBack, toast }) {
         </div>
 
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6,1fr)' }}>
-          {[
+          {!k && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-loading">统计加载中（数仓查询约 5–15 秒）…</div></div>}
+          {k && k.err && <div className="v2-kpi" style={{ gridColumn: 'span 6' }}><div className="v2-empty">加载失败：{k.err}，请刷新重试</div></div>}
+          {k && !k.err ? [
             { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
-            { lb: '活跃消费人数', vl: k.active.toLocaleString(), cmp: '在校生 15,103', bar: 'var(--p-t4)' },
-            { lb: '就餐达标人数', vl: k.eligible.toLocaleString(), cmp: '月食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
-            { lb: '高关注线索', vl: k.hi, cmp: '多信号低位 · 优先复核', bar: 'var(--abad)' },
-            { lb: '中关注线索', vl: k.mid, cmp: '建议纳入观察', bar: '#FBBF24' },
-            { lb: '观察线索', vl: k.watch, cmp: '低置信 · 参考', bar: 'var(--p-secondary)' },
+            { lb: '活跃消费人数', vl: (k.active || 0).toLocaleString(), cmp: '数据日期 ' + k.dataDate, bar: 'var(--p-t4)' },
+            { lb: '就餐达标人数', vl: (k.eligible || 0).toLocaleString(), cmp: '观察窗内食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
+            { lb: '高关注线索', vl: (k.hi || 0).toLocaleString(), cmp: '同学院同年级 P5 以下', bar: 'var(--abad)' },
+            { lb: '中关注线索', vl: (k.mid || 0).toLocaleString(), cmp: 'P5 – P15', bar: '#FBBF24' },
+            { lb: '观察线索', vl: (k.watch || 0).toLocaleString(), cmp: 'P15 – P40 · 参考', bar: 'var(--p-secondary)' },
           ].map((x) => (
             <div key={x.lb} className="v2-kpi">
               <span className="bar" style={{ background: x.bar }} />
@@ -281,7 +268,7 @@ export function FundingWorkbench({ onBack, toast }) {
               <div className="vl">{x.vl}</div>
               <div className="cmp">{x.cmp}</div>
             </div>
-          ))}
+          )) : null}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
@@ -294,9 +281,9 @@ export function FundingWorkbench({ onBack, toast }) {
                 <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--p-secondary)', marginRight: 4 }} />观察</span>
               </div>
             </div>
-            {FUND_COLLEGES.map((d) => (
+            {(colleges || []).map((d) => (
               <div key={d.n} className="v2-hbar-row">
-                <span className="v2-hbar-name">{d.n}</span>
+                <span className="v2-hbar-name" style={{ width: 150 }}>{d.n}</span>
                 <div className="v2-hbar-track" title={`${d.n}：高${d.hi} / 中${d.mid} / 观察${d.watch}`}>
                   <div style={{ width: `${(d.hi / maxC) * 100}%`, background: 'var(--abad)' }} />
                   <div style={{ width: `${(d.mid / maxC) * 100}%`, background: '#FBBF24' }} />
@@ -325,12 +312,12 @@ export function FundingWorkbench({ onBack, toast }) {
           <label>学院</label>
           <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
             <option value="">全部学院</option>
-            {FUND_COLLEGES.map((c) => <option key={c.n}>{c.n}</option>)}
+            {collegeNames.map((c) => <option key={c}>{c}</option>)}
           </select>
           <label>年级</label>
           <select className="v2-select" value={filters.grade} onChange={(e) => setFilters({ ...filters, grade: e.target.value })}>
             <option value="">全部年级</option>
-            {GRADES.map((g) => <option key={g}>{g}</option>)}
+            {[...new Set(rows.map((r) => r.grade).filter(Boolean))].sort().map((g) => <option key={g}>{g}</option>)}
           </select>
           <label>档位</label>
           <select className="v2-select" value={filters.level} onChange={(e) => setFilters({ ...filters, level: e.target.value })}>
@@ -356,18 +343,18 @@ export function FundingWorkbench({ onBack, toast }) {
                   <td className="num">{s.id}</td><td>{s.name}</td><td>{s.college}</td><td>{s.grade}</td>
                   <td><span className={`v2-tag ${LVL[s.level][1]}`}>{LVL[s.level][0]}</span></td>
                   <td className="num" style={{ textAlign: 'right' }}>{s.meals}</td>
-                  <td className="num" style={{ textAlign: 'right' }}>{s.price.toFixed(1)}</td>
+                  <td className="num" style={{ textAlign: 'right' }}>{Number(s.price).toFixed(2)}</td>
                   <td className="num" style={{ textAlign: 'right' }}>{s.spend}</td>
                   <td className="num" style={{ textAlign: 'right' }}><b style={{ color: s.level === 'hi' ? 'var(--abad)' : s.level === 'mid' ? '#D97706' : 'var(--p-primary)' }}>P{s.pct}</b></td>
-                  <td style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>{s.evi.t}</td>
+                  <td style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>同{String(s.college || '').slice(0, 4)}{s.grade || ''}均价 P{Math.round(Number(s.pct) || 0)}</td>
                   <td><button className="v2-link" onClick={() => setDetail(s)}>详情</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="v2-tbl-foot"><span>共 {rows.length} 条线索 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span></div>
+          <div className="v2-tbl-foot"><span>共 {list ? list.total : '…'} 条线索 · 当前筛选：{filters.college || '全部学院'} / {filters.grade || '全部年级'} / {filters.level ? LVL[filters.level][0] : '全部档位'}</span></div>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 16 }}>原型演示 · 示例数据（正式版数据源：一卡通消费 t_ykt_jkb · 学籍 t_bzks · 请假 xsqjb · 只读数仓）</div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 16 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k && k.range ? k.range : ''}</div>
       </div>
 
       {detail && (
@@ -383,7 +370,7 @@ export function FundingWorkbench({ onBack, toast }) {
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>综合消费分位 <b style={{ color: 'var(--aink)' }}>P{detail.pct}</b> · 同{detail.college}{detail.grade}基准</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
-                {[['月就餐', `${detail.meals} 顿`], ['单顿均价', `${detail.price.toFixed(1)} 元`], ['月支出', `${detail.spend} 元`], ['消费分位', `P${detail.pct}`]].map(([l, v]) => (
+                {[['观察窗就餐', `${detail.meals} 顿`], ['单顿均价', `${Number(detail.price).toFixed(2)} 元`], ['观察窗支出', `${detail.spend} 元`], ['消费分位', `P${Math.round(Number(detail.pct) || 0)}`]].map(([l, v]) => (
                   <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
                     <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l}</div>
                     <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', marginTop: 3 }}>{v}</div>
@@ -391,10 +378,14 @@ export function FundingWorkbench({ onBack, toast }) {
                 ))}
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>信号分解（百分位 = 同学院同年级相对位置）</div>
-              {detail.evi.ev.map(([nm, p]) => (
+              {[
+                ['单顿均价分位', 'P' + Math.round(Number(detail.pct) || 0), Number(detail.pct) < 5],
+                ['观察窗就餐次数', (detail.meals || 0) + ' 顿（≥40 达标）', false],
+                ['观察窗食堂总支出', (detail.spend || 0) + ' 元', false],
+              ].map(([nm, v, low]) => (
                 <div key={nm} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--p-t2)' }}>{nm}</span>
-                  <span style={{ fontWeight: 600, color: p < 15 ? 'var(--abad)' : p < 40 ? '#D97706' : 'var(--p-success)' }}>P{p}{p < 15 ? ' · 显著偏低' : ''}</span>
+                  <span style={{ fontWeight: 600, color: low ? 'var(--abad)' : 'var(--aink)' }}>{v}{low ? ' · 显著偏低' : ''}</span>
                 </div>
               ))}
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 9px' }}>排除项核验</div>
