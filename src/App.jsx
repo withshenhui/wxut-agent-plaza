@@ -30,7 +30,7 @@ import SqlBotPage from './SqlBotPage';
 import CollegeQueryPage from './CollegeQueryPage';
 import FormAgentPage from './form-agent/FormAgentPage';
 import GuidePage from './GuidePage';
-import { UserProvider } from './UserContext';
+import { UserProvider, useUser } from './UserContext';
 
 function AdminLoginRoute() {
   return (
@@ -50,6 +50,14 @@ function AdminRoute() {
   );
 }
 
+/** 普通用户只能访问广场类页面；受限路由直接访问时跳回广场 */
+function UserRoute({ children }) {
+  const { user, loading } = useUser();
+  if (loading) return null;
+  if (user && user.role !== 'admin') return <Navigate to="/plaza" replace />;
+  return children;
+}
+
 function App() {
   return (
     <SiteConfigProvider>
@@ -63,14 +71,14 @@ function App() {
         <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/campus-planning" element={<DigitalCampusPlanning />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/model-management" element={<ModelManagement />} />
+        <Route path="/model-management" element={<UserRoute><ModelManagement /></UserRoute>} />
         <Route path="/openclaw" element={<OpenClaw />} />
         <Route path="/guide" element={<UnderConstruction pageType="campus" />} />
         <Route path="/manual" element={<GuidePage />} />
         <Route path="/dify-chat" element={<DifyChatPage />} />
         <Route path="/sql-bot" element={<SqlBotPage />} />
         <Route path="/college-query/:id" element={<CollegeQueryPage />} />
-        <Route path="/form-agent" element={<FormAgentPage />} />
+        <Route path="/form-agent" element={<UserRoute><FormAgentPage /></UserRoute>} />
 
         {/* 管理后台 */}
         <Route path="/admin/login" element={<AdminLoginRoute />} />

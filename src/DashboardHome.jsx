@@ -4,6 +4,7 @@ import PageLayout from './components/PageLayout';
 import AgentIcon from './components/AgentIcon';
 import { searchAgents, getCategories, getRecommendedAgents } from './api/agent';
 import { searchModels } from './api/model';
+import { apiBase } from './api/request';
 import { useUser } from './UserContext';
 import { launchAgent } from './utils/agentLaunch';
 import logoDeepseek from './assets/model-logos/deepseek.svg';
@@ -53,6 +54,7 @@ const M_ICONS = {
 function DashboardHome() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const isAdmin = user?.role === 'admin';
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [agents, setAgents] = useState([]);
@@ -172,10 +174,13 @@ function DashboardHome() {
           </div>
         </header>
 
-        {/* 智能填报 / 智能问数暂时下线（2026-11-20），入口先换成站内其它常用页 */}
+        {/* 智能填报 / 智能问数暂时下线（2026-11-20），入口先换成站内其它常用页；普通用户只留广场 */}
         <nav className="campus-tools" aria-label="常用服务">
-          {[['智能体广场', '浏览全部智能体服务', '/plaza'], ['模型服务', '浏览已接入的模型', '/model-management'],
-            ['智能体开发平台', '低代码搭建专属智能体', '/'], ['知识库中心', '校内知识统一管理', '/']].map(([name, detail, path]) => (
+          {(isAdmin
+            ? [['智能体广场', '浏览全部智能体服务', '/plaza'], ['模型服务', '浏览已接入的模型', '/model-management'],
+              ['智能体开发平台', '低代码搭建专属智能体', `${apiBase}/sso/entry?app=dify`], ['知识库中心', '校内知识统一管理', `${apiBase}/sso/entry?app=dify&redirect=/datasets`]]
+            : [['智能体广场', '浏览全部智能体服务', '/plaza']]
+          ).map(([name, detail, path]) => (
             <Link key={name} to={path}><strong>{name}</strong><small>{detail}</small><span aria-hidden="true">↗</span></Link>
           ))}
         </nav>

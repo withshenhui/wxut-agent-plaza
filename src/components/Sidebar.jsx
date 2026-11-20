@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPublicConfig } from '../api/config';
 import { apiBase } from '../api/request';
+import { useUser } from '../UserContext';
 
 // SVG Icons - Line style matching the reference dashboard design
 const icons = {
@@ -78,11 +79,11 @@ const icons = {
 const menuItems = [
   { path: '/', icon: 'home', label: '首页' },
   { path: '/plaza', icon: 'apps', label: '智能体广场' },
-  { external: true, url: `${apiBase}/sso/entry?app=dify`, icon: 'ai', label: '智能体开发平台' },
-  { external: true, url: `${apiBase}/sso/entry?app=dify&redirect=/datasets`, icon: 'knowledge', label: '知识库中心' },
-  { path: '/model-management', icon: 'model', label: '模型服务' },
+  { external: true, url: `${apiBase}/sso/entry?app=dify`, icon: 'ai', label: '智能体开发平台', adminOnly: true },
+  { external: true, url: `${apiBase}/sso/entry?app=dify&redirect=/datasets`, icon: 'knowledge', label: '知识库中心', adminOnly: true },
+  { path: '/model-management', icon: 'model', label: '模型服务', adminOnly: true },
   { external: true, url: '/sqlbot.html', icon: 'search', label: '智能问数' },
-  { path: '/form-agent', icon: 'form', label: '智能填报' },
+  { path: '/form-agent', icon: 'form', label: '智能填报', adminOnly: true },
 ];
 
 /** 外链菜单项（label → 默认 url），供管理后台"入口链接配置"页复用，避免两处漂移 */
@@ -96,6 +97,8 @@ const LINKS_CONFIG_KEY = 'menu.links';
 function Sidebar({ isCollapsed, onToggle, activePath }) {
   // null = 配置加载中（菜单延迟渲染避免闪现待隐藏项）；{} = 加载失败用默认菜单
   const [overrides, setOverrides] = useState(null);
+  const { user } = useUser();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     let alive = true;
@@ -140,7 +143,10 @@ function Sidebar({ isCollapsed, onToggle, activePath }) {
         </div>
         <nav>
           <ul className="el-menu">
-            {overrides === null ? null : menuItems.filter((item) => !isHidden(item)).map((item, i) => {
+            {overrides === null ? null : menuItems
+              .filter((item) => !isHidden(item))
+              .filter((item) => !item.adminOnly || isAdmin)
+              .map((item, i) => {
               const isActive = item.path === activePath;
               const linkContent = (
                 <>
