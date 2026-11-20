@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
+import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast, IconBuilding } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
@@ -209,6 +209,16 @@ function Plaza({ agents, cats, q, setQ, onChat, onNav, toast }) {
   const rows = agents.filter((a) =>
     (cat === '全部' || a.categoryName === cat) &&
     (!q || (a.name + a.description + a.categoryName + (a.tags || []).join('')).includes(q)));
+  // 「全部」tab：推荐置顶 + 使用次数降序；建设中排最后（其余 tab 保持原顺序）
+  const sorted = cat === '全部' && !q
+    ? [...rows].sort((a, b) => {
+        const ba = a.isBuilding === 1 ? 1 : 0, bb = b.isBuilding === 1 ? 1 : 0;
+        if (ba !== bb) return ba - bb;
+        const ra = a.isRecommended === 1 ? 0 : 1, rb = b.isRecommended === 1 ? 0 : 1;
+        if (ra !== rb) return ra - rb;
+        return (b.visitCount || 0) - (a.visitCount || 0);
+      })
+    : rows;
   return (
     <>
       <Hero agents={agents} onChat={onChat} onSearch={setQ} q={q} />
@@ -229,19 +239,22 @@ function Plaza({ agents, cats, q, setQ, onChat, onNav, toast }) {
           ))}
         </div>
         <div className="v2-agent-grid">
-          {rows.length ? rows.map((a) => (
-            <div key={a.id} className="v2-ag-card" onClick={() => onChat(a)}>
-              {a.isRecommended === 1 && <span className="rec">推荐</span>}
-              <div className="em"><AgentAvatar agent={a} size={36} /></div>
+          {rows.length ? sorted.map((a) => {
+            const building = a.isBuilding === 1;
+            return (
+            <div key={a.id} className={`v2-ag-card${building ? ' building' : ''}`} onClick={() => building ? toast('该智能体建设中，敬请期待') : onChat(a)}>
+              {building ? <span className="rec bld">建设中</span> : (a.isRecommended === 1 && <span className="rec">推荐</span>)}
+              <div className="em">{building ? <IconBuilding size={34} /> : <AgentAvatar agent={a} size={36} />}</div>
               <div className="nm">{a.name}</div>
               <div className="ds">{a.description || ''}</div>
               <div className="tags">{(a.tags || []).map((t, i) => <span key={i} className="tg">{t}</span>)}</div>
               <div className="ft">
                 <span className="cat">{a.categoryName}</span>
-                <span className="cnt">访问 {(a.visitCount || 0).toLocaleString()} 次</span>
+                <span className="cnt">{building ? '开发建设中' : `访问 ${(a.visitCount || 0).toLocaleString()} 次`}</span>
               </div>
             </div>
-          )) : <div className="v2-empty">没有找到匹配的智能体，换个关键词试试</div>}
+            );
+          }) : <div className="v2-empty">没有找到匹配的智能体，换个关键词试试</div>}
         </div>
       </div>
     </>
@@ -840,7 +853,8 @@ export default function V2App() {
   }, [location.pathname, agents, navigate]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/agents?size=100`).then((r) => r.json())
+    // includeBuilding=1：前台也取建设中卡片（显示工程图标，排序沉底）
+    fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
       .then((j) => setAgents(j.data?.records || [])).catch((e) => setLoadErr(e.message));
     fetch(`${API_BASE}/categories`).then((r) => r.json())
       .then((j) => setCats((j.data || []).filter((c) => c.status === 1))).catch(() => {});

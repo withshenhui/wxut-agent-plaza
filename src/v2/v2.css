@@ -495,3 +495,10 @@ body.v2-modal-open{overflow:hidden}
 .v2-sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(15,23,42,.25)}
 .v2-sw.on{background:var(--el-primary)}
 .v2-sw.on::after{left:23px}
+
+/* 建设中卡片（首页工程图标样式） */
+.v2-ag-card.building{border-style:dashed;border-color:#C7D2E4;background:#FAFBFD}
+.v2-ag-card.building .em{color:#8A99B5}
+.v2-ag-card.building .nm{color:var(--p-t3)}
+.v2-ag-card.building .cat{color:var(--p-t3);background:var(--p-fill)}
+.v2-ag-card .rec.bld{color:#475569;background:#EDF1F6;border-color:#D7DEE9}

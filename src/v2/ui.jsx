@@ -32,7 +32,23 @@ const PATHS = {
   back: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   code: '<path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/>',
+  construction: '<rect x="2.5" y="4" width="19" height="4" rx="1"/><path d="M5.5 8v11M18.5 8v11M9.5 8v11M14.5 8v11"/><path d="M12 12l1.6 4.6L18 18l-4.4 1.4L12 24l-1.6-4.6L6 18l4.4-1.4z" transform="translate(0,-8) scale(.78)"/>',
 };
+
+/* 建设中卡片图标（工程车/吊钩，主色描边） */
+export function IconBuilding({ size = 30 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.5" y="3.5" width="14" height="2.8" rx="0.8" />
+      <path d="M5 6.3v13.7M14 6.3v13.7M9.5 6.3v13.7" />
+      <path d="M2.5 20.5h19" />
+      <path d="M17.5 3.5v4M17.5 7.5l-2.8 8.5" />
+      <path d="M15.1 13.6l4.6 1.5M16.2 16.9l2.4-1" />
+      <circle cx="17.5" cy="19.6" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M9.5 9.2h3.2" />
+    </svg>
+  );
+}
 
 export function Icon({ name, size = 17, style }) {
   return (
