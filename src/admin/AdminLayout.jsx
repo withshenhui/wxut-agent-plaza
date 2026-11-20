@@ -120,7 +120,7 @@ export default function AdminLayout() {
               </div>
             )}
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          <div style={{ overflowY: 'auto', overflowX: 'hidden' }}>
             <Menu
               mode="inline" selectedKeys={[location.pathname]} items={menuItems}
               openKeys={collapsed ? [] : openKeys}
@@ -128,13 +128,13 @@ export default function AdminLayout() {
               onClick={({ key }) => navigate(key)}
               inlineCollapsed={collapsed}
             />
-          </div>
-          <div className="adm-side-foot" style={{ display: collapsed ? 'none' : 'block' }}>
-            <div className="adm-side-user">
-              <span className="av">{nickname[0]}</span>
-              <div style={{ minWidth: 0 }}>
-                <div className="n">{nickname}</div>
-                <div className="r">平台管理员</div>
+            <div className="adm-side-foot" style={{ display: collapsed ? 'none' : 'block' }}>
+              <div className="adm-side-user">
+                <span className="av">{nickname[0]}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div className="n">{nickname}</div>
+                  <div className="r">平台管理员</div>
+                </div>
               </div>
             </div>
           </div>

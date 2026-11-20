@@ -27,7 +27,7 @@
 .admin-scope .adm-sider .ant-menu-item-selected{background:var(--apri-l9)!important;color:var(--apri-d)!important;font-weight:600;box-shadow:inset 3px 0 0 var(--apri)}
 .admin-scope .adm-group{font-size:10.5px;letter-spacing:.14em;color:var(--aink3);font-weight:600;padding:16px 14px 6px;text-transform:uppercase}
 .admin-scope .adm-sider-collapsed .ant-menu{padding:10px 6px!important}
-.admin-scope .adm-side-foot{margin-top:auto;padding:12px;border-top:1px solid var(--aline2)}
+.admin-scope .adm-side-foot{padding:6px 12px 14px;border-top:1px solid var(--aline2);margin-top:10px}
 .admin-scope .adm-side-user{display:flex;align-items:center;gap:10px;background:var(--aline2);border-radius:12px;padding:8px 10px}
 .admin-scope .adm-side-user .av{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4A6CF7,#6B8AFF);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
 .admin-scope .adm-side-user .n{font-size:12.5px;font-weight:600;color:var(--aink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
