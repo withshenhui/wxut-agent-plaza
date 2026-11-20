@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icon, XixiLoading } from './ui.jsx';
+import { exportCsv, exportExcel } from './exportUtil.js';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 const LVL = { hi: ['红灯', 'hi'], mid: ['黄灯', 'mid'], watch: ['绿灯', 'watch'] };
@@ -138,6 +139,29 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
   const maxC = Math.max(1, ...(colleges || []).map((d) => (d.hi || 0) + (d.mid || 0) + (d.watch || 0)));
   const histTotal = (k && [k.hi, k.mid, k.watch].reduce((a, b) => a + (Number(b) || 0), 0)) || 0;
 
+  const [expOpen, setExpOpen] = useState(false);
+  const expMeta = () => {
+    const m = [ '导出时间:' + new Date().toLocaleString('zh-CN'),
+      '当前筛选:学院=' + (filters.college || '全部') + ' / 档位=' + (filters.level ? LVL[filters.level][0] : '全部') + (filters.q ? ' / 关键词=' + filters.q : '') ];
+    if (hasWindow) m.unshift('观察窗:近 ' + win + ' 天' + (k && k.range ? '（' + k.range + '）' : ''));
+    else if (k && k.range) m.unshift('统计范围:' + k.range);
+    m.push('说明:本名单为AI数据洞察生成的工作线索，不构成任何定性结论，请结合人工核实后按流程处理');
+    return m;
+  };
+  const expHead = () => ['学号', '姓名', '学院', '年级', '档位', cfg.m1Label, cfg.m2Label, '信号摘要'];
+  const expRows = () => rows.map((r) => [r.id, r.name, r.college, r.grade,
+    LVL[r.level] ? LVL[r.level][0] : r.level,
+    sceneKey === 'mental' ? r.m1 + '%' : r.m1,
+    sceneKey === 'academic' ? Number(r.m2).toFixed(1) : r.m2,
+    cfg.summary(r)]);
+  const doExport = (fmt) => {
+    setExpOpen(false);
+    if (!rows.length) { toast('当前筛选下没有可导出的数据'); return; }
+    const args = { title: cfg.title + ' · 线索名单', meta: expMeta(), head: expHead(), rows: expRows(), filename: cfg.title + '_名单' };
+    (fmt === 'excel' ? exportExcel : exportCsv)(args);
+    toast('已导出 ' + rows.length + ' 条（' + (fmt === 'excel' ? 'Excel' : 'CSV') + '）· 正式版将写入审计日志');
+  };
+
   return (
     <div className="v2-body" style={{ maxWidth: 1560 }}>
       <button className="v2-btn ghost" onClick={onBack} style={{ marginBottom: 12 }}>← 返回数据洞察</button>
@@ -239,7 +263,16 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
           <input className="v2-search" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} placeholder="搜索学号 / 姓名" />
           <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
           <span style={{ flex: 1 }} />
-          <button className="v2-btn" onClick={() => toast('导出功能即将开放')}>⤓ 导出名单</button>
+          <div style={{ position: 'relative' }}>
+            <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>
+            {expOpen && (
+              <div className="v2-exp-menu" onMouseDown={(e) => e.preventDefault()}>
+                <button onMouseDown={() => doExport('excel')}><Icon name="doclog" size={14} /> 导出 Excel（.xls）</button>
+                <button onMouseDown={() => doExport('csv')}><Icon name="doclog" size={14} /> 导出 CSV（.csv）</button>
+                <div className="hint">导出当前筛选 · 共 {rows.length} 条</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {!list ? (

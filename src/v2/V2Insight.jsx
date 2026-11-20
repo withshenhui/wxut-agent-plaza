@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, useToast, XixiLoading } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
+import { exportCsv, exportExcel } from './exportUtil.js';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 
@@ -355,15 +356,21 @@ export function FundingWorkbench({ onBack, toast }) {
   const collegeNames = (colleges || []).map((c) => c.n);
 
   const maxC = Math.max(1, ...(colleges || []).map((d) => (d.hi || 0) + (d.mid || 0) + (d.watch || 0)));
-  const exportCsv = () => {
-    const head = ['学号', '姓名', '学院', '年级', '档位', '月就餐(顿)', '单顿均价(元)', '月食堂支出(元)', '消费分位', '信号证据'];
-    const csv = ['\uFEFF# 精准资助分析 · 线索名单（原型演示 · 示例数据）', '# 观察窗:' + k.range + ' · 导出时间:' + new Date().toLocaleString('zh-CN'), head.join(',')]
-      .concat(rows.map((s) => [s.id, s.name, s.college, s.grade, LVL[s.level][0], s.meals, Number(s.price).toFixed(2), s.spend, 'P' + s.pct, '"同学院同年级均价P' + Math.round(Number(s.pct) || 0) + '"'].join(','))).join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `精准资助线索名单_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    toast(`已导出 ${rows.length} 条（正式版将写入审计日志）`);
+  const [expOpen, setExpOpen] = useState(false);
+  const expMeta = () => [
+    '观察窗:近 ' + win + ' 天' + (k && k.range ? '（' + k.range + '）' : ''),
+    '导出时间:' + new Date().toLocaleString('zh-CN'),
+    '当前筛选:学院=' + (filters.college || '全部') + ' / 档位=' + (filters.level ? LVL[filters.level][0] : '全部') + (filters.q ? ' / 关键词=' + filters.q : ''),
+    '说明:本名单为AI数据洞察生成的资助工作线索，不构成困难认定，请结合人工核实后按流程处理',
+  ];
+  const expHead = () => ['学号', '姓名', '学院', '年级', '档位', '月就餐(顿)', '单顿均价(元)', '月食堂支出(元)', '消费分位'];
+  const expRows = () => rows.map((s) => [s.id, s.name, s.college, s.grade, LVL[s.level][0], s.meals, Number(s.price).toFixed(2), s.spend, 'P' + Math.round(Number(s.pct) || 0)]);
+  const doExport = (fmt) => {
+    setExpOpen(false);
+    if (!rows.length) { toast('当前筛选下没有可导出的数据'); return; }
+    const args = { title: '精准资助分析 · 线索名单', meta: expMeta(), head: expHead(), rows: expRows(), filename: '精准资助线索名单' };
+    (fmt === 'excel' ? exportExcel : exportCsv)(args);
+    toast('已导出 ' + rows.length + ' 条（' + (fmt === 'excel' ? 'Excel' : 'CSV') + '）· 正式版将写入审计日志');
   };
 
   return (
@@ -497,7 +504,16 @@ export function FundingWorkbench({ onBack, toast }) {
           <input className="v2-search" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} placeholder="搜索学号 / 姓名" />
           <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
           <span style={{ flex: 1 }} />
-          <button className="v2-btn" onClick={exportCsv}>⤓ 导出名单</button>
+          <div style={{ position: 'relative' }}>
+            <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>
+            {expOpen && (
+              <div className="v2-exp-menu" onMouseDown={(e) => e.preventDefault()}>
+                <button onMouseDown={() => doExport('excel')}><Icon name="doclog" size={14} /> 导出 Excel（.xls）</button>
+                <button onMouseDown={() => doExport('csv')}><Icon name="doclog" size={14} /> 导出 CSV（.csv）</button>
+                <div className="hint">导出当前筛选 · 共 {rows.length} 条</div>
+              </div>
+            )}
+          </div>
         </div>
         {!list ? (
           <div className="v2-tbl-wrap"><XixiLoading text="AI分析中…" sub="数仓查询中" /></div>
