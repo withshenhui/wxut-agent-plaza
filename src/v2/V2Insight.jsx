@@ -472,6 +472,9 @@ export function FundingWorkbench({ onBack, toast }) {
           <span style={{ flex: 1 }} />
           <button className="v2-btn" onClick={exportCsv}>⤓ 导出名单</button>
         </div>
+        {!list ? (
+          <div className="v2-tbl-wrap"><XixiLoading text="锡锡正在翻阅名单…" sub="数仓查询中" /></div>
+        ) : (
         <div className="v2-tbl-wrap">
           <table className="v2-table">
             <thead><tr>
@@ -508,6 +511,7 @@ export function FundingWorkbench({ onBack, toast }) {
             </div>
           </div>
         </div>
+        )}
         <div className="v2-notice warn" style={{ marginTop: 16 }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
           <span>本页结果为<b>AI数据洞察生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
