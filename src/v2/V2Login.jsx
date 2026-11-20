@@ -29,7 +29,7 @@ export default function V2Login({ onLoginOk }) {
       <div className="v2-login-card">
         <div className="brand">
           <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-          <div className="t">锡职大 AI中台</div>
+          <div className="t">锡职大AI中台</div>
         </div>
         <div className="sub">WUXI UNIVERSITY OF TECHNOLOGY · V2</div>
         <h2>登录管理后台</h2>

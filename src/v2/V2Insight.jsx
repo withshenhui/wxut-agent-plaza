@@ -174,13 +174,13 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
 /* ================= 精准资助分析工作台（原型界面，示例数据） ================= */
 
 
-/* AI 洞察横幅：锡锡 + 打字机 */
+/* AI数据洞察横幅：锡锡 + 打字机 */
 function AiInsightBanner({ k, win }) {
   const msg = useMemo(() => {
     if (!k || k.err) return '正在接入数仓，获取消费行为洞察…';
     const hi = Number(k.hi) || 0, mid = Number(k.mid) || 0;
     const top = '消费信号已完成分析';
-    return `${top}：近 ${win} 天共识别高关注线索 ${hi} 人、中关注 ${mid} 人。高关注人群呈"就餐频次达标 + 单顿均价显著低于同学院同年级"特征，建议优先复核；详细信号分解见名单详情。`;
+    return `${top}：近 ${win} 天共识别红灯（高关注）线索 ${hi} 人、黄灯（中关注）${mid} 人。红灯人群呈"就餐频次达标 + 单顿均价显著低于同学院同年级"特征，建议优先复核；详细信号分解见名单详情。`;
   }, [k, win]);
   const [shown, setShown] = useState('');
   useEffect(() => {
@@ -197,7 +197,7 @@ function AiInsightBanner({ k, win }) {
     <div className="v2-ai-banner">
       <div className="xab-avatar"><img src="./v2-xixi.png" alt="锡锡" /></div>
       <div className="xab-body">
-        <span className="xab-label"><Icon name="spark" size={11} /> AI 洞察</span>
+        <span className="xab-label"><Icon name="spark" size={11} /> AI数据洞察</span>
         <div className="xab-text">{shown}<span className="caret" /></div>
       </div>
     </div>
@@ -319,7 +319,7 @@ export function FundingWorkbench({ onBack, toast }) {
             { lb: '观察窗', vl: `${win}天`, cmp: k.range, bar: 'var(--p-t4)' },
             { lb: '活跃消费人数', vl: (k.active || 0).toLocaleString(), cmp: '数据日期 ' + k.dataDate, bar: 'var(--p-t4)' },
             { lb: '就餐达标人数', vl: (k.eligible || 0).toLocaleString(), cmp: '观察窗内食堂就餐 ≥40 顿', bar: 'var(--p-success)' },
-            { lb: '红灯线索', vl: (k.hi || 0).toLocaleString(), cmp: '同学院同年级 P5 以下', bar: 'var(--abad)' },
+            { lb: '红灯线索', vl: (k.hi || 0).toLocaleString(), cmp: '同学院同年级 P5 以下 · 红灯', bar: 'var(--abad)' },
             { lb: '黄灯线索', vl: (k.mid || 0).toLocaleString(), cmp: 'P5 – P15', bar: '#FBBF24' },
             { lb: '绿灯线索', vl: (k.watch || 0).toLocaleString(), cmp: 'P15 – P40 · 参考', bar: 'var(--p-success)' },
           ].map((x) => (
@@ -335,20 +335,20 @@ export function FundingWorkbench({ onBack, toast }) {
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14 }}>
           <div className="v2-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div><div className="ct">各学院线索分布</div><div className="cs">同学院同年级基准分位口径 · 红/黄/绿三档</div></div>
+              <div><div className="ct">各学院线索分布</div><div className="cs">同学院同年级基准分位口径 · 红灯/黄灯/绿灯</div></div>
               <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: 'var(--p-t3)' }}>
-                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--abad)', marginRight: 4 }} />高关注</span>
-                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: '#FBBF24', marginRight: 4 }} />中关注</span>
-                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: 'var(--p-secondary)', marginRight: 4 }} />观察</span>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#E5484D', boxShadow: '0 0 4px #E5484D88', marginRight: 4 }} />红灯（高关注）</span>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#F59E0B', boxShadow: '0 0 4px #F59E0B88', marginRight: 4 }} />黄灯（中关注）</span>
+                <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 4px #10B98188', marginRight: 4 }} />绿灯（观察）</span>
               </div>
             </div>
             {(colleges || []).map((d) => (
               <div key={d.n} className="v2-hbar-row">
                 <span className="v2-hbar-name" style={{ width: 150 }}>{d.n}</span>
                 <div className="v2-hbar-track" title={`${d.n}：高${d.hi} / 中${d.mid} / 观察${d.watch}`}>
-                  <div style={{ width: `${(d.hi / maxC) * 100}%`, background: 'var(--abad)' }} />
-                  <div style={{ width: `${(d.mid / maxC) * 100}%`, background: '#FBBF24' }} />
-                  <div style={{ width: `${(d.watch / maxC) * 100}%`, background: 'var(--p-secondary)' }} />
+                  <div style={{ width: `${(d.hi / maxC) * 100}%`, background: '#E5484D' }} />
+                  <div style={{ width: `${(d.mid / maxC) * 100}%`, background: '#F59E0B' }} />
+                  <div style={{ width: `${(d.watch / maxC) * 100}%`, background: '#10B981' }} />
                 </div>
                 <span className="v2-hbar-val">{d.hi + d.mid + d.watch} 人</span>
               </div>
@@ -383,7 +383,7 @@ export function FundingWorkbench({ onBack, toast }) {
           <label>档位</label>
           <select className="v2-select" value={filters.level} onChange={(e) => setFilters({ ...filters, level: e.target.value })}>
             <option value="">全部档位</option>
-            <option value="hi">高关注</option><option value="mid">中关注</option><option value="watch">观察</option>
+            <option value="hi">红灯（高关注）</option><option value="mid">黄灯（中关注）</option><option value="watch">绿灯（观察）</option>
           </select>
           <input className="v2-search" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} placeholder="搜索学号 / 姓名" />
           <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
@@ -428,7 +428,7 @@ export function FundingWorkbench({ onBack, toast }) {
         </div>
         <div className="v2-notice warn" style={{ marginTop: 16 }}>
           <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
-          <span>本页结果为<b>算法生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
+          <span>本页结果为<b>AI数据洞察生成的资助工作线索</b>，不构成困难认定。请结合谈心谈话、家庭情况复核后按学校资助流程处理；学生个人信息仅限授权岗位查看，导出操作将记录审计日志。</span>
         </div>
         <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--p-t4)', marginTop: 12 }}>数据源：一卡通消费（终端含餐厅/食堂）· 宿管学籍映射 · 只读数仓实时查询 · 观察窗 {k && k.range ? k.range : ''}</div>
       </div>
@@ -471,7 +471,7 @@ export function FundingWorkbench({ onBack, toast }) {
                 </div>
               ))}
               <div className="v2-notice warn" style={{ marginTop: 16, fontSize: 11.5 }}>
-                本详情为算法线索，请辅导员/资助岗人工复核后按学校资助流程处理。<b>请勿直接向学生提及「被系统识别」。</b>
+                本详情为AI数据洞察线索，请辅导员/资助岗人工复核后按学校资助流程处理。<b>请勿直接向学生提及「被系统识别」。</b>
               </div>
             </div>
           </div>

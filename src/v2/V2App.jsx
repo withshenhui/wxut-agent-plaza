@@ -77,7 +77,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
         <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-        <div><div className="t1">锡职大 AI中台</div><div className="t2">AGENT PLAZA</div></div>
+        <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
       </a>
       <div className="v2-nav-links">
         {NAVS.map((n) => (
@@ -122,7 +122,7 @@ export function Footer({ onNav, toast }) {
           <div className="v2-foot-brand">
             <div className="row">
               <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-              <div><div className="t1">锡职大 AI中台</div><div className="t2">AGENT PLAZA</div></div>
+              <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
             </div>
             <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
           </div>
