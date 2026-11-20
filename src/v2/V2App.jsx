@@ -4,9 +4,50 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast } from './ui.jsx';
+import { getAgentDetail } from '../api/agent';
+import { useUser } from '../UserContext';
+
+/** 学工号 gzip+base64 编码为 sys.user_id（与 V1 utils/agentLaunch 完全一致） */
+async function encodeUserId(userId) {
+  const encoded = new TextEncoder().encode(userId);
+  const stream = new Blob([encoded]).stream().pipeThrough(new CompressionStream('gzip'));
+  const compressed = await new Response(stream).arrayBuffer();
+  const bytes = new Uint8Array(compressed);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+/** V1 同款智能体唤起：externalUrl 外跳(带登录态)/#/college-query 站内/其余进 V2 对话 */
+async function launchAgentV2(navigate, agentId, user, onChat) {
+  try {
+    const detail = await getAgentDetail(agentId);
+    const url = detail.externalUrl || detail.external_url;
+    if (url) {
+      if (url.startsWith('#/')) {
+        // 站内路由：college-query 走 V2 流式对话，其他站内页跳 V1 对应页
+        const m = url.match(/^#\/college-query\/(\d+)$/);
+        if (m) { onChat(detail); return; }
+        window.location.hash = url.slice(1);
+        return;
+      }
+      const separator = url.includes('?') ? '&' : '?';
+      let finalUrl = url;
+      if (user?.username) {
+        const encoded = await encodeUserId(user.username);
+        finalUrl = `${url}${separator}sys.user_id=${encodeURIComponent(encoded)}`;
+      }
+      window.open(finalUrl, '_blank');
+    } else {
+      onChat(detail);
+    }
+  } catch {
+    onChat(null);
+  }
+}
 
 /* ============ 顶栏 ============ */
-export function TopNav({ page, onNav, user, onLogin }) {
+export function TopNav({ page, onNav, user, onLogin, onLogout }) {
   const NAVS = [
     { key: 'plaza', label: '首页' },
     { key: 'models', label: '模型服务' },
@@ -17,7 +58,7 @@ export function TopNav({ page, onNav, user, onLogin }) {
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
         <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-        <div><div className="t1">锡职大 AI中台 <span style={{ fontSize: 10, color: 'var(--el-primary)', fontWeight: 700 }}>V2</span></div><div className="t2">AGENT PLAZA</div></div>
+        <div><div className="t1">锡职大 AI中台 <span style={{ fontSize: 10, color: 'var(--el-primary)', fontWeight: 700 }}>V2 Beta</span></div><div className="t2">AGENT PLAZA</div></div>
       </a>
       <div className="v2-nav-links">
         {NAVS.map((n) => (
@@ -29,12 +70,15 @@ export function TopNav({ page, onNav, user, onLogin }) {
         ))}
       </div>
       <div className="v2-nav-right">
-        <span className="v2-badge">V2 预览版</span>
+        <span className="v2-badge">V2 Beta</span>
         {user ? (
-          <div className="v2-user" title="用户信息">
-            <div className="ava">{(user.nickname || user.username || '用').slice(0, 1)}</div>
-            <span className="nm">{user.nickname || user.username}</span>
-          </div>
+          <>
+            <div className="v2-user" title="统一身份认证账号">
+              <div className="ava">{(user.nickname || user.username || '用').slice(0, 1)}</div>
+              <span className="nm">{user.nickname || user.username}</span>
+            </div>
+            <button className="v2-btn ghost" onClick={onLogout} title="退出登录">退出</button>
+          </>
         ) : (
           <button className="v2-btn ghost" onClick={onLogin}>登录</button>
         )}
@@ -548,7 +592,7 @@ function SimplePage({ kind }) {
 }
 
 /* ============ 主应用 ============ */
-export default function V2App({ user, onLogin }) {
+export default function V2App() {
   const [page, setPage] = useState('plaza');
   const [agents, setAgents] = useState([]);
   const [cats, setCats] = useState([]);
@@ -557,6 +601,7 @@ export default function V2App({ user, onLogin }) {
   const [loadErr, setLoadErr] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
+  const { user, casLogin, logout } = useUser();
 
   useEffect(() => {
     fetch(`${API_BASE}/agents?size=100`).then((r) => r.json())
@@ -579,18 +624,24 @@ export default function V2App({ user, onLogin }) {
     window.scrollTo(0, 0);
   }, []);
 
+  // V1 同款智能体唤起：externalUrl 外跳(带 sys.user_id)/college-query 进 V2 流式对话/其余进 V2 对话
+  const launch = useCallback((a) => {
+    if (!a) return;
+    launchAgentV2(navigate, a.id, user, enterChat);
+  }, [navigate, user, enterChat]);
+
   if (chatAgent) return (
     <>
-      <TopNav page="plaza" onNav={nav} user={user} onLogin={onLogin} />
+      <TopNav page="plaza" onNav={nav} user={user} onLogin={casLogin} onLogout={logout} />
       <ChatPage agent={chatAgent} onBack={() => nav('plaza')} />
     </>
   );
 
   return (
     <>
-      <TopNav page={page} onNav={nav} user={user} onLogin={onLogin} />
+      <TopNav page={page} onNav={nav} user={user} onLogin={casLogin} onLogout={logout} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={enterChat} onNav={nav} toast={toast} />}
+      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={nav} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'dev' && <Dev toast={toast} />}
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
