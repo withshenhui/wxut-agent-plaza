@@ -421,7 +421,7 @@ function ModelsAdmin({ toast }) {
             ['类型', 'type', '如 文本生成 / 推理 / 嵌入'],
             ['描述', 'description', '对外展示的说明'],
             ['图标 URL', 'iconUrl', '供应商 logo 地址'],
-            ['标签(逗号分隔)', 'tags', '如 限时免费'],
+            ['标签(逗号分隔)', 'tags', '如 云端模型,本地部署,默认'],
           ].map(([lb, k, hint, req]) => (
             <div className="v2-fm-row" key={k}>
               <span className={`v2-fm-label${req ? ' req' : ''}`}>{lb}</span>
