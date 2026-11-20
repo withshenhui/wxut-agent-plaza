@@ -614,10 +614,8 @@ function DevGuide({ onClose, toast }) {
   ];
   return (
     <div className="v2-body" style={{ maxWidth: 1000 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <button className="v2-btn ghost" onClick={onClose}>← 返回平台介绍</button>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--aink)' }}>使用指南</div>
-      </div>
+      <button className="v2-btn ghost" onClick={onClose} style={{ marginBottom: 14 }}>← 返回平台介绍</button>
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--aink)' }}>使用指南</div>
       <p style={{ fontSize: 13, color: 'var(--p-t3)', margin: '4px 0 22px' }}>从申请开通到上架广场的完整流程 · 基于智能体开发平台（aiagent.wxut.edu.cn）实际操作整理</p>
 
       {steps.map((st) => (
