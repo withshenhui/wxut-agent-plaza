@@ -445,11 +445,15 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
               <div className="d-title">江苏省事业单位工作人员年度考核登记表</div>
               <div className="d-sub">（2025年度）</div>
               <div className="d-unit">单　位：无锡职业技术大学</div>
-              <div className="doc-sum-wrap">
-                <div className="doc-sum-title">本 人 总 结</div>
-                <div className="doc-sum" style={{ minHeight: 260 }}>{summary || '（等待 AI 起草…）'}</div>
-                <div className="doc-sign">本人签名：</div>
-              </div>
+              <table className="doc-sum-tbl"><tbody>
+                <tr>
+                  <td className="op-lb sum-lb">本<br />人<br />总<br />结</td>
+                  <td className="sum-bd">
+                    <div className="doc-sum" style={{ minHeight: 260 }}>{summary || '（等待 AI 起草…）'}</div>
+                    <div className="doc-sign">本人签名：</div>
+                  </td>
+                </tr>
+              </tbody></table>
             </div>
             <div className="v2t-doc-note">纸面预览即导出效果 · 意见与签章区保持空白，线下手写签署</div>
           </div>
@@ -511,11 +515,15 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
                     ))}
                   </tbody>
                 </table>
-                <div className="doc-sum-wrap">
-                  <div className="doc-sum-title">本 人 总 结</div>
-                  <div className="doc-sum" style={{ minHeight: 120, whiteSpace: 'pre-wrap' }}>{summary}</div>
-                  <div className="doc-sign">本人签名：</div>
-                </div>
+                <table className="doc-sum-tbl"><tbody>
+                  <tr>
+                    <td className="op-lb sum-lb">本<br />人<br />总<br />结</td>
+                    <td className="sum-bd">
+                      <div className="doc-sum" style={{ minHeight: 120, whiteSpace: 'pre-wrap' }}>{summary}</div>
+                      <div className="doc-sign">本人签名：</div>
+                    </td>
+                  </tr>
+                </tbody></table>
                 <table className="doc-op"><tbody>
                   {['主管领导评鉴意见', '考核委员会（小组）审核意见', '单位负责人意见', '本人意见', '未确定等次或其他情况说明'].map((o) => (
                     <tr key={o}><td className="op-lb">{o}</td><td className="op-bd">（线下签署）</td></tr>
