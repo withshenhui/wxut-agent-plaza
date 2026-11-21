@@ -211,11 +211,17 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
     const es = new EventSource(streamUrl(rid));
     esRef.current = es;
     const cur = { fields: [], summary: '' };
+    let total = 0;
     es.onmessage = (ev) => {
       let d; try { d = JSON.parse(ev.data); } catch { return; }
-      if (d.type === 'start') setLogLines((L) => [...L, { k: 'SYSTEM', v: `流水线就绪 · 共 ${d.total} 项字段`, sys: true }]);
+      if (d.type === 'start') { total = d.total || 0; setLogLines((L) => [...L, { k: 'SYSTEM', v: `流水线就绪 · 共 ${d.total} 项字段`, sys: true }]); }
       if (d.type === 'stage') setStages((s) => ({ ...s, [d.stage]: { state: d.state, text: d.text } }));
-      if (d.type === 'field') { cur.fields[d.index] = d; setFields([...cur.fields]); pushLog(d.label, d.src === 'need' ? (d.val ? '按手动确认填写' : '待手动确认') : d.val ? `已带出：${d.val}` : '待填'); }
+      if (d.type === 'field') {
+        cur.fields[d.index] = d; setFields([...cur.fields]);
+        const pct = (d.idx && d.total) ? `（${Math.round(d.idx / d.total * 100)}%）` : '';
+        pushLog(d.label + (d.idx && d.total ? ` ${d.idx}/${d.total}` : ''),
+          d.src === 'need' ? (d.val ? '按手动确认填写' + pct : '待手动确认') : d.val ? `已带出：${d.val}${pct}` : '待填');
+      }
       if (d.type === 'nstart') pushLog(d.label, 'AI 正在起草…');
       if (d.type === 'delta' && d.index !== undefined) {
         const f = cur.fields[d.index];
