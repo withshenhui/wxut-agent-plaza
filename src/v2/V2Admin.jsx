@@ -34,6 +34,25 @@ const TITLES = {
 
 const ROUTE_KEYS = Object.keys(TITLES);
 
+/* 表格骨架屏（前台 FundingSkeleton 同范式） */
+function TableSkeleton({ rows = 6, kpis = false }) {
+  return (
+    <div className="v2-adm-sk">
+      {kpis && <div className="sk-kpis"><div className="sk-kpi" /><div className="sk-kpi" /><div className="sk-kpi" /><div className="sk-kpi" /></div>}
+      {kpis && <div className="sk-title" />}
+      {Array.from({ length: rows }).map((_, i) => (
+        <div className="sk-row" key={i}>
+          <div className="sk-cir" />
+          <div className="sk-ln" style={{ width: `${18 + (i % 3) * 6}%` }} />
+          <div className="sk-chip" style={{ width: 64, marginLeft: 'auto' }} />
+          <div className="sk-chip" style={{ width: 48 }} />
+          <div className="sk-ln" style={{ width: 56 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function V2Admin({ user, onLogout }) {
   const [page, setPage] = useState(() => {
     // 初始 page 由地址栏决定：#/admin/{key}
@@ -110,9 +129,12 @@ export default function V2Admin({ user, onLogout }) {
 /* ================= 仪表盘 ================= */
 function Dashboard({ go }) {
   const [st, setSt] = useState(null);
-  useEffect(() => {
+
+  const [loadedAt, setLoadedAt] = useState(null);
+  const refresh = () => {
+    setSt(null);
     Promise.all([
-      fetch(`${API_BASE}/agents?size=100`).then((r) => r.json()),
+      fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json()),
       fetch(`${API_BASE}/categories`).then((r) => r.json()),
       fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
       fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
@@ -122,30 +144,39 @@ function Dashboard({ go }) {
         agents: a.data?.total ?? agents.length,
         cats: (c.data || []).length,
         models: (g.data?.records || []).length + (v.data?.records || []).length,
-        visits: agents.reduce((s, x) => s + (x.visitCount || 0), 0),
+        visits: agents.reduce((s2, x) => s2 + (x.visitCount || 0), 0),
         top: [...agents].sort((x, y) => (y.visitCount || 0) - (x.visitCount || 0)).slice(0, 5),
         byCat: (c.data || []).map((cc) => ({ label: cc.label, n: agents.filter((x) => x.categoryName === cc.label).length })),
+        building: agents.filter((x) => x.isBuilding === 1).length,
       });
+      setLoadedAt(new Date());
     }).catch(() => setSt({ err: true }));
-  }, []);
-  if (!st) return <div className="v2-loading">数据加载中…</div>;
-  if (st.err) return <div className="v2-empty">数据加载失败，请刷新重试</div>;
+  };
+  useEffect(() => { refresh(); }, []);
+  if (!st) return (
+    <>
+      <div className="v2-page-head"><div><div className="v2-ph-title">仪表盘</div><div className="v2-ph-sub">平台核心数据概览 · 实时统计</div></div></div>
+      <TableSkeleton kpis />
+    </>
+  );
+  if (st.err) return <div className="v2-empty">数据加载失败 · <button className="v2-link" onClick={refresh}>重试</button></div>;
   const kpis = [
-    { lb: '智能体', vl: st.agents, cmp: `累计访问 ${st.visits.toLocaleString()}`, bar: 'var(--el-primary)' },
-    { lb: '分类', vl: st.cats, cmp: '覆盖广场全部标签', bar: 'var(--p-secondary)' },
-    { lb: '模型', vl: st.models, cmp: '本地部署 + 外部合作', bar: '#8B5CF6' },
-    { lb: '学院锡锡导员', vl: st.byCat.find((x) => x.label === '锡锡导员')?.n ?? 0, cmp: '实时数据查询', bar: 'var(--p-success)' },
+    { lb: '智能体', vl: st.agents, cmp: `累计访问 ${st.visits.toLocaleString()} · 建设中 ${st.building ?? 0}`, bar: 'var(--el-primary)', go: 'agents' },
+    { lb: '分类', vl: st.cats, cmp: '覆盖广场全部标签', bar: 'var(--p-secondary)', go: 'categories' },
+    { lb: '模型', vl: st.models, cmp: '本地部署 + 外部合作', bar: '#8B5CF6', go: 'models' },
+    { lb: '学院锡锡导员', vl: st.byCat.find((x) => x.label === '锡锡导员')?.n ?? 0, cmp: '实时数据查询', bar: 'var(--p-success)', go: 'agents' },
   ];
   return (
     <>
       <div className="v2-page-head">
-        <div><div className="v2-ph-title">仪表盘</div><div className="v2-ph-sub">平台核心数据概览 · 实时统计</div></div>
+        <div><div className="v2-ph-title">仪表盘</div><div className="v2-ph-sub">平台核心数据概览 · 实时统计{loadedAt ? ` · 更新于 ${loadedAt.toLocaleTimeString('zh-CN')}` : ''}</div></div>
+        <button className="v2-btn ghost" onClick={refresh}><Icon name="back" size={14} style={{ transform: 'rotate(180deg)' }} /> 刷新数据</button>
       </div>
       <div className="v2-kpi-row">
         {kpis.map((k) => (
-          <div key={k.lb} className="v2-kpi">
+          <div key={k.lb} className="v2-kpi" style={{ cursor: k.go ? 'pointer' : 'default', transition: 'box-shadow .15s' }} onClick={() => k.go && go(k.go)} onMouseEnter={(e) => k.go && (e.currentTarget.style.boxShadow = '0 4px 16px #1a31521a')} onMouseLeave={(e) => k.go && (e.currentTarget.style.boxShadow = 'none')}>
             <span className="bar" style={{ background: k.bar }} />
-            <div className="lb">{k.lb}</div><div className="vl">{k.vl.toLocaleString()}</div><div className="cmp">{k.cmp}</div>
+            <div className="lb">{k.lb}{k.go && <span style={{ fontSize: 10, color: 'var(--el-primary)', marginLeft: 6 }}>管理 →</span>}</div><div className="vl">{k.vl.toLocaleString()}</div><div className="cmp">{k.cmp}</div>
           </div>
         ))}
       </div>
@@ -192,7 +223,6 @@ function AgentsAdmin({ toast }) {
     catApi.listCategories().then(setCats).catch(() => {});
   };
   useEffect(() => { load(); }, []);
-  const rows = (list || []).filter((a) => !q || (a.name + a.description + (a.tags || []).join('')).includes(q));
   const save = async (data) => {
     try {
       const payload = { ...data, tags: typeof data.tags === 'string' ? data.tags.split(/[,，]/).map((s) => s.trim()).filter(Boolean) : data.tags };
@@ -206,15 +236,47 @@ function AgentsAdmin({ toast }) {
     if (!window.confirm(`确认删除智能体「${a.name}」？删除后卡片从广场即时消失，不可恢复。`)) return;
     try { await agentApi.deleteAgent(a.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
-  if (!list) return <div className="v2-loading">加载中…</div>;
+  const [catF, setCatF] = useState('');
+  const [stF, setStF] = useState('');
+  if (!list) return (
+    <>
+      <div className="v2-page-head">
+        <div><div className="v2-ph-title">智能体管理</div><div className="v2-ph-sub">维护广场上的全部智能体</div></div>
+      </div>
+      <TableSkeleton rows={7} />
+    </>
+  );
+  const rows = (list || []).filter((a) => {
+    if (catF && a.categoryName !== catF) return false;
+    if (stF === 'building' && a.isBuilding !== 1) return false;
+    if (stF === 'off' && a.status === 1) return false;
+    if (stF === 'on' && a.status !== 1) return false;
+    if (stF === 'rec' && a.isRecommended !== 1) return false;
+    if (q && !(a.name + a.description + (a.tags || []).join('')).includes(q)) return false;
+    return true;
+  });
+  const building = list.filter((a) => a.isBuilding === 1).length;
   return (
     <>
       <div className="v2-page-head">
-        <div><div className="v2-ph-title">智能体管理</div><div className="v2-ph-sub">维护广场上的全部智能体 · 当前共 {list.length} 个</div></div>
+        <div><div className="v2-ph-title">智能体管理</div><div className="v2-ph-sub">维护广场上的全部智能体 · 共 {list.length} 个（建设中 {building} · 已上架 {list.length - building}）</div></div>
         <button className="v2-btn" onClick={() => setEdit({ isRecommended: 0, status: 1, sortOrder: 100 })}>＋ 新增智能体</button>
       </div>
       <div className="v2-filter-bar">
-        <input className="v2-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索名称 / 描述 / 标签" />
+        <input className="v2-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索名称 / 描述 / 标签" style={{ width: 230 }} />
+        <select className="v2-select" value={catF} onChange={(e) => setCatF(e.target.value)}>
+          <option value="">全部分类</option>
+          {cats.map((c) => <option key={c.id} value={c.label}>{c.label}</option>)}
+        </select>
+        <select className="v2-select" value={stF} onChange={(e) => setStF(e.target.value)}>
+          <option value="">全部状态</option>
+          <option value="on">已上架</option>
+          <option value="building">建设中</option>
+          <option value="off">已停用</option>
+          <option value="rec">推荐位</option>
+        </select>
+        {(catF || stF || q) && <button className="v2-link" onClick={() => { setCatF(''); setStF(''); setQ(''); }}>清除筛选</button>}
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>本页 {rows.length} / {list.length} 个</span>
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
@@ -225,7 +287,7 @@ function AgentsAdmin({ toast }) {
                 <td><span className="v2-ag-ic"><AgentAvatar agent={a} size={30} /></span></td>
                 <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{a.name}{a.isBuilding === 1 && <span className="v2-tag mid" style={{ marginLeft: 6 }}>建设中</span>}</td>
                 <td><span className="v2-tag blue">{a.categoryName}</span></td>
-                <td style={{ whiteSpace: 'normal', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.description}</td>
+                <td style={{ whiteSpace: 'normal', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.description || ''}>{a.description}</td>
                 <td className="num" style={{ textAlign: 'right' }}>{(a.visitCount || 0).toLocaleString()}</td>
                 <td><Switch on={a.isRecommended === 1} onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isRecommended: v ? 1 : 0 }); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
                 <td><Switch on={a.isBuilding === 1} title="建设中：广场不展示" onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isBuilding: v ? 1 : 0 }); toast(v ? `「${a.name}」已标记为建设中，广场不再展示` : `「${a.name}」已上架广场`); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
@@ -236,9 +298,17 @@ function AgentsAdmin({ toast }) {
                 </td>
               </tr>
             ))}
+            {!rows.length && (
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--p-t4)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <Icon name="spark" size={36} style={{ color: '#C9D6E8' }} />
+                  <div style={{ fontSize: 13 }}>没有匹配的智能体{(q || catF || stF) ? '，试试调整筛选条件' : ''}</div>
+                </div>
+              </td></tr>
+            )}
           </tbody>
         </table>
-        <div className="v2-tbl-foot"><span>共 {rows.length} 个智能体</span></div>
+        <div className="v2-tbl-foot"><span>共 {rows.length} 个智能体{list.length !== rows.length ? `（筛选自 ${list.length}）` : ''}</span></div>
       </div>
       <div className="v2-notice warn" style={{ marginTop: 14 }}>
         <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
@@ -327,7 +397,12 @@ function CatsAdmin({ toast }) {
     if (!window.confirm(`确认删除分类「${c.label}」？`)) return;
     try { await catApi.deleteCategory(c.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
-  if (!list) return <div className="v2-loading">加载中…</div>;
+  if (!list) return (
+    <>
+      <div className="v2-page-head"><div><div className="v2-ph-title">分类管理</div><div className="v2-ph-sub">广场智能体的分类体系</div></div></div>
+      <TableSkeleton rows={5} />
+    </>
+  );
   return (
     <>
       <div className="v2-page-head">
@@ -405,7 +480,12 @@ function ModelsAdmin({ toast }) {
     if (!window.confirm(`确认删除模型「${m.name}」？`)) return;
     try { await modelApi.deleteModel(m.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
-  if (!list) return <div className="v2-loading">加载中…</div>;
+  if (!list) return (
+    <>
+      <div className="v2-page-head"><div><div className="v2-ph-title">模型管理</div><div className="v2-ph-sub">维护「模型服务」页向师生展示的模型条目</div></div></div>
+      <TableSkeleton rows={6} />
+    </>
+  );
   return (
     <>
       <div className="v2-page-head">
@@ -534,18 +614,42 @@ function UsersAdmin({ toast }) {
       load();
     } catch (e) { toast('失败：' + e.message); }
   };
-  if (!list) return <div className="v2-loading">加载中…</div>;
+  const [q, setQ] = useState('');
+  const [roleF, setRoleF] = useState('');
+  if (!list) return (
+    <>
+      <div className="v2-page-head">
+        <div><div className="v2-ph-title">用户管理</div><div className="v2-ph-sub">账号 · 四层角色 · 学院归属与细粒度权限</div></div>
+      </div>
+      <TableSkeleton rows={8} />
+    </>
+  );
   const collegeName = (id) => (colleges.find((c) => c.id === id) || {}).name || '—';
+  const allRecords = list.records || [];
+  const rows = allRecords.filter((u) => {
+    if (roleF && u.role !== roleF) return false;
+    if (q && !((u.username || '') + (u.nickname || '')).includes(q.trim())) return false;
+    return true;
+  });
   return (
     <>
       <div className="v2-page-head">
-        <div><div className="v2-ph-title">用户管理</div><div className="v2-ph-sub">账号 · 四层角色 · 学院归属与细粒度权限 · 当前共 {list.total ?? list.records.length} 个</div></div>
+        <div><div className="v2-ph-title">用户管理</div><div className="v2-ph-sub">账号 · 四层角色 · 学院归属与细粒度权限 · 当前共 {list.total ?? allRecords.length} 个</div></div>
+      </div>
+      <div className="v2-filter-bar">
+        <input className="v2-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索工号 / 姓名" style={{ width: 220 }} />
+        <select className="v2-select" value={roleF} onChange={(e) => setRoleF(e.target.value)}>
+          <option value="">全部角色</option>
+          {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        {roleF && <button className="v2-link" onClick={() => setRoleF('')}>清除筛选</button>}
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>本页 {rows.length} / {allRecords.length} 个账号</span>
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
           <thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>角色</th><th>学院</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
-            {list.records.map((u) => (
+            {rows.map((u) => (
               <tr key={u.id}>
                 <td className="num">{u.id}</td>
                 <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12 }}>{u.username}</td>
@@ -560,6 +664,14 @@ function UsersAdmin({ toast }) {
                 </td>
               </tr>
             ))}
+            {!rows.length && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--p-t4)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <Icon name="users" size={36} style={{ color: '#C9D6E8' }} />
+                  <div style={{ fontSize: 13 }}>没有匹配的账号{q || roleF ? '，试试调整搜索或筛选条件' : ''}</div>
+                </div>
+              </td></tr>
+            )}
           </tbody>
         </table>
         <div className="v2-tbl-foot">
@@ -871,7 +983,12 @@ function LogsAdmin() {
   useEffect(() => {
     logApi.listLogs({ page, size: 20 }).then((d) => setList(d)).catch(() => setList({ records: [], total: 0 }));
   }, [page]);
-  if (!list) return <div className="v2-loading">加载中…</div>;
+  if (!list) return (
+    <>
+      <div className="v2-page-head"><div><div className="v2-ph-title">操作日志</div><div className="v2-ph-sub">管理端关键操作记录 · 按时间倒序 · 只读</div></div></div>
+      <TableSkeleton rows={8} />
+    </>
+  );
   return (
     <>
       <div className="v2-page-head">

@@ -780,3 +780,15 @@ select.v2t-inp{cursor:pointer}
   border: 1px solid #DCDFE6; border-radius: 8px; background: #F5F7FA;
   font-size: 13px; color: var(--p-t2, #606266); white-space: nowrap;
 }
+
+/* ================= 后台骨架屏（对齐前台 FundingSkeleton 范式） ================= */
+.v2-adm-sk{padding:26px 4px}
+.v2-adm-sk .sk-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid #F3F6FA}
+.v2-adm-sk .sk-row:first-child{border-top:1px solid #F3F6FA}
+.v2-adm-sk .sk-cir{width:30px;height:30px;border-radius:50%;background:linear-gradient(100deg,#EEF2F8 40%,#F8FAFD 50%,#EEF2F8 60%);background-size:200% 100%;animation:sk-sweep 1.4s ease infinite}
+.v2-adm-sk .sk-ln{height:13px;border-radius:6px;background:linear-gradient(100deg,#EEF2F8 40%,#F8FAFD 50%,#EEF2F8 60%);background-size:200% 100%;animation:sk-sweep 1.4s ease infinite}
+.v2-adm-sk .sk-chip{height:20px;border-radius:10px;background:linear-gradient(100deg,#EEF2F8 40%,#F8FAFD 50%,#EEF2F8 60%);background-size:200% 100%;animation:sk-sweep 1.4s ease infinite}
+.v2-adm-sk .sk-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.v2-adm-sk .sk-kpi{height:92px;border-radius:14px;border:1px solid var(--p-line);background:linear-gradient(100deg,#F4F7FB 40%,#FAFCFE 50%,#F4F7FB 60%);background-size:200% 100%;animation:sk-sweep 1.4s ease infinite}
+@keyframes sk-sweep{0%{background-position:120% 0}100%{background-position:-80% 0}}
+.v2-adm-sk .sk-title{height:18px;width:180px;border-radius:9px;margin:0 0 12px;background:linear-gradient(100deg,#EEF2F8 40%,#F8FAFD 50%,#EEF2F8 60%);background-size:200% 100%;animation:sk-sweep 1.4s ease infinite}
