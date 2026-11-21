@@ -931,10 +931,19 @@ export default function V2App() {
     if (!a) return;
     // 游客使用智能体：引导登录
     if (!requireLogin()) { setLoginPrompt('使用智能体对话需要登录'); return; }
+    // RBAC 前端预检（后端为最终防线）：学院锡锡仅本院可用，全校锡锡需 chat.all
+    if (a.collegeId != null && user && !hasPerm('chat.all')) {
+      if (a.collegeId === 0) {
+        setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员'); return;
+      }
+      if (a.collegeId !== user.collegeId) {
+        setLoginPrompt(`该智能体面向${a.collegeName || '其他学院'}老师开放，如需使用请联系管理员`); return;
+      }
+    }
     launchAgentV2(navigate, a.id, user, (detail) => {
       navigate(`/chat/${a.id}`);
     });
-  }, [navigate, user, requireLogin]);
+  }, [navigate, user, requireLogin, hasPerm]);
 
   // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
   const guardNav = useCallback((p, label) => {
@@ -947,12 +956,6 @@ export default function V2App() {
     }
     nav(p);
   }, [nav, requireLogin, user, hasPerm, hasAnyPerm]);
-
-  // 广场可见性（RBAC）：游客全显（点进去由后端拦）；登录用户非 chat.all 隐藏他院锡锡与全校锡锡
-  const visibleAgents = useMemo(() => {
-    if (!user || hasPerm('chat.all')) return agents;
-    return agents.filter((a) => a.collegeId == null || a.collegeId === user.collegeId);
-  }, [agents, user, hasPerm]);
 
   // 打开智能填报向导（可带记录 id 继续填报）
   const openWizard = useCallback((recId) => {
@@ -973,7 +976,7 @@ export default function V2App() {
     <>
       <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={visibleAgents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员')} />}
+      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员')} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
         <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
