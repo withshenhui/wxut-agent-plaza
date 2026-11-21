@@ -31,7 +31,15 @@ export default defineConfig({
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js'
+        entryFileNames: 'assets/[name]-[hash].js',
+        // react 系固定单例 chunk：此前 V2Teacher 双入口共享把 react-dom 拆进 form chunk，
+        // 与 v2 主 bundle 各持一份运行时，快速切页时跨实例提交崩溃（TypeError: n is not a function 白屏）
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
+            if (id.includes('axios')) return 'vendor-net';
+          }
+        }
       }
     }
   }

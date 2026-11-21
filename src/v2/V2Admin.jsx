@@ -170,7 +170,7 @@ function AgentsAdmin({ toast }) {
     agentApi.searchAgents({ size: 100, includeBuilding: 1 }).then((d) => setList(d.records || [])).catch((e) => { setList([]); toast('加载失败：' + e.message); });
     catApi.listCategories().then(setCats).catch(() => {});
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
   const rows = (list || []).filter((a) => !q || (a.name + a.description + (a.tags || []).join('')).includes(q));
   const save = async (data) => {
     try {
@@ -294,7 +294,7 @@ function CatsAdmin({ toast }) {
   const [list, setList] = useState(null);
   const [edit, setEdit] = useState(null);
   const load = () => catApi.listCategories().then((d) => setList(Array.isArray(d) ? d : d?.records || [])).catch((e) => { setList([]); toast('加载失败：' + e.message); });
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
   const save = async (data) => {
     try {
       if (data.id) await catApi.updateCategory(data.id, data);
@@ -372,7 +372,7 @@ function ModelsAdmin({ toast }) {
     ]).then(([g, v]) => setList([...(g.data?.records || []), ...(v.data?.records || [])]))
       .catch(() => { setList([]); toast('加载失败'); });
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
   const save = async (data) => {
     try {
       if (data.id) await modelApi.updateModel(data.id, data);
@@ -780,7 +780,7 @@ function FilesAdmin({ toast }) {
     import('../api/request').then(({ default: r }) => r.get('/files', { params: { page: 1, size: 100 } }))
       .then((d) => setList(d)).catch(() => { setList({ records: [] }); toast('加载失败'); });
   };
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
   const del = async (f) => {
     if (!window.confirm(`确认删除「${f.originalName || f.fileName || f.id}」？`)) return;
     try { await fileApi.deleteFile(f.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }

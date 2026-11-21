@@ -384,6 +384,11 @@ input,select,textarea{font-family:inherit}
 .v2-fm-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:13px}
 .v2-fm-label{width:88px;text-align:right;font-size:13px;color:var(--p-t2);padding-top:8px;flex-shrink:0}
 .v2-fm-label.req::after{content:" *";color:var(--abad);font-weight:700}
+.v2-fm-i{flex:1;min-width:0;height:38px;border:1.5px solid var(--p-line2);border-radius:10px;padding:0 13px;
+  font-size:13.5px;outline:none;background:#FAFBFD;color:var(--p-text);transition:border-color .15s,background .15s}
+.v2-fm-i:focus{border-color:var(--el-primary);background:var(--p-surface)}
+textarea.v2-fm-i{height:auto;min-height:76px;padding:9px 13px;line-height:1.6;resize:vertical;font-family:inherit}
+.v2-fm-i::placeholder{color:var(--p-t4)}
 .v2-fm-body{flex:1;min-width:0}
 .v2-fm-hint{font-size:11px;color:var(--p-t4);margin-top:4px}
 .v2-textarea{width:100%;height:70px;border:1px solid var(--p-line2);border-radius:9px;padding:8px 12px;font-size:13px;outline:none;resize:vertical;line-height:1.5;background:var(--p-surface);color:var(--p-text)}
