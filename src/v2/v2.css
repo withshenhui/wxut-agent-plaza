@@ -254,18 +254,49 @@ input,select,textarea{font-family:inherit}
 @media (max-width:1020px){.v2-foot-grid{grid-template-columns:1fr 1fr}}
 
 /* ============ 登录页 ============ */
-.v2-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f6f9ff,#fff 55%,#f0f5ff);padding:30px}
-.v2-login-card{width:420px;max-width:94vw;background:var(--p-surface);border:1px solid var(--p-line);border-radius:18px;box-shadow:0 24px 70px #1a315224;padding:36px 34px}
-.v2-login-card .brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px}
-.v2-login-card .brand img{width:44px;height:44px;object-fit:contain}
-.v2-login-card .brand .t{font-size:19px;font-weight:700;color:var(--aink)}
-.v2-login-card .sub{text-align:center;font-size:12.5px;color:var(--p-t4);margin-bottom:26px}
-.v2-login-card h2{text-align:center;font-size:17px;font-weight:600;color:var(--aink);margin-bottom:22px}
-.v2-fm-label{font-size:12.5px;color:var(--p-t2);font-weight:500;margin-bottom:6px;display:block}
-.v2-fm-i{width:100%;height:42px;border:1px solid var(--p-line2);border-radius:10px;padding:0 14px;font-size:14px;outline:none;background:var(--p-surface);color:var(--p-text);transition:border-color .15s}
-.v2-fm-i:focus{border-color:var(--el-primary-l3)}
-.v2-fm-row{margin-bottom:16px}
-.v2-login-err{background:#FEECEB;border:1px solid #F8C9C7;color:#8A2E2E;font-size:12.5px;border-radius:9px;padding:9px 13px;margin-bottom:14px}
+/* ============ 管理后台登录（双栏品牌式） ============ */
+.v2-login-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;min-width:900px}
+.v2-login-side{position:relative;overflow:hidden;background:linear-gradient(160deg,#0E2A52 0%,#16407B 55%,#1B4E96 100%);
+  display:flex;flex-direction:column;justify-content:space-between;padding:52px 58px;color:#fff}
+.v2-ls-glow{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none}
+.v2-ls-glow.g1{width:420px;height:420px;right:-140px;top:-140px;background:rgba(64,140,255,.35)}
+.v2-ls-glow.g2{width:300px;height:300px;left:-100px;bottom:-90px;background:rgba(96,181,255,.22)}
+.v2-ls-top{display:flex;align-items:center;gap:13px;position:relative;z-index:1}
+.v2-ls-top img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25))}
+.v2-ls-top .t1{font-size:19px;font-weight:700;letter-spacing:.5px}
+.v2-ls-top .t2{font-size:10.5px;color:rgba(255,255,255,.55);letter-spacing:2.2px;margin-top:2px}
+.v2-ls-hero{position:relative;z-index:1;padding-bottom:30px}
+.v2-ls-hero h1{font-size:38px;font-weight:700;letter-spacing:1px;margin:0 0 12px}
+.v2-ls-hero p{font-size:14.5px;color:rgba(255,255,255,.72);margin:0 0 40px;line-height:1.8;max-width:400px}
+.v2-ls-features{display:flex;flex-direction:column;gap:14px;max-width:380px}
+.v2-ls-features .ft{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:13px 16px;backdrop-filter:blur(2px)}
+.v2-ls-features .ft .ic{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#9CC4FF}
+.v2-ls-features .ft .t{font-size:14px;font-weight:600}
+.v2-ls-features .ft .d{font-size:11.5px;color:rgba(255,255,255,.55);margin-top:2px}
+.v2-ls-foot{position:relative;z-index:1;font-size:11px;color:rgba(255,255,255,.4)}
+.v2-login-main{display:flex;align-items:center;justify-content:center;background:#F6F8FC;padding:40px}
+.v2-login-card{width:400px;max-width:92%;background:var(--p-surface);border:1px solid var(--p-line);
+  border-radius:20px;box-shadow:0 24px 70px #1a31521f;padding:40px 38px 30px}
+.v2-lc-head{text-align:center;margin-bottom:26px}
+.v2-lc-head .mascot{width:74px;height:74px;object-fit:contain;margin-bottom:12px;animation:xixi-bob 2.8s ease-in-out infinite}
+.v2-lc-head h2{font-size:21px;font-weight:700;color:var(--aink);margin:0 0 6px}
+.v2-lc-head p{font-size:12.5px;color:var(--p-t3);margin:0}
+.v2-lc-field{margin-bottom:16px}
+.v2-lc-field label{display:block;font-size:12.5px;color:var(--p-t2);font-weight:500;margin-bottom:7px}
+.v2-lc-i{width:100%;height:46px;border:1.5px solid var(--p-line2);border-radius:11px;padding:0 15px;
+  font-size:14px;outline:none;background:#FAFBFD;color:var(--p-text);transition:border-color .15s,background .15s}
+.v2-lc-i:focus{border-color:var(--el-primary);background:var(--p-surface)}
+.v2-lc-submit{width:100%;height:47px;margin-top:8px;font-size:15px;letter-spacing:6px}
+.v2-lc-divider{display:flex;align-items:center;gap:12px;margin:22px 0 14px;color:var(--p-t4);font-size:11px}
+.v2-lc-divider:before,.v2-lc-divider:after{content:'';flex:1;height:1px;background:var(--p-line2)}
+.v2-lc-cas{width:100%;height:44px}
+.v2-lc-tip{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--p-line);
+  font-size:11px;color:var(--p-t4);line-height:1.7}
+.v2-login-err{display:flex;align-items:center;gap:7px;background:#FEECEB;border:1px solid #F8C9C7;color:#8A2E2E;
+  font-size:12.5px;border-radius:9px;padding:9px 13px;margin-bottom:14px}
+@media (max-width:900px){.v2-login-wrap{grid-template-columns:1fr;min-width:0}.v2-login-side{display:none}}
 
 /* ============ 管理后台 ============ */
 .v2-admin-app{display:flex;min-height:100vh;min-width:1180px}

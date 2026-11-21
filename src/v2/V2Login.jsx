@@ -5,10 +5,17 @@ import { Icon } from './ui.jsx';
 const CAS_ENABLED = import.meta.env.VITE_CAS_ENABLED === 'true';
 const apiBase = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 
+const FEATURES = [
+  ['dashboard', '智能体运营', '上架审核 · 推荐位 · 建设中管理'],
+  ['chart', '数据洞察', '四工作台 · 学院数据范围管控'],
+  ['users', '权限体系', '四层角色 · 学院归属 · 细粒度授权'],
+];
+
 export default function V2Login({ onLoginOk }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
@@ -26,42 +33,65 @@ export default function V2Login({ onLoginOk }) {
 
   return (
     <div className="v2-login-wrap">
-      <div className="v2-login-card">
-        <div className="brand">
+      {/* 品牌叙事区 */}
+      <aside className="v2-login-side">
+        <div className="v2-ls-glow g1" /><div className="v2-ls-glow g2" />
+        <div className="v2-ls-top">
           <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
-          <div className="t">锡职大AI中台</div>
+          <div>
+            <div className="t1">锡职大AI中台</div>
+            <div className="t2">WXUT AI CENTER</div>
+          </div>
         </div>
-        <div className="sub">WUXI UNIVERSITY OF TECHNOLOGY · V2</div>
-        <h2>登录管理后台</h2>
-        {err && <div className="v2-login-err">{err}</div>}
-        <form onSubmit={submit}>
-          <div className="v2-fm-row">
-            <label className="v2-fm-label">用户名</label>
-            <input className="v2-fm-i" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="管理员账号" autoComplete="username" />
+        <div className="v2-ls-hero">
+          <h1>管理控制台</h1>
+          <p>智能体广场 · 数据洞察 · 权限体系的统一运营中枢</p>
+          <div className="v2-ls-features">
+            {FEATURES.map(([ic, t, d]) => (
+              <div key={t} className="ft">
+                <span className="ic"><Icon name={ic} size={17} /></span>
+                <div><div className="t">{t}</div><div className="d">{d}</div></div>
+              </div>
+            ))}
           </div>
-          <div className="v2-fm-row">
-            <label className="v2-fm-label">密码</label>
-            <input className="v2-fm-i" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="密码" autoComplete="current-password" />
+        </div>
+        <div className="v2-ls-foot">© 2026 无锡职业技术大学 · 信息化与数据服务中心</div>
+      </aside>
+
+      {/* 登录表单区 */}
+      <main className="v2-login-main">
+        <div className="v2-login-card">
+          <div className="v2-lc-head">
+            <img src="./v2-xixi.png" alt="锡锡" className="mascot" />
+            <h2>欢迎回来</h2>
+            <p>登录管理后台，继续运营你的智能体生态</p>
           </div>
-          <button className="v2-btn lg" style={{ width: '100%', marginTop: 6 }} disabled={loading} type="submit">
-            {loading ? '登录中…' : '登录'}
-          </button>
-        </form>
-        {CAS_ENABLED && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px', color: 'var(--p-t4)', fontSize: 11 }}>
-              <span style={{ flex: 1, height: 1, background: 'var(--p-line2)' }} />或<span style={{ flex: 1, height: 1, background: 'var(--p-line2)' }} />
+          {err && <div className="v2-login-err"><Icon name="warn" size={14} /> {err}</div>}
+          <form onSubmit={submit}>
+            <div className="v2-lc-field">
+              <label>管理员账号</label>
+              <input className="v2-lc-i" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="工号 / 管理员用户名" autoComplete="username" />
             </div>
-            <button className="v2-btn ghost" style={{ width: '100%', height: 42 }}
-              onClick={() => { window.location.href = `${apiBase}/auth/cas-login`; }}>
-              <Icon name="users" size={15} /> 统一身份认证登录
+            <div className="v2-lc-field">
+              <label>密码</label>
+              <input className="v2-lc-i" type={showPwd ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" autoComplete="current-password" />
+            </div>
+            <button className="v2-btn lg v2-lc-submit" disabled={loading} type="submit">
+              {loading ? '登录中…' : '登 录'}
             </button>
-          </>
-        )}
-        <div style={{ textAlign: 'center', marginTop: 18, fontSize: 11.5, color: 'var(--p-t4)' }}>
-          © 2026 无锡职业技术大学 · 信息化与数据服务中心
+          </form>
+          {CAS_ENABLED && (
+            <>
+              <div className="v2-lc-divider"><span>或</span></div>
+              <button className="v2-btn ghost v2-lc-cas"
+                onClick={() => { window.location.href = `${apiBase}/auth/cas-login`; }}>
+                <Icon name="users" size={15} /> 统一身份认证登录
+              </button>
+            </>
+          )}
+          <div className="v2-lc-tip">仅平台管理员可登录 · 忘记密码请联系信息化与数据服务中心</div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
