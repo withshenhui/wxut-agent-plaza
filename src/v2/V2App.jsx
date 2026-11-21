@@ -979,7 +979,9 @@ export default function V2App() {
     <>
       <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />}
+      {page === 'plaza' && (agents.length === 0 && !loadErr
+        ? <div className="v2-body" style={{ paddingTop: 120 }}><XixiLoading text="锡锡正在为您准备广场…" /></div>
+        : <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />)}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
         <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
