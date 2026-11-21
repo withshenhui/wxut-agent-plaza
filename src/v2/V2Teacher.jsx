@@ -22,11 +22,11 @@ function AiBanner({ badge, text }) {
     return () => clearInterval(t);
   }, [text]);
   return (
-    <div className="v2t-banner">
-      <img className="v2t-banner-xixi" src="./v2-xixi.png" alt="锡锡" />
-      <div>
-        <div className="v2t-banner-t"><span className="v2t-banner-badge">{badge}</span>锡锡已就绪</div>
-        <div className="v2t-banner-txt">{typed}<span className="v2t-cur">|</span></div>
+    <div className="v2-ai-banner">
+      <div className="xab-avatar"><img src="./v2-xixi.png" alt="锡锡" /></div>
+      <div className="xab-body">
+        <span className="xab-label"><Icon name="spark" size={11} /> {badge}</span>
+        <div className="xab-text">{typed}<span className="caret" /></div>
       </div>
     </div>
   );
