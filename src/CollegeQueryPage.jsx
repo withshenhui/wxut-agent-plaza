@@ -274,11 +274,23 @@ function CollegeQueryPage() {
 
     fetch(`${GATEWAY_BASE}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('user_token') ? { Authorization: 'Bearer ' + localStorage.getItem('user_token') } : {}) },
       body: JSON.stringify({ model, messages: [{ role: 'user', content }], stream: true }),
     })
       .then(async (resp) => {
-        if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+        if (!resp.ok || !resp.body) {
+          if (resp.status === 401) {
+            failAgent('⚠ 请先使用统一身份认证登录后再使用学院数据查询');
+            return;
+          }
+          if (resp.status === 403) {
+            let reason = '⚠ 当前账号无该学院的数据查询权限';
+            try { const j = await resp.json(); if (j?.error?.message) reason = '⚠ ' + j.error.message; } catch {}
+            failAgent(reason);
+            return;
+          }
+          throw new Error(`HTTP ${resp.status}`);
+        }
         const reader = resp.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buf = '';
