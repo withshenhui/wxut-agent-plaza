@@ -129,8 +129,6 @@ function OverviewTab() {
   }
 
   const maxTrend = Math.max(...OV.trend.map((x) => x[1]));
-  const maxScene = Math.max(...OV.scenes.map((x) => x[1]));
-  const maxAct = Math.max(...OV.collegeActivity.map((x) => x[1]));
   const maxTop = Math.max(1, ...st.top.map((a) => a.visitCount || 0));
   const maxCat = Math.max(1, ...st.cats.map(([, c]) => c.n));
   const maxProv = Math.max(1, ...st.provs.map(([, v]) => v));
@@ -174,132 +172,109 @@ function OverviewTab() {
           </div>
         </div>
 
-        {/* 智能体生态 */}
-        <div className="v2-card" style={{ marginTop: 14 }}>
-          <div className="ct">智能体广场生态</div>
-          <div className="cs">平台实时数据聚合 · 智能体上线结构、分类分布与访问热度</div>
-          <div className="v2-ov-stats">
-            {[
-              ['智能体总数', fmt(st.list.length)], ['已上线', fmt(st.online.length)], ['建设中', fmt(st.building.length)],
-              ['覆盖分类', fmt(st.cats.length)], ['推荐位', fmt(st.rec)], ['累计访问', fmt(st.visits)],
-            ].map(([n, l]) => (
-              <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
-            ))}
+        {/* 行3：智能体生态（TOP10 + 学院活跃面积图 | 分类 + 知识库制度问答） */}
+        <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 14, marginTop: 14 }}>
+          <div className="v2-card">
+            <div className="ct">智能体广场生态 <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--p-t4)' }}>· 热度 TOP 10 与学院活跃度</span></div>
+            <div className="v2-ov-stats">
+              {[
+                ['智能体总数', fmt(st.list.length)], ['已上线', fmt(st.online.length)], ['建设中', fmt(st.building.length)],
+                ['推荐位', fmt(st.rec)], ['累计访问', fmt(st.visits)],
+              ].map(([n, l]) => (
+                <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 }}>
+              <div>
+                <div style={subT}>访问热度 TOP 10</div>
+                {st.top.map((a) => (
+                  <div key={a.id} className="v2-hbar-row">
+                    <span className="v2-hbar-name" style={{ width: 118 }}>{a.name}</span>
+                    <div className="v2-hbar-track"><div style={{ width: `${((a.visitCount || 0) / maxTop) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                    <span className="v2-hbar-val">{fmt(a.visitCount)}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={subT}>各学院使用活跃度</div>
+                <AreaTrendChart data={OV.collegeActivity.map(([n, v]) => [n, v])} />
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 26 }}>
-            <div>
-              <div style={subT}>智能体访问热度 TOP 10</div>
-              {st.top.map((a) => (
-                <div key={a.id} className="v2-hbar-row">
-                  <span className="v2-hbar-name" style={{ width: 136 }}>{a.name}</span>
-                  <div className="v2-hbar-track"><div style={{ width: `${((a.visitCount || 0) / maxTop) * 100}%`, background: 'var(--el-primary)' }} /></div>
-                  <span className="v2-hbar-val">{fmt(a.visitCount)} 次</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={subT}>各学院智能体使用活跃度</div>
-              <AreaTrendChart data={OV.collegeActivity.map(([n, v]) => [n, v])} />
-              <div style={{ fontSize: 10.5, color: 'var(--p-t4)', textAlign: 'right', marginTop: 2 }}>按近 30 日访问指数排序 · 曲线平滑仅示趋势形态</div>
-            </div>
-            <div>
-              <div style={subT}>分类分布</div>
-              {st.cats.map(([name, c]) => (
-                <div key={name} className="v2-hbar-row">
-                  <span className="v2-hbar-name" style={{ width: 92 }}>{name}</span>
-                  <div className="v2-hbar-track"><div style={{ width: `${(c.n / maxCat) * 100}%`, background: 'var(--p-secondary)' }} /></div>
-                  <span className="v2-hbar-val">{c.n} 个 · {pct(c.n, st.list.length)}</span>
-                </div>
-              ))}
+          <div className="v2-card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="ct">分类与制度知识 <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--p-t4)' }}>· 智能体域覆盖</span></div>
+            <div style={subT}>智能体分类分布</div>
+            {st.cats.map(([name, c]) => (
+              <div key={name} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 92 }}>{name}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(c.n / maxCat) * 100}%`, background: 'var(--p-secondary)' }} /></div>
+                <span className="v2-hbar-val">{c.n} 个 · {pct(c.n, st.list.length)}</span>
+              </div>
+            ))}
+            <div style={subT}>制度问答热度 <span style={{ fontSize: 10.5, fontWeight: 400, color: 'var(--p-t4)' }}>· {fmt(st.kbVisits)} 次累计</span></div>
+            {st.kb.map(([name, v]) => (
+              <div key={name} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 92 }}>{name}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxKb) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                <span className="v2-hbar-val">{fmt(v)}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 'auto', paddingTop: 12 }}>
+              <div style={{ padding: '9px 12px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 11.5, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Icon name="chip" size={14} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
+                <span><b>知识库中心建设中：</b>建成后各部门制度库统一汇聚、部门自维护，支持对话式检索与原文引用。</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 模型服务能力 */}
+        {/* 行4：模型服务能力 */}
         <div className="v2-card" style={{ marginTop: 14 }}>
-          <div className="ct">模型服务能力</div>
-          <div className="cs">本地部署 + 云端合作统一纳管 · 通用模型与专业垂类模型</div>
-          <div className="v2-ov-stats">
-            {[
-              ['接入模型', fmt(st.ms.length)], ['通用模型', fmt(st.generalN)], ['垂类模型', fmt(st.ms.length - st.generalN)],
-              ['供应商', fmt(st.provs.length)], ['本地部署', fmt(st.local.length)], ['校园免费', fmt(st.free.length)],
-            ].map(([n, l]) => (
-              <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 26 }}>
+          <div className="ct">模型服务能力 <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--p-t4)' }}>· 本地部署 + 云端合作统一纳管</span></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 26, marginTop: 4 }}>
             <div>
-              <div style={subT}>供应商构成</div>
-              {st.provs.map(([name, v]) => (
-                <div key={name} className="v2-hbar-row">
-                  <span className="v2-hbar-name" style={{ width: 104 }}>{name || '—'}</span>
-                  <div className="v2-hbar-track"><div style={{ width: `${(v / maxProv) * 100}%`, background: 'var(--el-primary)' }} /></div>
-                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+              <div className="v2-ov-stats">
+                {[
+                  ['接入模型', fmt(st.ms.length)], ['通用模型', fmt(st.generalN)], ['垂类模型', fmt(st.ms.length - st.generalN)],
+                  ['供应商', fmt(st.provs.length)], ['本地部署', fmt(st.local.length)], ['校园免费', fmt(st.free.length)],
+                ].map(([n, l]) => (
+                  <div key={l} className="v2-ov-stat"><div className="n">{n}</div><div className="l">{l}</div></div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 22 }}>
+                <div>
+                  <div style={subT}>供应商构成</div>
+                  {st.provs.map(([name, v]) => (
+                    <div key={name} className="v2-hbar-row">
+                      <span className="v2-hbar-name" style={{ width: 90 }}>{name || '—'}</span>
+                      <div className="v2-hbar-track"><div style={{ width: `${(v / maxProv) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                      <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <div style={subT}>部署方式</div>
-              {[
-                ['本地部署（校园智算一体机）', st.local.length],
-                ['云端合作', st.ms.length - st.local.length],
-              ].map(([name, v]) => (
-                <div key={name} className="v2-hbar-row">
-                  <span className="v2-hbar-name" style={{ width: 104 }}>{name}</span>
-                  <div className="v2-hbar-track"><div style={{ width: `${(v / Math.max(1, st.ms.length)) * 100}%`, background: 'var(--p-success)' }} /></div>
-                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                <div>
+                  <div style={subT}>部署方式</div>
+                  {[
+                    ['本地部署（一体机）', st.local.length],
+                    ['云端合作', st.ms.length - st.local.length],
+                  ].map(([name, v]) => (
+                    <div key={name} className="v2-hbar-row">
+                      <span className="v2-hbar-name" style={{ width: 90 }}>{name}</span>
+                      <div className="v2-hbar-track"><div style={{ width: `${(v / Math.max(1, st.ms.length)) * 100}%`, background: 'var(--p-success)' }} /></div>
+                      <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 14, padding: '9px 11px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 11.5, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <Icon name="chip" size={14} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
+                    <span>5×NVIDIA L20（240G 显存）本地算力，数据不出校园、免费调用。</span>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
             <div>
               <div style={subT}>模型能力画像</div>
               <RadarChart data={st.types} />
-              <div style={{ fontSize: 10.5, color: 'var(--p-t4)', textAlign: 'center', marginTop: 2 }}>按类型数量刻画平台能力结构</div>
-              <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 12, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <Icon name="chip" size={15} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
-                <span>校园智算一体机：5×NVIDIA L20（240G 显存）本地算力，承载 DeepSeek-R1-70B 等模型，数据不出校园、免费调用。</span>
-              </div>
             </div>
-          </div>
-        </div>
-
-        {/* 知识库与制度问答 */}
-        <div className="v2-card" style={{ marginTop: 14 }}>
-          <div className="ct">知识库与制度问答</div>
-          <div className="cs">制度知识已通过智能体问答服务全校 · 域覆盖与访问情况</div>
-          <div className="v2-ov-stats" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-            {[
-              [fmt(st.kb.length), '制度知识域'],
-              [fmt(st.kb.length), '制度问答智能体'],
-              [`${fmt(st.kbVisits)} 次`, '制度问答累计访问'],
-              ['建设中', '知识库中心'],
-            ].map(([n, l]) => (
-              <div key={l} className="v2-ov-stat"><div className="n" style={l === '知识库中心' ? { fontSize: 15 } : undefined}>{n}</div><div className="l">{l}</div></div>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 28 }}>
-            {st.kb.map(([name, v]) => (
-              <div key={name} className="v2-hbar-row">
-                <span className="v2-hbar-name" style={{ width: 110 }}>{name}</span>
-                <div className="v2-hbar-track"><div style={{ width: `${(v / maxKb) * 100}%`, background: 'var(--el-primary)' }} /></div>
-                <span className="v2-hbar-val">{fmt(v)} 次</span>
-              </div>
-            ))}
-          </div>
-          <div className="v2-notice warn" style={{ marginTop: 16 }}>
-            <span><b>知识库中心正在建设中：</b>建成后各部门公开制度库将统一汇聚、由部门自维护，支持对话式检索与原文引用，制度知识更新不再依赖信息中心代管。</span>
-          </div>
-        </div>
-
-        <div className="v2-card" style={{ marginTop: 14 }}>
-          <div className="ct">各学院智能体活跃度</div>
-          <div className="cs">近 30 日锡锡导员问答次数指数 · 仅聚合统计，不含个体数据</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 28 }}>
-            {OV.collegeActivity.map(([n, v]) => (
-              <div key={n} className="v2-hbar-row">
-                <span className="v2-hbar-name" style={{ width: 130 }}>{n}</span>
-                <div className="v2-hbar-track"><div style={{ width: `${(v / maxAct) * 100}%`, background: 'var(--el-primary)' }} /></div>
-                <span className="v2-hbar-val">{v}</span>
-              </div>
-            ))}
           </div>
         </div>
 
