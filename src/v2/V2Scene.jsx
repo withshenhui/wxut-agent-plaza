@@ -79,7 +79,7 @@ export const SCENES = {
 };
 
 /* 通用场景工作台（复用资助分析全部交互范式） */
-export function SceneWorkbench({ sceneKey, onBack, toast }) {
+export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataScope }) {
   const cfg = SCENES[sceneKey];
   const [win, setWin] = useState(30);
   const [k, setK] = useState(null);
@@ -253,10 +253,14 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
 
         <div className="v2-filter-bar" style={{ marginTop: 16 }}>
           <label>学院</label>
-          <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
-            <option value="">全部学院</option>
-            {collegeNames.map((c) => <option key={c}>{c}</option>)}
-          </select>
+          {dataScope === 'college' && user?.collegeName ? (
+            <span className="v2-scope-lock" title="数据范围为本人学院">{user.collegeName} 🔒</span>
+          ) : (
+            <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
+              <option value="">全部学院</option>
+              {collegeNames.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          )}
           <label>年级</label>
           <select className="v2-select" value={filters.grade} onChange={(e) => setFilters({ ...filters, grade: e.target.value })}>
             <option value="">全部年级</option>
@@ -271,7 +275,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast }) {
           <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
           <span style={{ flex: 1 }} />
           <div style={{ position: 'relative' }}>
-            <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>
+            {canExport && <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>}
             {expOpen && (
               <div className="v2-exp-menu" onMouseDown={(e) => e.preventDefault()}>
                 <button onMouseDown={() => doExport('excel')}><Icon name="doclog" size={14} /> 导出 Excel（.xls）</button>

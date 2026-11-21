@@ -257,7 +257,7 @@ function OverviewTab() {
 }
 
 /* ================= 频道首页 ================= */
-export function InsightHome({ onOpenWorkbench, tab, setTab }) {
+export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
   const { user, casLogin } = useV2User();
 
   return (
@@ -298,6 +298,9 @@ export function InsightHome({ onOpenWorkbench, tab, setTab }) {
                 {w.tags.map((t) => <span key={t} className="v2-tag blue">{t}</span>)}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #F3F6FA' }}>
+                {perms && perms.length > 0 && !perms.includes('insight.' + w.key) && w.status !== 'building' && (
+                  <span className="v2-tag" style={{ background: '#F4F4F5', color: '#909399' }}>未开通</span>
+                )}
                 <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>需要角色：{w.role}</span>
                 <button className="v2-btn" disabled={w.status === 'building'} onClick={() => onOpenWorkbench(w)}>
                   {w.status === 'building' ? '敬请期待' : '进入分析'} →
@@ -556,7 +559,7 @@ function DetailAiInsight({ detail }) {
   );
 }
 
-export function FundingWorkbench({ onBack, toast }) {
+export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) {
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [detail, setDetail] = useState(null);
@@ -745,10 +748,14 @@ export function FundingWorkbench({ onBack, toast }) {
 
         <div className="v2-filter-bar" style={{ marginTop: 16 }}>
           <label>学院</label>
-          <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
-            <option value="">全部学院</option>
-            {collegeNames.map((c) => <option key={c}>{c}</option>)}
-          </select>
+          {dataScope === 'college' && user?.collegeName ? (
+            <span className="v2-scope-lock" title="数据范围为本人学院">{user.collegeName} 🔒</span>
+          ) : (
+            <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
+              <option value="">全部学院</option>
+              {collegeNames.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          )}
           <label>年级</label>
           <select className="v2-select" value={filters.grade} onChange={(e) => setFilters({ ...filters, grade: e.target.value })}>
             <option value="">全部年级</option>
@@ -763,7 +770,7 @@ export function FundingWorkbench({ onBack, toast }) {
           <button className="v2-btn ghost" onClick={() => { setFilters({ college: '', grade: '', level: '', q: '' }); toast('筛选已重置'); }}>重置</button>
           <span style={{ flex: 1 }} />
           <div style={{ position: 'relative' }}>
-            <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>
+            {canExport && <button className="v2-btn" onClick={() => setExpOpen((v) => !v)} onBlur={() => setTimeout(() => setExpOpen(false), 180)}>⤓ 导出名单 ▾</button>}
             {expOpen && (
               <div className="v2-exp-menu" onMouseDown={(e) => e.preventDefault()}>
                 <button onMouseDown={() => doExport('excel')}><Icon name="doclog" size={14} /> 导出 Excel（.xls）</button>

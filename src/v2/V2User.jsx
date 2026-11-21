@@ -112,8 +112,14 @@ export function V2UserProvider({ children }) {
   // 敏感操作鉴权：游客时返回 false 由调用方弹引导框，已登录直接放行
   const requireLogin = () => !!user;
 
+  // RBAC：功能权限判定（游客无任何授权；后端返回 perms 数组）
+  const hasPerm = (key) => !!user && Array.isArray(user.perms) && user.perms.includes(key);
+  const hasAnyPerm = (keys) => keys.some(hasPerm);
+  const dataScope = user?.dataScope || null;
+  const collegeName = user?.collegeName || null;
+
   return (
-    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest: isGuest, enterGuest, exitGuest, requireLogin }}>
+    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest: isGuest, enterGuest, exitGuest, requireLogin, hasPerm, hasAnyPerm, dataScope, collegeName }}>
       {children}
     </V2UserCtx.Provider>
   );

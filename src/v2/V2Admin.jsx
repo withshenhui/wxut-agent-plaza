@@ -444,11 +444,23 @@ function ModelsAdmin({ toast }) {
 }
 
 /* ================= 用户管理 ================= */
+const ROLE_LABELS = { admin: '平台管理员', leader: '校领导', college_admin: '学院管理员', user: '普通用户' };
+const PERM_GROUPS = [
+  { h: '数据查询', keys: ['chat.college', 'chat.all'] },
+  { h: 'AI场景分析', keys: ['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export'] },
+  { h: '工作台', keys: ['teacher.form', 'kb.use', 'dev.entry'] },
+];
+
 function UsersAdmin({ toast }) {
   const [list, setList] = useState(null);
   const [page, setPage] = useState(1);
+  const [colleges, setColleges] = useState([]);
+  const [edit, setEdit] = useState(null); // {u, role, collegeId, perms:{}}
   const load = () => userApi.listUsers({ page, size: 20 }).then((d) => setList(d)).catch((e) => { setList({ records: [] }); toast('加载失败：' + e.message); });
   useEffect(() => { load(); }, [page]);
+  useEffect(() => {
+    fetch(`${API_BASE}/colleges`).then((r) => r.json()).then((j) => setColleges(j.data || [])).catch(() => {});
+  }, []);
   const toggle = async (u) => {
     try { await userApi.updateUserStatus(u.id, u.status === 1 ? 0 : 1); toast(u.status === 1 ? `已禁用「${u.nickname || u.username}」` : `已启用「${u.nickname || u.username}」`); load(); } catch (e) { toast('失败：' + e.message); }
   };
@@ -457,23 +469,52 @@ function UsersAdmin({ toast }) {
     const pwd = 'Wxit@' + Math.random().toString(36).slice(2, 8);
     try { await userApi.resetPassword(u.id, pwd); toast(`已重置，新初始密码：${pwd}（请通知用户）`); } catch (e) { toast('失败：' + e.message); }
   };
+  const openEdit = (u) => {
+    // 默认勾选=角色默认集（前端近似；以提交后的后端并集为准）
+    const roleDefault = {
+      admin: ['chat.college', 'chat.all', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
+      leader: ['chat.college', 'chat.all', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
+      college_admin: ['chat.college', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
+      user: ['chat.college', 'teacher.form', 'kb.use', 'dev.entry'],
+    }[u.role] || [];
+    const perms = {};
+    roleDefault.forEach((k) => { perms[k] = true; });
+    setEdit({ u, role: u.role || 'user', collegeId: u.collegeId ?? '', perms });
+  };
+  const saveEdit = async () => {
+    const { u, role, collegeId, perms } = edit;
+    try {
+      await userApi.updateUser(u.id, {
+        role,
+        collegeId: collegeId === '' ? null : Number(collegeId),
+        perms: Object.fromEntries(Object.entries(perms).filter(([, v]) => v !== null)),
+      });
+      toast(`已保存「${u.nickname || u.username}」的角色与权限`);
+      setEdit(null);
+      load();
+    } catch (e) { toast('失败：' + e.message); }
+  };
   if (!list) return <div className="v2-loading">加载中…</div>;
+  const collegeName = (id) => (colleges.find((c) => c.id === id) || {}).name || '—';
   return (
     <>
       <div className="v2-page-head">
-        <div><div className="v2-ph-title">用户管理</div><div className="v2-ph-sub">管理后台的登录账号 · 当前共 {list.total ?? list.records.length} 个</div></div>
+        <div><div className="v2-ph-title">用户管理</div><div className="v2-ph-sub">账号 · 四层角色 · 学院归属与细粒度权限 · 当前共 {list.total ?? list.records.length} 个</div></div>
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
-          <thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>角色</th><th>学院</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             {list.records.map((u) => (
               <tr key={u.id}>
                 <td className="num">{u.id}</td>
                 <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12 }}>{u.username}</td>
                 <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{u.nickname}</td>
+                <td><span className={`v2-tag ${u.role === 'admin' ? 'blue' : u.role === 'leader' ? 'ok' : u.role === 'college_admin' ? 'mid' : ''}`}>{ROLE_LABELS[u.role] || u.role}</span></td>
+                <td>{u.collegeId != null ? collegeName(u.collegeId) : <span style={{ color: 'var(--p-t4)' }}>未同步</span>}</td>
                 <td><span className={`v2-tag ${u.status === 1 ? 'ok' : 'off'}`}>{u.status === 1 ? '启用' : '禁用'}</span></td>
                 <td>
+                  <button className="v2-link" onClick={() => openEdit(u)}>角色权限</button>
                   <button className="v2-link" onClick={() => toggle(u)}>{u.status === 1 ? '禁用' : '启用'}</button>
                   <button className="v2-link" onClick={() => reset(u)}>重置密码</button>
                 </td>
@@ -482,10 +523,54 @@ function UsersAdmin({ toast }) {
           </tbody>
         </table>
         <div className="v2-tbl-foot">
-          <span>共 {list.total ?? list.records.length} 个账号 · CAS 账号密码随学校统一认证体系，无需在此重置</span>
+          <span>首次 CAS 登录自动同步学院归属（数据中台口径） · CAS 账号密码随学校统一认证体系</span>
           <Pager page={page} total={list.total ?? list.records.length} size={20} onPage={setPage} />
         </div>
       </div>
+
+      {edit && (
+        <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setEdit(null); }}>
+          <div className="v2-modal" style={{ width: 520 }}>
+            <div className="v2-md-head"><div className="t">角色与权限 · {edit.u.nickname || edit.u.username}</div><button className="v2-md-close" onClick={() => setEdit(null)}>✕</button></div>
+            <div className="v2-md-body">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginBottom: 6 }}>角色</div>
+                  <select className="v2-select" style={{ width: '100%' }} value={edit.role} onChange={(e) => setEdit({ ...edit, role: e.target.value })}>
+                    {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginBottom: 6 }}>学院</div>
+                  <select className="v2-select" style={{ width: '100%' }} value={edit.collegeId} onChange={(e) => setEdit({ ...edit, collegeId: e.target.value })}>
+                    <option value="">未分配</option>
+                    {colleges.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginBottom: 8 }}>功能权限（覆盖角色默认）</div>
+              {PERM_GROUPS.map((g) => (
+                <div key={g.h} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, color: 'var(--p-t4)', marginBottom: 4 }}>{g.h}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {g.keys.map((k) => (
+                      <label key={k} className="v2-tag" style={{ cursor: 'pointer', background: edit.perms[k] ? 'var(--el-primary-l9)' : '#F4F4F5', color: edit.perms[k] ? 'var(--el-primary)' : '#909399', userSelect: 'none' }}>
+                        <input type="checkbox" checked={!!edit.perms[k]} style={{ marginRight: 4, accentColor: 'var(--el-primary)' }}
+                          onChange={(e) => setEdit({ ...edit, perms: { ...edit.perms, [k]: e.target.checked } })} />
+                        {k}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="v2-md-foot">
+              <button className="v2-btn ghost" onClick={() => setEdit(null)}>取消</button>
+              <button className="v2-btn" onClick={saveEdit}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

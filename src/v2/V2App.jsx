@@ -69,13 +69,19 @@ async function launchAgentV2(navigate, agentId, user, onChat) {
 }
 
 /* ============ 顶栏 ============ */
-export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
+export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
+  const has = (k) => Array.isArray(perms) && perms.includes(k);
+  const canInsight = has('insight.funding') || has('insight.safety') || has('insight.academic') || has('insight.mental');
+  const canTeacher = has('teacher.form');
+  // 游客全显（展示性导航，点进去由守卫引导登录/提示无权限）
+  const showInsight = !user || canInsight;
+  const showTeacher = !user || canTeacher;
   const NAVS = [
     { key: 'plaza', label: '首页' },
-    { key: 'models', label: '模型服务' },
-    { key: 'insight', label: 'AI 数据洞察' },
-    { key: 'teacher', label: 'AI教师工作台' },
+    ...(showInsight ? [{ key: 'insight', label: 'AI 数据洞察' }] : []),
+    ...(showTeacher ? [{ key: 'teacher', label: 'AI教师工作台' }] : []),
     { key: 'dev', label: '智能体开发平台' },
+    { key: 'models', label: '模型服务' },
     { key: 'kb', label: '知识库中心' },
   ];
   return (
@@ -401,12 +407,22 @@ function ChatPage({ agent, onExit }) {
     const genId = Date.now() + 1;
     mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
     try {
+      const _tk = localStorage.getItem('user_token');
       const resp = await fetch(`${GATEWAY_BASE}/v1/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(_tk ? { Authorization: `Bearer ${_tk}` } : {}) },
         body: JSON.stringify({ model: gw, messages: [{ role: 'user', content }], stream: true }),
       });
-      if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok || !resp.body) {
+        if (resp.status === 401 || resp.status === 403) {
+          let reason = '当前账号无该数据查询权限';
+          try { const j = await resp.json(); reason = j?.error?.message || reason; } catch {}
+          mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: Date.now() + 1, sender: 'agent', content: `⚠ ${reason}` }] }));
+          setLoading(false);
+          return;
+        }
+        throw new Error(`HTTP ${resp.status}`);
+      }
       const reader = resp.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buf = ''; let acc = '';
@@ -854,7 +870,7 @@ export default function V2App() {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, guest, casLogin, logout, requireLogin } = useV2User();
+  const { user, guest, casLogin, logout, requireLogin, hasPerm, hasAnyPerm, dataScope } = useV2User();
   const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
@@ -880,7 +896,12 @@ export default function V2App() {
       setChatAgent(null);
       const segs = location.pathname.replace(/^\/+/, '').split('/');
       const p = segs[0] || 'plaza';
-      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) { setPage('insight'); setWorkbench(segs[1]); return; }
+      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) {
+      if (!user) { setPage('insight'); return; } // 游客直入工作台 → 停在频道首页
+      const need = 'insight.' + segs[1];
+      if (!hasPerm(need)) { setPage('insight'); setLoginPrompt('该分析工作台未对您的账号开放，如需开通请联系管理员'); return; }
+      setPage('insight'); setWorkbench(segs[1]); return;
+    }
       if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
       setTeacherWizard(false);
       setWorkbench(null);
@@ -913,11 +934,17 @@ export default function V2App() {
     });
   }, [navigate, user, requireLogin]);
 
-  // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）
+  // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
   const guardNav = useCallback((p, label) => {
     if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
+    if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental'])) {
+      setLoginPrompt('AI数据洞察面向学工线老师开放，如需开通请联系管理员'); return;
+    }
+    if (p === 'teacher' && user && !hasPerm('teacher.form')) {
+      setLoginPrompt('AI教师工作台暂未对您的账号开放'); return;
+    }
     nav(p);
-  }, [nav, requireLogin]);
+  }, [nav, requireLogin, user, hasPerm, hasAnyPerm]);
 
   // 打开智能填报向导（可带记录 id 继续填报）
   const openWizard = useCallback((recId) => {
@@ -929,30 +956,31 @@ export default function V2App() {
   // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
     <>
-      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
+      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       <ChatPage agent={chatAgent} onExit={() => nav('plaza')} />
     </>
   );
 
   return (
     <>
-      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} />
+      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
-        <InsightHome tab={insightTab} setTab={setInsightTab} onOpenWorkbench={(w) => {
+        <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
           if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
+          if (!hasPerm('insight.' + w.key)) { setLoginPrompt('该分析工作台未对您的账号开放，如需开通请联系管理员'); return; }
           if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
           setWorkbench(w.key);
           navigate('/insight/' + w.key);
         }} />
       )}
       {page === 'insight' && workbench === 'funding' && (
-        <FundingWorkbench toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
+        <FundingWorkbench toast={toast} user={user} canExport={hasPerm('insight.export')} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
       {page === 'insight' && ['safety', 'academic', 'mental'].includes(workbench) && (
-        <SceneWorkbench sceneKey={workbench} toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
+        <SceneWorkbench sceneKey={workbench} toast={toast} user={user} canExport={hasPerm('insight.export')} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
       {page === 'dev' && <Dev toast={toast} />}
       {page === 'teacher' && (
