@@ -738,24 +738,14 @@ function UsersAdmin({ toast }) {
     try { await userApi.resetPassword(u.id, pwd); toast(`已重置，新初始密码：${pwd}（请通知用户）`); } catch (e) { toast('失败：' + e.message); }
   };
   const openEdit = (u) => {
-    // 默认勾选=角色默认集（前端近似；以提交后的后端并集为准）
-    const roleDefault = {
-      admin: ['chat.college', 'chat.all', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
-      leader: ['chat.college', 'chat.all', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
-      college_admin: ['chat.college', 'insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export', 'teacher.form', 'kb.use', 'dev.entry'],
-      user: ['chat.college', 'teacher.form', 'kb.use', 'dev.entry'],
-    }[u.role] || [];
-    const perms = {};
-    roleDefault.forEach((k) => { perms[k] = true; });
-    setEdit({ u, role: u.role || 'user', collegeId: u.collegeId ?? '', perms });
+    setEdit({ u, role: u.role || 'user', collegeId: u.collegeId ?? '' });
   };
   const saveEdit = async () => {
-    const { u, role, collegeId, perms } = edit;
+    const { u, role, collegeId } = edit;
     try {
       await userApi.updateUser(u.id, {
         role,
         collegeId: collegeId === '' ? null : Number(collegeId),
-        perms: Object.fromEntries(Object.entries(perms).filter(([, v]) => v !== null)),
       });
       toast(`已保存「${u.nickname || u.username}」的角色与权限`);
       setEdit(null);
@@ -848,21 +838,18 @@ function UsersAdmin({ toast }) {
                   </select>
                 </div>
               </div>
-              <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginBottom: 8 }}>功能权限（覆盖角色默认）</div>
-              {PERM_GROUPS.map((g) => (
-                <div key={g.h} style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, color: 'var(--p-t4)', marginBottom: 4 }}>{g.h}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {g.keys.map((k) => (
-                      <label key={k} title={'权限键：' + k} className="v2-tag" style={{ cursor: 'pointer', background: edit.perms[k] ? 'var(--el-primary-l9)' : '#F4F4F5', color: edit.perms[k] ? 'var(--el-primary)' : '#909399', userSelect: 'none', fontSize: 12.5, padding: '4px 10px' }}>
-                        <input type="checkbox" checked={!!edit.perms[k]} style={{ marginRight: 4, accentColor: 'var(--el-primary)' }}
-                          onChange={(e) => setEdit({ ...edit, perms: { ...edit.perms, [k]: e.target.checked } })} />
-                        {PERM_LABELS[k] || k}
-                      </label>
-                    ))}
-                  </div>
+              <div className="v2-scope-explain">
+                <div className="h"><Icon name="info" size={15} /> 数据权限说明</div>
+                <div className="b">
+                  平台功能对所有登录用户开放，无需逐一授权。<b>数据范围由「学院」决定</b>：
+                  <ul>
+                    <li>选择具体学院（如机械工程学院）→ AI场景分析、学院锡锡等数据能力<b>仅限该学院</b>；</li>
+                    <li>选择<b>「全校」</b> → 可查看全部学院的数仓数据（适用于校资助中心等面向全校的业务岗）；</li>
+                    <li>「非学院机构」/未分配 → 不含学院数据。</li>
+                  </ul>
+                  保存后立即生效，用户下次登录即可按新范围使用。
                 </div>
-              ))}
+              </div>
             </div>
             <div className="v2-md-foot">
               <button className="v2-btn ghost" onClick={() => setEdit(null)}>取消</button>
