@@ -466,6 +466,25 @@ function ModelsAdmin({ toast }) {
 
 /* ================= 用户管理 ================= */
 const ROLE_LABELS = { admin: '平台管理员', leader: '校领导', college_admin: '学院管理员', user: '普通用户' };
+const PERM_LABELS = {
+  'chat.college': '本院锡锡对话',
+  'chat.all': '全校锡锡对话',
+  'insight.funding': '精准资助分析',
+  'insight.safety': '学生安全分析',
+  'insight.academic': '学业预警分析',
+  'insight.mental': '心理健康关怀',
+  'insight.export': '名单导出（Excel/CSV）',
+  'teacher.form': '智能填报',
+  'kb.use': '知识库中心',
+  'dev.entry': '智能体开发平台',
+  'admin.dashboard': '使用统计（本院）',
+  'admin.agent': '智能体管理',
+  'admin.model': '模型管理',
+  'admin.user': '用户与权限',
+  'admin.config': '系统配置',
+  'admin.file': '文件管理',
+  'admin.log': '操作日志',
+};
 const PERM_GROUPS = [
   { h: '数据查询', keys: ['chat.college', 'chat.all'] },
   { h: 'AI场景分析', keys: ['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.export'] },
@@ -575,10 +594,10 @@ function UsersAdmin({ toast }) {
                   <div style={{ fontSize: 12, color: 'var(--p-t4)', marginBottom: 4 }}>{g.h}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {g.keys.map((k) => (
-                      <label key={k} className="v2-tag" style={{ cursor: 'pointer', background: edit.perms[k] ? 'var(--el-primary-l9)' : '#F4F4F5', color: edit.perms[k] ? 'var(--el-primary)' : '#909399', userSelect: 'none' }}>
+                      <label key={k} title={'权限键：' + k} className="v2-tag" style={{ cursor: 'pointer', background: edit.perms[k] ? 'var(--el-primary-l9)' : '#F4F4F5', color: edit.perms[k] ? 'var(--el-primary)' : '#909399', userSelect: 'none', fontSize: 12.5, padding: '4px 10px' }}>
                         <input type="checkbox" checked={!!edit.perms[k]} style={{ marginRight: 4, accentColor: 'var(--el-primary)' }}
                           onChange={(e) => setEdit({ ...edit, perms: { ...edit.perms, [k]: e.target.checked } })} />
-                        {k}
+                        {PERM_LABELS[k] || k}
                       </label>
                     ))}
                   </div>
