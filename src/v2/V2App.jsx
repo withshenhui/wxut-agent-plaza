@@ -574,6 +574,7 @@ function Models({ toast }) {
   const all = tab === 'general' ? mg : mv;
   const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
   const provLogo = (m) => {
+    if (m.iconUrl) return m.iconUrl; // 后台配置的图标优先
     const n = ((m.name || '') + (m.provider || '')).toLowerCase();
     if (n.includes('qwen')) return './v2-qwen.svg';
     if (n.includes('baai') || n.includes('bge')) return './v2-zhiyuan.svg';

@@ -390,6 +390,9 @@ input,select,textarea{font-family:inherit}
 .v2-modal .v2-fm-i{min-width:0;width:100%}
 .v2-fm-i:focus{border-color:var(--el-primary);background:var(--p-surface)}
 textarea.v2-fm-i{height:auto;min-height:76px;padding:9px 13px;line-height:1.6;resize:vertical;font-family:inherit}
+select.v2-fm-i{height:40px;padding:0 11px;cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#8A9BB3 50%),linear-gradient(135deg,#8A9BB3 50%,transparent 50%);
+  background-position:calc(100% - 18px) 17px,calc(100% - 13px) 17px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
 .v2-fm-i::placeholder{color:var(--p-t4)}
 .v2-fm-body{flex:1;min-width:0}
 .v2-fm-hint{font-size:11px;color:var(--p-t4);margin-top:4px}

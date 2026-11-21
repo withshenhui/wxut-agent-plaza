@@ -34,6 +34,45 @@ const TITLES = {
 
 const ROUTE_KEYS = Object.keys(TITLES);
 
+/* 图标网格选择器：智能体用图标库，模型用供应商 logo */
+const ICON_CHOICES = ['dashboard', 'spark', 'tag', 'chip', 'cap', 'grad', 'briefcase', 'book', 'flask', 'wrench', 'robot', 'clipboard', 'chart', 'users', 'heart', 'headset', 'sliders', 'gear', 'folder', 'doclog', 'search', 'code', 'construction', 'check', 'download', 'send', 'ext'];
+const LOGO_CHOICES = [
+  { key: 'deepseek', label: 'DeepSeek', src: './v2-deepseek.svg' },
+  { key: 'qwen', label: '通义千问', src: './v2-qwen.svg' },
+  { key: 'zhiyuan', label: '智谱 BAAI', src: './v2-zhiyuan.svg' },
+  { key: 'xixi', label: '锡锡（无锡职大）', src: './v2-xixi.png' },
+];
+function IconPicker({ value, onChange, kind = 'icon' }) {
+  if (kind === 'logo') {
+    return (
+      <div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+          {LOGO_CHOICES.map((l) => (
+            <div key={l.key} onClick={() => onChange(l.src)} title={l.label}
+              style={{ width: 86, height: 70, borderRadius: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+                border: value === l.src ? '2px solid var(--el-primary)' : '1.5px solid var(--p-line2)', background: value === l.src ? 'var(--el-primary-l9)' : '#FAFBFD' }}>
+              <img src={l.src} alt={l.label} style={{ width: 30, height: 30, objectFit: 'contain' }} />
+              <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l.label}</div>
+            </div>
+          ))}
+        </div>
+        <input className="v2-fm-i" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="或粘贴自定义图标 URL（优先级高于左侧选择）" />
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 6 }}>
+      {ICON_CHOICES.map((name) => (
+        <div key={name} onClick={() => onChange(name)} title={name}
+          style={{ height: 44, borderRadius: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: value === name ? '2px solid var(--el-primary)' : '1.5px solid var(--p-line2)', background: value === name ? 'var(--el-primary-l9)' : '#FAFBFD', color: value === name ? 'var(--el-primary)' : 'var(--p-t2)' }}>
+          <Icon name={name} size={19} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* 表格骨架屏（前台 FundingSkeleton 同范式） */
 function TableSkeleton({ rows = 6, kpis = false }) {
   return (
@@ -332,7 +371,6 @@ function AgentModal({ agent, cats, onClose, onSave }) {
       </>}>
       {[
         ['名称', 'name', '智能体显示名称，建议带学院/业务前缀', true],
-        ['图标 (emoji)', 'icon', '填一个 emoji 字符'],
         ['描述', 'description', '一句话简介，显示在广场卡片上'],
         ['标签', 'tags', '逗号分隔，用于检索'],
       ].map(([lb, k, hint, req]) => (
@@ -343,6 +381,13 @@ function AgentModal({ agent, cats, onClose, onSave }) {
           </div>
         </div>
       ))}
+      <div className="v2-fm-row">
+        <span className="v2-fm-label">图标</span>
+        <div className="v2-fm-body">
+          <IconPicker kind="icon" value={f.icon || ''} onChange={(v) => set('icon', v)} />
+          <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 6 }}>当前：{f.icon ? `「${f.icon}」` : '未选择（保存后按分类默认图标显示）'}</div>
+        </div>
+      </div>
       <div className="v2-fm-row">
         <span className="v2-fm-label">分类</span>
         <div className="v2-fm-body">
@@ -521,7 +566,6 @@ function ModelsAdmin({ toast }) {
             ['供应商', 'provider', '如 震泽 / 无锡职大', true],
             ['类型', 'type', '如 文本生成 / 推理 / 嵌入'],
             ['描述', 'description', '对外展示的说明'],
-            ['图标 URL', 'iconUrl', '供应商 logo 地址'],
             ['标签(逗号分隔)', 'tags', '如 云端模型,本地部署,默认'],
           ].map(([lb, k, hint, req]) => (
             <div className="v2-fm-row" key={k}>
@@ -529,6 +573,13 @@ function ModelsAdmin({ toast }) {
               <div className="v2-fm-body"><input className="v2-fm-i" value={typeof edit[k] === 'string' ? edit[k] : (Array.isArray(edit[k]) ? edit[k].join(',') : '')} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} placeholder={hint} /></div>
             </div>
           ))}
+          <div className="v2-fm-row">
+            <span className="v2-fm-label">图标</span>
+            <div className="v2-fm-body">
+              <IconPicker kind="logo" value={edit.iconUrl || ''} onChange={(v) => setEdit({ ...edit, iconUrl: v })} />
+              <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 6 }}>当前：{edit.iconUrl ? '已选择' : '未选择（前台按名称/供应商自动匹配）'}</div>
+            </div>
+          </div>
           <div className="v2-fm-row">
             <span className="v2-fm-label">分类</span>
             <div className="v2-fm-body">
