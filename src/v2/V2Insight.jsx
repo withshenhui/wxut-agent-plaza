@@ -207,7 +207,7 @@ function OverviewTab() {
           </div>
         </div>
 
-        {/* 运营三连：模型服务 / 制度问答 / 知识库规划 */}
+        {/* 运营三连：模型服务 / 知识库规划 / 制度问答 */}
         <div className="v2-ov-grid">
           <div className="v2-card">
             <div className="ct">模型服务构成 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}>· {st.ms.length} 个接入</span></div>
@@ -229,16 +229,6 @@ function OverviewTab() {
               <span>5×NVIDIA L20（240G 显存）本地算力，数据不出校园、免费调用。</span>
             </div>
           </div>
-          <div className="v2-card">
-            <div className="ct">制度问答热度 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}>· {fmt(st.kbVisits)} 次累计</span></div>
-            {st.kb.map(([name, v]) => (
-              <div key={name} className="v2-hbar-row">
-                <span className="v2-hbar-name" style={{ width: 108 }}>{name}</span>
-                <div className="v2-hbar-track"><div style={{ width: `${(v / maxKb) * 100}%`, background: 'var(--el-primary)' }} /></div>
-                <span className="v2-hbar-val">{fmt(v)}</span>
-              </div>
-            ))}
-          </div>
           <div className="v2-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 }}>
             <div className="ct">知识库中心</div>
             <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--p-t4)' }}>建设中</div>
@@ -250,6 +240,16 @@ function OverviewTab() {
                 <div key={n} className="v2-ov-stat" style={{ flex: 1 }}><div className="n">{l}</div><div className="l">{n}</div></div>
               ))}
             </div>
+          </div>
+          <div className="v2-card">
+            <div className="ct">制度问答热度 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}>· {fmt(st.kbVisits)} 次累计</span></div>
+            {st.kb.map(([name, v]) => (
+              <div key={name} className="v2-hbar-row">
+                <span className="v2-hbar-name" style={{ width: 108 }}>{name}</span>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxKb) * 100}%`, background: 'var(--el-primary)' }} /></div>
+                <span className="v2-hbar-val">{fmt(v)}</span>
+              </div>
+            ))}
           </div>
         </div>
 
