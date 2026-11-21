@@ -34,7 +34,7 @@ function AiBanner({ badge, text }) {
 
 function WarnBar({ children }) {
   return (
-    <div className="v2-warn">
+    <div className="v2t-warn">
       <Icon name="warn" size={14} style={{ color: '#B45309', marginTop: 2, flexShrink: 0 }} />
       <div>{children}</div>
     </div>
