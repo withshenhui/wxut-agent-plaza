@@ -128,14 +128,14 @@ function Sidebar({ isCollapsed, onToggle, activePath }) {
           {!isCollapsed ? (
             <>
               <img
-                src="/plaza/logo3.png"
+                src="/plaza/logo3.png?v=2"
                 alt="锡职大"
               />
               <span className="el-sidebar-logo-text">AI校园</span>
             </>
           ) : (
             <img
-              src="/plaza/logo3.png"
+              src="/plaza/logo3.png?v=2"
               alt="锡职大"
               style={{ height: '32px' }}
             />

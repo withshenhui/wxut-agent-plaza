@@ -115,7 +115,7 @@ export default function AdminLayout() {
           className={`adm-sider${collapsed ? ' adm-sider-collapsed' : ''}`}
         >
           <div className="adm-brand">
-            <img src="/plaza/logo3.png" alt="logo" />
+            <img src="/plaza/logo3.png?v=2" alt="logo" />
             {!collapsed && (
               <div>
                 <div className="bt">AI 管理后台</div>
