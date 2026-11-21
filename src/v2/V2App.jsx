@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
@@ -183,8 +183,10 @@ const HERO_BUBBLES = [
   { b: '制度文件也可以问我', sub: '党建 / 教学 / 科研 / 人事 8 大类' },
 ];
 
-function Hero({ agents, onChat, onSearch, q }) {
+function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
+  // RBAC：全校锡锡(111)已被上层过滤时，按钮/吉祥物点击走提示而非对话
   const isXixi = agents.find((a) => Number(a.id) === 111);
+  const tryXixi = () => { isXixi ? onChat(isXixi) : onXixiBlocked && onXixiBlocked(); };
   const visits = agents.reduce((s, a) => s + (a.visitCount || 0), 0);
   const college = agents.filter((a) => a.categoryKey === 'college').length;
   const [bIdx, setBIdx] = useState(0);
@@ -212,7 +214,7 @@ function Hero({ agents, onChat, onSearch, q }) {
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
             <input value={q} onChange={(e) => onSearch(e.target.value)} placeholder="搜索智能体名称 / 描述 / 标签…" />
-            <button className="v2-btn" onClick={() => onChat(isXixi)}>和锡锡聊聊</button>
+            <button className="v2-btn" onClick={tryXixi}>和锡锡聊聊</button>
           </div>
           <div className="v2-hero-stats">
             <div className="v2-hstat"><div className="v">{agents.length}</div><div className="k">智能体</div></div>
@@ -220,7 +222,7 @@ function Hero({ agents, onChat, onSearch, q }) {
             <div className="v2-hstat"><div className="v">{college}</div><div className="k">学院锡锡导员</div></div>
           </div>
         </div>
-        <div className="v2-hero-side" onClick={() => onChat(isXixi)} title="点击和锡锡对话">
+        <div className="v2-hero-side" onClick={tryXixi} title="点击和锡锡对话">
           <div className="v2-mascot-ring" />
           <div className="v2-mascot-bubble" style={{ right: 198, top: 'calc(46% - 4px)' }} key={bIdx}>
             <b>{typed}{typed.length < cur.b.length ? <span className="cursor" /> : ''}</b>
@@ -237,7 +239,7 @@ function Hero({ agents, onChat, onSearch, q }) {
 }
 
 /* ============ 广场 ============ */
-function Plaza({ agents, cats, q, setQ, onChat, onNav, toast }) {
+function Plaza({ agents, cats, q, setQ, onChat, onNav, toast, onXixiBlocked }) {
   const [cat, setCat] = useState('全部');
   const labels = ['全部', ...cats.map((c) => c.label)];
   const cnt = (l) => (l === '全部' ? agents.length : agents.filter((a) => a.categoryName === l).length);
@@ -256,7 +258,7 @@ function Plaza({ agents, cats, q, setQ, onChat, onNav, toast }) {
     : rows;
   return (
     <>
-      <Hero agents={agents} onChat={onChat} onSearch={setQ} q={q} />
+      <Hero agents={agents} onChat={onChat} onSearch={setQ} q={q} onXixiBlocked={onXixiBlocked} />
       <div className="v2-body">
         <div className="v2-dev-banner">
           <div className="ic"><Icon name="code" size={22} /></div>
@@ -946,6 +948,12 @@ export default function V2App() {
     nav(p);
   }, [nav, requireLogin, user, hasPerm, hasAnyPerm]);
 
+  // 广场可见性（RBAC）：游客全显（点进去由后端拦）；登录用户非 chat.all 隐藏他院锡锡与全校锡锡
+  const visibleAgents = useMemo(() => {
+    if (!user || hasPerm('chat.all')) return agents;
+    return agents.filter((a) => a.collegeId == null || a.collegeId === user.collegeId);
+  }, [agents, user, hasPerm]);
+
   // 打开智能填报向导（可带记录 id 继续填报）
   const openWizard = useCallback((recId) => {
     setTeacherRec(recId || null);
@@ -965,7 +973,7 @@ export default function V2App() {
     <>
       <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />}
+      {page === 'plaza' && <Plaza agents={visibleAgents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员')} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
         <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
