@@ -873,7 +873,10 @@ export default function V2App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, guest, casLogin, logout, requireLogin, hasPerm, hasAnyPerm, dataScope } = useV2User();
-  const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
+  // 敏感操作引导弹窗：{msg, kind} kind='login'(未登录引导登录) | 'perm'(已登录但无权限，纯提示)
+  const [prompt, setPrompt] = useState(null);
+  const setLoginPrompt = (msg) => setPrompt({ msg, kind: 'login' });
+  const setPermPrompt = (msg) => setPrompt({ msg, kind: 'perm' });
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
@@ -901,7 +904,7 @@ export default function V2App() {
       if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) {
       if (!user) { setPage('insight'); return; } // 游客直入工作台 → 停在频道首页
       const need = 'insight.' + segs[1];
-      if (!hasPerm(need)) { setPage('insight'); setLoginPrompt('该分析工作台未对您的账号开放，如需开通请联系管理员'); return; }
+      if (!hasPerm(need)) { setPage('insight'); setPermPrompt('该分析工作台未对您的账号开放'); return; }
       setPage('insight'); setWorkbench(segs[1]); return;
     }
       if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
@@ -934,10 +937,10 @@ export default function V2App() {
     // RBAC 前端预检（后端为最终防线）：学院锡锡仅本院可用，全校锡锡需 chat.all
     if (a.collegeId != null && user && !hasPerm('chat.all')) {
       if (a.collegeId === 0) {
-        setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员'); return;
+        setPermPrompt('全校锡锡面向校领导与管理员开放'); return;
       }
       if (a.collegeId !== user.collegeId) {
-        setLoginPrompt(`该智能体面向${a.collegeName || '其他学院'}老师开放，如需使用请联系管理员`); return;
+        setPermPrompt(`该智能体面向${a.collegeName || '其他学院'}老师开放`); return;
       }
     }
     launchAgentV2(navigate, a.id, user, (detail) => {
@@ -949,10 +952,10 @@ export default function V2App() {
   const guardNav = useCallback((p, label) => {
     if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
     if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental'])) {
-      setLoginPrompt('AI数据洞察面向学工线老师开放，如需开通请联系管理员'); return;
+      setPermPrompt('AI数据洞察面向学工线老师开放'); return;
     }
     if (p === 'teacher' && user && !hasPerm('teacher.form')) {
-      setLoginPrompt('AI教师工作台暂未对您的账号开放'); return;
+      setPermPrompt('AI教师工作台暂未对您的账号开放'); return;
     }
     nav(p);
   }, [nav, requireLogin, user, hasPerm, hasAnyPerm]);
@@ -976,12 +979,12 @@ export default function V2App() {
     <>
       <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
-      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setLoginPrompt('全校锡锡面向校领导与管理员开放，如需开通请联系管理员')} />}
+      {page === 'plaza' && <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
         <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
           if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
-          if (!hasPerm('insight.' + w.key)) { setLoginPrompt('该分析工作台未对您的账号开放，如需开通请联系管理员'); return; }
+          if (!hasPerm('insight.' + w.key)) { setPermPrompt('该分析工作台未对您的账号开放'); return; }
           if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
           setWorkbench(w.key);
           navigate('/insight/' + w.key);
@@ -1005,20 +1008,27 @@ export default function V2App() {
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
       <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
 
-      {loginPrompt && (
-        <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setLoginPrompt(''); }}>
+      {prompt && (
+        <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setPrompt(null); }}>
           <div className="v2-modal" style={{ width: 400 }}>
-            <div className="v2-md-head"><div className="t">需要登录</div><button className="v2-md-close" onClick={() => setLoginPrompt('')}>✕</button></div>
+            <div className="v2-md-head"><div className="t">{prompt.kind === 'perm' ? '暂无使用权限' : '需要登录'}</div><button className="v2-md-close" onClick={() => setPrompt(null)}>✕</button></div>
             <div className="v2-md-body" style={{ paddingBottom: 8 }}>
               <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
                 <img src="./v2-logo.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
               </div>
-              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{loginPrompt}</p>
-              <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>使用学校统一身份认证登录后即可继续<br />（游客可以浏览广场与模型服务）</p>
+              <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{prompt.msg}</p>
+              {prompt.kind === 'login' && (
+                <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>使用学校统一身份认证登录后即可继续<br />（游客可以浏览广场与模型服务）</p>
+              )}
+              {prompt.kind === 'perm' && (
+                <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>如需开通权限，请联系信息化与数据服务中心（dcc@wxit.edu.cn）</p>
+              )}
             </div>
             <div className="v2-md-foot" style={{ justifyContent: 'center', gap: 10 }}>
-              <button className="v2-btn ghost" onClick={() => setLoginPrompt('')}>继续浏览</button>
-              <button className="v2-btn" onClick={() => { setLoginPrompt(''); casLogin(); }}>统一身份认证登录</button>
+              <button className="v2-btn ghost" onClick={() => setPrompt(null)}>继续浏览</button>
+              {prompt.kind === 'login'
+                ? <button className="v2-btn" onClick={() => { setPrompt(null); casLogin(); }}>统一身份认证登录</button>
+                : <button className="v2-btn" onClick={() => setPrompt(null)}>我知道了</button>}
             </div>
           </div>
         </div>
