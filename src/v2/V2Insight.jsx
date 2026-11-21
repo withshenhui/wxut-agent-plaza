@@ -277,7 +277,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
         {tab === 'overview' && <OverviewTab />}
         {tab === 'workbench' && (<>
         <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>AI场景分析</div>
-        <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · 使用学校统一身份认证登录，并需具备对应业务角色</p>
+        <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · <b style={{ color: 'var(--p-t2)' }}>数据范围随账号所属学院</b>：学院账号仅可查看本学院数据，配置为「全校」的账号（如校资助中心）可查看与切换全部学院</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {WORKBENCHES.map((w) => (
             <div key={w.key} className="v2-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

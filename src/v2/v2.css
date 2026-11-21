@@ -805,3 +805,6 @@ select.v2t-inp{cursor:pointer}
 .v2-scope-explain ul{margin:6px 0 6px 2px;padding-left:16px}
 .v2-scope-explain li{margin:2px 0}
 .v2-scope-explain b{color:var(--aink)}
+
+/* 顶栏数据范围徽标 */
+.v2-scope-badge{font-size:10.5px;color:var(--el-primary);background:var(--el-primary-l9);border-radius:5px;padding:2px 7px;margin-left:2px;font-weight:600;white-space:nowrap;flex-shrink:0}

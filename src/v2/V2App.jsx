@@ -105,6 +105,11 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
             <div className="v2-user" title="统一身份认证账号">
               <div className="ava">{(user.nickname || user.username || '用').slice(0, 1)}</div>
               <span className="nm">{user.nickname || user.username}</span>
+              {user.collegeName && (
+                <span className="v2-scope-badge" title={user.dataScope === 'all' ? '数据范围：全校' : '数据范围：本人学院'}>
+                  {user.dataScope === 'all' ? '全校数据' : user.collegeName}
+                </span>
+              )}
             </div>
             <button className="v2-btn ghost" onClick={onLogout} title="退出登录">退出</button>
           </>
@@ -935,11 +940,9 @@ export default function V2App() {
     if (!a) return;
     // 游客使用智能体：引导登录
     if (!requireLogin()) { setLoginPrompt('使用智能体对话需要登录'); return; }
-    // RBAC 前端预检（后端为最终防线）：学院锡锡仅本院可用，全校锡锡需 chat.all
-    if (a.collegeId != null && user && !hasPerm('chat.all')) {
-      if (a.collegeId === 0) {
-        setPermPrompt('全校锡锡面向校领导与管理员开放'); return;
-      }
+    // RBAC 前端预检（后端为最终防线）：锡锡随数据范围——scope=all（含学院=全校）放行全部；
+    // college 范围锁本院
+    if (a.collegeId != null && user && dataScope !== 'all') {
       if (a.collegeId !== user.collegeId) {
         setPermPrompt(`该智能体面向${a.collegeName || '其他学院'}老师开放`); return;
       }
@@ -947,7 +950,7 @@ export default function V2App() {
     launchAgentV2(navigate, a.id, user, (detail) => {
       navigate(`/chat/${a.id}`);
     });
-  }, [navigate, user, requireLogin, hasPerm]);
+  }, [navigate, user, requireLogin, dataScope]);
 
   // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
   const guardNav = useCallback((p, label) => {
