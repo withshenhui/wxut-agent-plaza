@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { listTemplates, searchTeachers, pageRecords, getRecord, createRecord, updateRecord, deleteRecord, streamUrl, regenUrl } from '../api/form';
+import { listTemplates, searchTeachers, pageRecords, getRecord, createRecord, updateRecord, deleteRecord, streamUrl, regenUrl, aiMaterial } from '../api/form';
 import { apiBase } from '../api/request';
 import { Icon, XixiLoading } from './ui.jsx';
 
@@ -152,6 +152,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
   const [summary, setSummary] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [aiBusy, setAiBusy] = useState('');
   const esRef = useRef(null);
   const logRef = useRef(null);
   const fieldsRef = useRef(null);
@@ -180,6 +181,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
   }, [toast]);
 
   const tpl = (templates || []).find((t) => t.id === tplId) || null;
+  const khnf = ((record && record.fields) || fields).find((x) => x.key === '_khnf')?.val || '';
   const matFields = (tpl?.fields || []).filter((f) => f.src === 'material');
   const needFields = (tpl?.fields || []).filter((f) => f.src === 'need');
   const dbFields = (tpl?.fields || []).filter((f) => f.src === 'db');
@@ -190,6 +192,24 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
     if (required) return v ? { cls: 'filled', t: `已填 ${v.length} 字` } : { cls: 'empty', t: '必填' };
     return v ? { cls: 'filled', t: `已填 ${v.length} 字` } : { cls: 'opt', t: '选填' };
   };
+
+  const doAiMaterial = async (f) => {
+    if (!requireLoginAi()) return;
+    if (aiBusy) { toast('AI 正在起草中，请稍候'); return; }
+    const cur = (mats[f.key] || '').trim();
+    if (cur && !window.confirm('该栏目已有内容，AI 建议将追加在末尾（不覆盖已写内容）。继续？')) return;
+    setAiBusy(f.key);
+    try {
+      const r = await aiMaterial(f.key, f.label, cur);
+      const text = (r && r.text) || '';
+      if (!text) { toast('AI 未返回内容，请手动填写'); return; }
+      setMats((m) => ({ ...m, [f.key]: cur ? cur + '\n' + text : text }));
+      toast('AI 已生成要点，请核对修改后使用');
+    } catch (e) {
+      toast(e.message || 'AI 填写失败');
+    } finally { setAiBusy(''); }
+  };
+  const requireLoginAi = () => !!user;
 
   const startFill = async () => {
     const ji = matFields.find((f) => (f.hint || '').includes('必填'));
@@ -247,7 +267,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
 
   const saveSummary = async () => {
     if (!record) return;
-    const fs = fields.map((f) => (f.key === SUMMARY_KEY ? { ...f, val: summary } : f));
+    const fs = fields.map((f) => (f.key === SUMMARY_KEY ? { ...f, val: summary, edited: true } : f));
     try { await updateRecord(record.id, { fields: fs }); toast('已保存'); } catch (e) { toast(e.message || '保存失败'); }
   };
   const polish = () => {
@@ -403,6 +423,13 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
                         <div className="m-badge">{f.label.slice(0, 1)}</div>
                         <div className="m-tt"><div className="m-t">{f.label}{required && <span style={{ color: 'var(--p-danger)' }}> *</span>}</div><div className="m-hint">{f.hint}</div></div>
                         <span className="m-state" style={st.cls === 'filled' ? { color: '#0B7A4B', background: '#E2F5EC' } : st.cls === 'empty' ? { color: '#B45309', background: '#FEF3C7' } : { color: 'var(--p-t3)', background: 'var(--p-fill)' }}>{st.t}</span>
+                        {required && (
+                          <button type="button" className="v2t-ai-fill-btn" disabled={aiBusy === f.key}
+                            onClick={(e) => { e.stopPropagation(); doAiMaterial(f); }}
+                            title="AI 结合数仓事实生成该栏目要点">
+                            {aiBusy === f.key ? '起草中…' : '✦ AI填写'}
+                          </button>
+                        )}
                         <span className="m-arr"><Icon name="chevD" size={15} /></span>
                       </div>
                       <div className="m-body">
@@ -449,7 +476,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
             <div className="pc-t" style={{ marginBottom: 12 }}><span className="v2t-tag ai">AI数据填报生成</span>本人总结正在起草{streaming && <span className="v2t-cur" style={{ marginLeft: 4 }}>|</span>}</div>
             <div className="v2t-doc">
               <div className="d-title">江苏省事业单位工作人员年度考核登记表</div>
-              <div className="d-sub">（2025年度）</div>
+              <div className="d-sub">（{khnf ? `${khnf}年度` : "年度分析中"}）</div>
               <div className="d-unit">单　位：无锡职业技术大学</div>
               <table className="doc-sum-tbl"><tbody>
                 <tr>
@@ -480,7 +507,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
                   <div className="pv-f" key={f.label}>
                     <div className="l"><span>{f.label}</span><span className={`mini-tag ${f.src === 'db' ? 'db' : 'mn'}`}>{f.src === 'db' ? '数仓' : '手动'}</span></div>
                     <input className="v2t-inp" value={f.val || ''} readOnly={f.src === 'db'}
-                      onChange={(e) => setFields(fields.map((x) => (x.label === f.label ? { ...x, val: e.target.value } : x)))} />
+                      onChange={(e) => setFields(fields.map((x) => (x.label === f.label ? { ...x, val: e.target.value, edited: true } : x)))} />
                   </div>
                 ))}
               </div>
@@ -507,7 +534,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
               </div>
               <div className="v2t-doc">
                 <div className="d-title">江苏省事业单位工作人员年度考核登记表</div>
-                <div className="d-sub">（2025年度）</div>
+                <div className="d-sub">（{khnf ? `${khnf}年度` : "年度分析中"}）</div>
                 <div className="d-unit">单　位：无锡职业技术大学</div>
                 <table className="doc-tbl">
                   <tbody>

@@ -45,6 +45,10 @@ export function updateRecord(id, body) {
   return userRequest.put(`/form/records/${id}`, body, { timeout: 30000 });
 }
 
+export function aiMaterial(fieldKey, fieldLabel, current) {
+  return userRequest.post('/form/ai-material', { fieldKey, fieldLabel, current }, { timeout: 60000 });
+}
+
 export function deleteRecord(id) {
   return userRequest.delete(`/form/records/${id}`);
 }
