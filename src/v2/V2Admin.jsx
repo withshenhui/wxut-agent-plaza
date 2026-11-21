@@ -309,8 +309,8 @@ function Dashboard({ go }) {
           <div className="ct">各分类：数量 × 访问量</div>
           <div className="cs">双指标对比 · 点击前往分类管理</div>
           {st.byCat.map((c) => (
-            <div key={c.label} className="v2-hbar-row" style={{ cursor: 'pointer' }} onClick={() => go('categories')} title="前往分类管理">
-              <span className="v2-hbar-name">{c.label}</span>
+            <div key={c.label} className="v2-hbar-row cat-align" style={{ cursor: 'pointer' }} onClick={() => go('categories')} title="前往分类管理">
+              <span className="nm">{c.label}</span>
               <div className="v2-hbar-track">
                 <div style={{ width: `${(c.n / catMax) * 100}%`, background: 'var(--p-secondary)' }} />
               </div>

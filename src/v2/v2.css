@@ -347,6 +347,8 @@ input,select,textarea{font-family:inherit}
 .v2-hbar-track{flex:1;display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--p-fill)}
 .v2-hbar-track div{height:100%}
 .v2-hbar-val{width:80px;font-size:11.5px;color:var(--p-t4);font-variant-numeric:tabular-nums;flex-shrink:0}
+/* 仪表盘「各分类」卡：名称左对齐自适应，行首与标题对齐 */
+.v2-hbar-row.cat-align .nm{min-width:64px;max-width:96px;text-align:left;font-size:12px;color:var(--p-t2);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v2-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .v2-filter-bar label{font-size:12.5px;color:var(--p-t3)}
 .v2-select{height:34px;border:1px solid var(--p-line2);border-radius:9px;background:var(--p-surface);font-size:13px;color:var(--p-text);padding:0 10px;outline:none;cursor:pointer}
