@@ -169,14 +169,8 @@ function OverviewTab() {
           </div>
           <div className="v2-card">
             <div className="ct">对话场景分布</div>
-            <div className="cs">按智能体分类聚合</div>
-            {OV.scenes.map(([n, v]) => (
-              <div key={n} className="v2-hbar-row">
-                <span className="v2-hbar-name" style={{ width: 100 }}>{n}</span>
-                <div className="v2-hbar-track"><div style={{ width: `${(v / maxScene) * 100}%`, background: 'var(--p-secondary)' }} /></div>
-                <span className="v2-hbar-val">{v}%</span>
-              </div>
-            ))}
+            <div className="cs">按智能体分类聚合 · 环形占比</div>
+            <DonutChart data={OV.scenes} unit="%" centerLabel="场景占比" />
           </div>
         </div>
 
@@ -202,6 +196,11 @@ function OverviewTab() {
                   <span className="v2-hbar-val">{fmt(a.visitCount)} 次</span>
                 </div>
               ))}
+            </div>
+            <div>
+              <div style={subT}>各学院智能体使用活跃度</div>
+              <AreaTrendChart data={OV.collegeActivity.map(([n, v]) => [n, v])} />
+              <div style={{ fontSize: 10.5, color: 'var(--p-t4)', textAlign: 'right', marginTop: 2 }}>按近 30 日访问指数排序 · 曲线平滑仅示趋势形态</div>
             </div>
             <div>
               <div style={subT}>分类分布</div>
@@ -251,15 +250,10 @@ function OverviewTab() {
               ))}
             </div>
             <div>
-              <div style={subT}>模型能力类型分布</div>
-              {st.types.map(([name, v]) => (
-                <div key={name} className="v2-hbar-row">
-                  <span className="v2-hbar-name" style={{ width: 76 }}>{name || '—'}</span>
-                  <div className="v2-hbar-track"><div style={{ width: `${(v / maxType) * 100}%`, background: 'var(--p-secondary)' }} /></div>
-                  <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 12, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={subT}>模型能力画像</div>
+              <RadarChart data={st.types} />
+              <div style={{ fontSize: 10.5, color: 'var(--p-t4)', textAlign: 'center', marginTop: 2 }}>按类型数量刻画平台能力结构</div>
+              <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 12, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <Icon name="chip" size={15} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
                 <span>校园智算一体机：5×NVIDIA L20（240G 显存）本地算力，承载 DeepSeek-R1-70B 等模型，数据不出校园、免费调用。</span>
               </div>
@@ -440,6 +434,131 @@ function ComboTrendChart({ data }) {
       {data.map((x, i) => (
         <circle key={x[0] + 'c'} cx={xOf(i).toFixed(1)} cy={yOf(x[1]).toFixed(1)} r="3.4" fill="#fff"
           stroke="var(--p-accent)" stroke-width="1.8" />
+      ))}
+    </svg>
+  );
+}
+
+
+/* 环形占比图（Donut）：中心放总量，右侧图例 */
+function DonutChart({ data, unit = '', centerLabel = '' }) {
+  const total = data.reduce((s, x) => s + x[1], 0) || 1;
+  const R = 62, C = 2 * Math.PI * R;
+  const colors = ['var(--el-primary)', 'var(--p-secondary)', 'var(--p-accent)', 'var(--p-success)', '#8B5CF6', '#94A3B8', '#38BDF8'];
+  let acc = 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginTop: 16, flexWrap: 'wrap' }}>
+      <svg viewBox="0 0 160 160" style={{ width: 158, height: 158, flexShrink: 0 }}>
+        {data.map((x, i) => {
+          const frac = x[1] / total;
+          const dash = `${(frac * C).toFixed(1)} ${C}`;
+          const off = (-acc * C).toFixed(1);
+          acc += frac;
+          return (
+            <circle key={x[0]} cx="80" cy="80" r={R} fill="none" stroke={colors[i % colors.length]}
+              stroke-width="21" stroke-dasharray={dash} stroke-dashoffset={off}
+              transform="rotate(-90 80 80)" opacity="0.92">
+              <title>{x[0]}：{x[1]}{unit}（{Math.round(frac * 100)}%）</title>
+            </circle>
+          );
+        })}
+        <text x="80" y="76" text-anchor="middle" font-size="21" font-weight="700" fill="var(--aink)">{total.toLocaleString()}</text>
+        <text x="80" y="93" text-anchor="middle" font-size="9.5" fill="var(--p-t4)">{centerLabel}</text>
+      </svg>
+      <div style={{ flex: 1, minWidth: 130 }}>
+        {data.map((x, i) => (
+          <div key={x[0]} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4.5px 0', fontSize: 12 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 2.5, background: colors[i % colors.length], flexShrink: 0 }} />
+            <span style={{ color: 'var(--p-t2)', flex: 1 }}>{x[0]}</span>
+            <b style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--aink)' }}>{x[1]}{unit}</b>
+            <span style={{ color: 'var(--p-t4)', width: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Math.round((x[1] / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* 雷达图：多维度能力画像 */
+function RadarChart({ data, max }) {
+  const n = data.length;
+  const cx = 130, cy = 112, R = 78;
+  const M = max || Math.max(...data.map((x) => x[1])) * 1.15;
+  const pt = (i, v) => {
+    const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const r = (v / M) * R;
+    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+  };
+  const ring = (f) => data.map((_, i) => pt(i, M * f)).join(' ');
+  return (
+    <svg viewBox="0 0 260 224" style={{ width: '100%', maxWidth: 300, margin: '10px auto 0', display: 'block' }}>
+      {[0.25, 0.5, 0.75, 1].map((f) => (
+        <polygon key={f} points={ring(f)} fill="none" stroke="#E3E9F2" stroke-width="1" />
+      ))}
+      {data.map((x, i) => {
+        const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+        return <line key={x[0]} x1={cx} y1={cy} x2={(cx + R * Math.cos(a)).toFixed(1)} y2={(cy + R * Math.sin(a)).toFixed(1)} stroke="#EDF1F6" stroke-width="1" />;
+      })}
+      <polygon points={data.map((x, i) => pt(i, x[1])).join(' ')} fill="var(--el-primary)" opacity="0.16" stroke="var(--el-primary)" stroke-width="2" stroke-linejoin="round" />
+      {data.map((x, i) => (
+        <circle key={x[0] + 'p'} {...(() => { const a = (Math.PI * 2 * i) / n - Math.PI / 2; const r = (x[1] / M) * R; return { cx: (cx + r * Math.cos(a)).toFixed(1), cy: (cy + r * Math.sin(a)).toFixed(1) }; })()} r="3.2" fill="#fff" stroke="var(--el-primary)" stroke-width="1.8" />
+      ))}
+      {data.map((x, i) => {
+        const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+        const lx = cx + (R + 17) * Math.cos(a), ly = cy + (R + 17) * Math.sin(a);
+        return (
+          <text key={x[0] + 't'} x={lx.toFixed(1)} y={(ly + 3).toFixed(1)} font-size="10" fill="var(--p-t3)"
+            text-anchor={Math.abs(Math.cos(a)) < 0.3 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end'}>{x[0]} {x[1]}</text>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* 面积趋势图：渐变填充 + 平滑曲线 */
+function AreaTrendChart({ data }) {
+  const W = 560, H = 200, padT = 24, padB = 26, padL = 10, padR = 10;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const vals = data.map((x) => x[1]);
+  const max = Math.max(...vals) * 1.1, min = Math.min(...vals) * 0.9;
+  const n = data.length;
+  const xOf = (i) => padL + (iw / (n - 1)) * i;
+  const yOf = (v) => padT + ih - ((v - min) / (max - min)) * ih;
+  // Catmull-Rom → bezier 平滑
+  let d = `M ${xOf(0)} ${yOf(vals[0])}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = i === 0 ? [xOf(0), yOf(vals[0])] : [xOf(i - 1), yOf(vals[i - 1])];
+    const p1 = [xOf(i), yOf(vals[i])];
+    const p2 = [xOf(i + 1), yOf(vals[i + 1])];
+    const p3 = i + 2 >= n ? p2 : [xOf(i + 2), yOf(vals[i + 2])];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  const area = d + ` L ${xOf(n - 1).toFixed(1)} ${padT + ih} L ${xOf(0)} ${padT + ih} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', marginTop: 12, display: 'block' }}>
+      <defs>
+        <linearGradient id="ovAreaG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--el-primary)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--el-primary)" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75].map((f) => (
+        <line key={f} x1={padL} x2={W - padR} y1={padT + ih * f} y2={padT + ih * f} stroke="#F1F5F9" stroke-width="1" />
+      ))}
+      <path d={area} fill="url(#ovAreaG)" />
+      <path d={d} fill="none" stroke="var(--el-primary)" stroke-width="2.4" stroke-linecap="round" />
+      {data.map((x, i) => (
+        <g key={x[0]}>
+          <circle cx={xOf(i).toFixed(1)} cy={yOf(x[1]).toFixed(1)} r="3.4" fill="#fff" stroke="var(--el-primary)" stroke-width="1.8">
+            <title>{x[0]}：{x[1].toLocaleString()} 次</title>
+          </circle>
+          <text x={xOf(i).toFixed(1)} y={(H - 8).toFixed(1)} font-size="10" fill="#94A3B8" text-anchor="middle">{x[0].slice(5)}</text>
+          {(i === 0 || i === n - 1 || x[1] === Math.max(...vals)) && (
+            <text x={xOf(i).toFixed(1)} y={(yOf(x[1]) - 9).toFixed(1)} font-size="10" fill="var(--el-primary)" text-anchor="middle" font-weight="600">{x[1].toLocaleString()}</text>
+          )}
+        </g>
       ))}
     </svg>
   );
