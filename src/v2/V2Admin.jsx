@@ -73,6 +73,45 @@ function IconPicker({ value, onChange, kind = 'icon' }) {
   );
 }
 
+/* 环形图（前台 DonutChart 同款） */
+function AdminDonut({ data, unit = '', centerLabel = '' }) {
+  const total = data.reduce((s, x) => s + x[1], 0) || 1;
+  const R = 62, C = 2 * Math.PI * R;
+  const colors = ['var(--el-primary)', 'var(--p-secondary)', 'var(--p-accent)', 'var(--p-success)', '#8B5CF6', '#94A3B8', '#38BDF8'];
+  let acc = 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
+      <svg viewBox="0 0 160 160" style={{ width: 148, height: 148, flexShrink: 0 }}>
+        {data.map((x, i) => {
+          const frac = x[1] / total;
+          const dash = `${(frac * C).toFixed(1)} ${C}`;
+          const off = (-acc * C).toFixed(1);
+          acc += frac;
+          return (
+            <circle key={x[0]} cx="80" cy="80" r={R} fill="none" stroke={colors[i % colors.length]}
+              stroke-width="21" stroke-dasharray={dash} stroke-dashoffset={off}
+              transform="rotate(-90 80 80)" opacity="0.92">
+              <title>{x[0]}：{x[1]}{unit}（{Math.round(frac * 100)}%）</title>
+            </circle>
+          );
+        })}
+        <text x="80" y="76" text-anchor="middle" font-size="20" font-weight="700" fill="var(--aink)">{total.toLocaleString()}</text>
+        <text x="80" y="93" text-anchor="middle" font-size="9.5" fill="var(--p-t4)">{centerLabel}</text>
+      </svg>
+      <div style={{ flex: 1, minWidth: 130 }}>
+        {data.map((x, i) => (
+          <div key={x[0]} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 2.5, background: colors[i % colors.length], flexShrink: 0 }} />
+            <span style={{ color: 'var(--p-t2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x[0]}</span>
+            <b style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--aink)' }}>{x[1]}{unit}</b>
+            <span style={{ color: 'var(--p-t4)', width: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Math.round((x[1] / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* 表格骨架屏（前台 FundingSkeleton 同范式） */
 function TableSkeleton({ rows = 6, kpis = false }) {
   return (
@@ -168,25 +207,40 @@ export default function V2Admin({ user, onLogout }) {
 /* ================= 仪表盘 ================= */
 function Dashboard({ go }) {
   const [st, setSt] = useState(null);
-
   const [loadedAt, setLoadedAt] = useState(null);
+  const [users, setUsers] = useState(null);
   const refresh = () => {
-    setSt(null);
+    setSt(null); setUsers(null);
     Promise.all([
       fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json()),
       fetch(`${API_BASE}/categories`).then((r) => r.json()),
       fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
       fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
-    ]).then(([a, c, g, v]) => {
+      userApi.listUsers({ page: 1, size: 200 }).catch(() => null),
+    ]).then(([a, c, g, v, us]) => {
       const agents = a.data?.records || [];
+      const models = [...(g.data?.records || []), ...(v.data?.records || [])];
+      const catMap = new Map();
+      agents.forEach((x) => {
+        const e = catMap.get(x.categoryName) || { n: 0, v: 0 };
+        e.n += 1; e.v += x.visitCount || 0;
+        catMap.set(x.categoryName, e);
+      });
+      const provMap = new Map();
+      models.forEach((m) => provMap.set(m.provider, (provMap.get(m.provider) || 0) + 1));
+      setUsers(us ? (us.records || []).length : null);
       setSt({
         agents: a.data?.total ?? agents.length,
         cats: (c.data || []).length,
-        models: (g.data?.records || []).length + (v.data?.records || []).length,
+        models: models.length,
         visits: agents.reduce((s2, x) => s2 + (x.visitCount || 0), 0),
-        top: [...agents].sort((x, y) => (y.visitCount || 0) - (x.visitCount || 0)).slice(0, 5),
-        byCat: (c.data || []).map((cc) => ({ label: cc.label, n: agents.filter((x) => x.categoryName === cc.label).length })),
+        top: [...agents].sort((x, y) => (y.visitCount || 0) - (x.visitCount || 0)).slice(0, 8),
+        byCat: (c.data || []).map((cc) => ({ label: cc.label, n: agents.filter((x) => x.categoryName === cc.label).length, v: agents.filter((x) => x.categoryName === cc.label).reduce((s2, x) => s2 + (x.visitCount || 0), 0) })),
         building: agents.filter((x) => x.isBuilding === 1).length,
+        rec: agents.filter((x) => x.isRecommended === 1).length,
+        on: agents.filter((x) => x.status === 1 && x.isBuilding !== 1).length,
+        provs: [...provMap.entries()].sort((x, y) => y[1] - x[1]).slice(0, 7),
+        local: models.filter((m) => (m.tags || []).includes('本地部署')).length,
       });
       setLoadedAt(new Date());
     }).catch(() => setSt({ err: true }));
@@ -200,51 +254,94 @@ function Dashboard({ go }) {
   );
   if (st.err) return <div className="v2-empty">数据加载失败 · <button className="v2-link" onClick={refresh}>重试</button></div>;
   const kpis = [
-    { lb: '智能体', vl: st.agents, cmp: `累计访问 ${st.visits.toLocaleString()} · 建设中 ${st.building ?? 0}`, bar: 'var(--el-primary)', go: 'agents' },
+    { lb: '智能体', vl: st.agents, cmp: `建设中 ${st.building} · 已上架 ${st.on}`, bar: 'var(--el-primary)', go: 'agents' },
+    { lb: '累计访问', vl: st.visits, cmp: `推荐位 ${st.rec} 个`, bar: '#8B5CF6' },
+    { lb: '模型', vl: st.models, cmp: `本地部署 ${st.local} 个`, bar: 'var(--p-accent)', go: 'models' },
     { lb: '分类', vl: st.cats, cmp: '覆盖广场全部标签', bar: 'var(--p-secondary)', go: 'categories' },
-    { lb: '模型', vl: st.models, cmp: '本地部署 + 外部合作', bar: '#8B5CF6', go: 'models' },
     { lb: '学院锡锡导员', vl: st.byCat.find((x) => x.label === '锡锡导员')?.n ?? 0, cmp: '实时数据查询', bar: 'var(--p-success)', go: 'agents' },
+    { lb: '管理账号', vl: users ?? '—', cmp: '含 CAS 自动注册', bar: '#38BDF8', go: 'users' },
   ];
+  const topMax = st.top[0]?.visitCount || 1;
+  const catMax = Math.max(...st.byCat.map((x) => x.n), 1);
   return (
     <>
       <div className="v2-page-head">
         <div><div className="v2-ph-title">仪表盘</div><div className="v2-ph-sub">平台核心数据概览 · 实时统计{loadedAt ? ` · 更新于 ${loadedAt.toLocaleTimeString('zh-CN')}` : ''}</div></div>
         <button className="v2-btn ghost" onClick={refresh}><Icon name="back" size={14} style={{ transform: 'rotate(180deg)' }} /> 刷新数据</button>
       </div>
-      <div className="v2-kpi-row">
+      <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
         {kpis.map((k) => (
           <div key={k.lb} className="v2-kpi" style={{ cursor: k.go ? 'pointer' : 'default', transition: 'box-shadow .15s' }} onClick={() => k.go && go(k.go)} onMouseEnter={(e) => k.go && (e.currentTarget.style.boxShadow = '0 4px 16px #1a31521a')} onMouseLeave={(e) => k.go && (e.currentTarget.style.boxShadow = 'none')}>
             <span className="bar" style={{ background: k.bar }} />
-            <div className="lb">{k.lb}{k.go && <span style={{ fontSize: 10, color: 'var(--el-primary)', marginLeft: 6 }}>管理 →</span>}</div><div className="vl">{k.vl.toLocaleString()}</div><div className="cmp">{k.cmp}</div>
+            <div className="lb">{k.lb}{k.go && <span style={{ fontSize: 10, color: 'var(--el-primary)', marginLeft: 6 }}>管理 →</span>}</div><div className="vl">{typeof k.vl === 'number' ? k.vl.toLocaleString() : k.vl}</div><div className="cmp">{k.cmp}</div>
           </div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 16 }}>
         <div className="v2-card">
-          <div className="ct">访问量 TOP5 智能体</div>
-          <div className="cs">按累计访问次数排序</div>
+          <div className="ct">访问量 TOP8 智能体</div>
+          <div className="cs">点击行直达编辑 · 按累计访问排序</div>
           {st.top.map((a) => (
-            <div key={a.id} className="v2-hbar-row">
+            <div key={a.id} className="v2-hbar-row" style={{ cursor: 'pointer' }} onClick={() => go('agents')} title="前往智能体管理">
               <span className="v2-hbar-name">{a.name}</span>
               <div className="v2-hbar-track">
-                <div style={{ width: `${(a.visitCount / st.top[0].visitCount) * 100}%`, background: 'var(--el-primary)' }} />
+                <div style={{ width: `${(a.visitCount / topMax) * 100}%`, background: a.categoryKey === 'college' ? 'var(--p-success)' : 'var(--el-primary)' }} />
               </div>
               <span className="v2-hbar-val">{(a.visitCount || 0).toLocaleString()}</span>
             </div>
           ))}
         </div>
         <div className="v2-card">
-          <div className="ct">各分类智能体数</div>
-          <div className="cs">实时统计</div>
+          <div className="ct">智能体分类分布</div>
+          <div className="cs">数量与占比</div>
+          <AdminDonut data={st.byCat.filter((x) => x.n > 0).map((x) => [x.label, x.n])} unit=" 个" centerLabel="智能体" />
+        </div>
+        <div className="v2-card">
+          <div className="ct">模型供应商构成</div>
+          <div className="cs">本地部署 + 外部合作</div>
+          <AdminDonut data={st.provs} unit=" 个" centerLabel="模型" />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
+        <div className="v2-card">
+          <div className="ct">各分类：数量 × 访问量</div>
+          <div className="cs">双指标对比 · 点击前往分类管理</div>
           {st.byCat.map((c) => (
-            <div key={c.label} className="v2-hbar-row">
+            <div key={c.label} className="v2-hbar-row" style={{ cursor: 'pointer' }} onClick={() => go('categories')} title="前往分类管理">
               <span className="v2-hbar-name">{c.label}</span>
               <div className="v2-hbar-track">
-                <div style={{ width: `${(c.n / Math.max(...st.byCat.map((x) => x.n), 1)) * 100}%`, background: 'var(--p-secondary)' }} />
+                <div style={{ width: `${(c.n / catMax) * 100}%`, background: 'var(--p-secondary)' }} />
               </div>
-              <span className="v2-hbar-val">{c.n} 个</span>
+              <span className="v2-hbar-val" title="访问量">{c.n} 个 · {c.v.toLocaleString()} 次</span>
             </div>
           ))}
+        </div>
+        <div className="v2-card">
+          <div className="ct">运营健康度</div>
+          <div className="cs">上架结构一览</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+            {[
+              ['已上架', st.on, 'var(--p-success)', '广场可见，师生可直接使用'],
+              ['建设中', st.building, '#F59E0B', '广场隐藏，后台可继续编辑'],
+              ['推荐位', st.rec, 'var(--el-primary)', '广场「全部」tab 置顶展示'],
+            ].map(([lb, n, color, desc]) => (
+              <div key={lb} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, background: '#F8FAFD', border: '1px solid #EEF2F8' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: color + '1a', color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>{n}</div>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--aink)' }}>{lb}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--p-t4)', marginTop: 2 }}>{desc}</div>
+                </div>
+                <div style={{ marginLeft: 'auto', width: 90 }}>
+                  <div style={{ height: 6, borderRadius: 3, background: '#EDF1F6', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${st.agents ? (n / st.agents) * 100 : 0}%`, background: color, borderRadius: 3 }} />
+                  </div>
+                  <div style={{ fontSize: 10.5, color: 'var(--p-t4)', textAlign: 'right', marginTop: 3 }}>{st.agents ? Math.round((n / st.agents) * 100) : 0}% 占比</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
