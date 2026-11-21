@@ -87,7 +87,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
-        <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
+        <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
         <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
       </a>
       <div className="v2-nav-links">
@@ -137,7 +137,7 @@ export function Footer({ onNav, toast }) {
         <div className="v2-foot-grid">
           <div className="v2-foot-brand">
             <div className="row">
-              <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
+              <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
               <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
             </div>
             <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
@@ -1020,7 +1020,7 @@ export default function V2App() {
             <div className="v2-md-head"><div className="t">{prompt.kind === 'perm' ? '暂无使用权限' : '需要登录'}</div><button className="v2-md-close" onClick={() => setPrompt(null)}>✕</button></div>
             <div className="v2-md-body" style={{ paddingBottom: 8 }}>
               <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
-                <img src="./v2-logo.png" alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
+                <img src="./v2-logo.png?v=2" alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
               </div>
               <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{prompt.msg}</p>
               {prompt.kind === 'login' && (

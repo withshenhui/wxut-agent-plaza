@@ -159,7 +159,7 @@ export default function V2Admin({ user, onLogout }) {
     <div className="v2-admin-app">
       <aside className="v2-sidebar">
         <div className="v2-side-brand">
-          <img src="./v2-logo.png" alt="无锡职业技术大学校徽" />
+          <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
           <div><div className="t1">锡职大AI中台 <span style={{ fontSize: 9, color: 'var(--el-primary)', fontWeight: 700 }}>V2</span></div><div className="t2">WXUT AI CENTER · ADMIN</div></div>
         </div>
         <nav className="v2-side-menu">
