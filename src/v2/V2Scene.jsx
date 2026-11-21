@@ -256,7 +256,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
           {dataScope === 'college' && user?.collegeName ? (
             <span className="v2-scope-lock" title="数据范围为本人学院">{user.collegeName} 🔒</span>
           ) : (
-            <select className="v2-select" value={filters.college} onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
+            <select className="v2-select" value={filters.college} title="数据范围为全校，可切换学院" onChange={(e) => setFilters({ ...filters, college: e.target.value })}>
               <option value="">全部学院</option>
               {collegeNames.map((c) => <option key={c}>{c}</option>)}
             </select>

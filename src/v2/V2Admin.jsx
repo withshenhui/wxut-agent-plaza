@@ -844,7 +844,7 @@ function UsersAdmin({ toast }) {
                   <div style={{ fontSize: 12.5, color: 'var(--p-t3)', marginBottom: 6 }}>学院</div>
                   <select className="v2-select" style={{ width: '100%' }} value={edit.collegeId} onChange={(e) => setEdit({ ...edit, collegeId: e.target.value })}>
                     <option value="">未分配</option>
-                    {colleges.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {colleges.map((c) => <option key={c.id} value={c.id} title={c.scopeAll === 1 ? '数据范围=全校数据（如校资助中心等业务岗）' : undefined}>{c.name}{c.scopeAll === 1 ? '（数据范围=全校）' : ''}</option>)}
                   </select>
                 </div>
               </div>
