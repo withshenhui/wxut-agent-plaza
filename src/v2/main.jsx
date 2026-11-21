@@ -57,7 +57,7 @@ function V2Entry() {
   const logout = useCallback(() => {
     localStorage.removeItem('admin_token');
     setUser(null);
-    navigate('/');
+    navigate('/admin/login');
   }, [navigate]);
 
   if (checking) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F5F6FA', color: '#94A3B8', fontSize: 13 }}>加载中…</div>;

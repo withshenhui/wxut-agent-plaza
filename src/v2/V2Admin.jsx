@@ -551,7 +551,7 @@ function UsersAdmin({ toast }) {
                 <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12 }}>{u.username}</td>
                 <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{u.nickname}</td>
                 <td><span className={`v2-tag ${u.role === 'admin' ? 'blue' : u.role === 'leader' ? 'ok' : u.role === 'college_admin' ? 'mid' : ''}`}>{ROLE_LABELS[u.role] || u.role}</span></td>
-                <td>{u.collegeId != null ? collegeName(u.collegeId) : <span style={{ color: 'var(--p-t4)' }}>未同步</span>}</td>
+                <td>{u.collegeId != null ? collegeName(u.collegeId) : <span style={{ color: 'var(--p-t4)' }} title="该账号尚未登录过，下次 CAS 登录时自动从数据中台同步学院归属">未同步</span>}</td>
                 <td><span className={`v2-tag ${u.status === 1 ? 'ok' : 'off'}`}>{u.status === 1 ? '启用' : '禁用'}</span></td>
                 <td>
                   <button className="v2-link" onClick={() => openEdit(u)}>角色权限</button>
@@ -840,14 +840,22 @@ function FilesAdmin({ toast }) {
               <tr key={f.id}>
                 <td style={{ color: 'var(--aink)' }}>{f.originalName || f.fileName || f.id}</td>
                 <td className="num">{f.fileSize ? `${(f.fileSize / 1024).toFixed(0)} KB` : '—'}</td>
-                <td className="num">{(f.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
+                <td className="num">{(f.createTime || f.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
                 <td>
                   <a className="v2-link" href={`/agent-plaza/api/v1/files/download/${f.id}`} target="_blank" rel="noreferrer">下载</a>
                   <button className="v2-link danger" onClick={() => del(f)}>删除</button>
                 </td>
               </tr>
             ))}
-            {!recs.length && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--p-t4)' }}>暂无文件</td></tr>}
+            {!recs.length && (
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: '44px 20px', color: 'var(--p-t4)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <Icon name="folder" size={40} style={{ color: '#C9D6E8' }} />
+                  <div style={{ fontSize: 13.5, color: 'var(--p-t3)' }}>还没有上传过文件</div>
+                  <div style={{ fontSize: 12 }}>智能体图标、知识库附件等素材可上传后在外链引用 · 文件同样受白名单约束</div>
+                </div>
+              </td></tr>
+            )}
           </tbody>
         </table>
         <div className="v2-tbl-foot"><span>共 {recs.length} 个文件</span></div>
@@ -875,9 +883,9 @@ function LogsAdmin() {
           <tbody>
             {(list.records || []).map((l) => (
               <tr key={l.id}>
-                <td className="num" style={{ color: 'var(--p-t4)' }}>{(l.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
+                <td className="num" style={{ color: 'var(--p-t4)', whiteSpace: 'nowrap' }}>{(l.createTime || l.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
                 <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{l.operatorName || l.username || '—'}</td>
-                <td style={{ whiteSpace: 'normal' }}>{l.content || l.operation || l.description || '—'}</td>
+                <td style={{ whiteSpace: 'normal' }}>{l.operation || l.content || '—'}{l.params ? <span style={{ color: 'var(--p-t4)', marginLeft: 8, fontSize: 12 }}>{l.params}</span> : null}</td>
               </tr>
             ))}
             {!(list.records || []).length && <tr><td colSpan={3} style={{ textAlign: 'center', padding: 32, color: 'var(--p-t4)' }}>暂无日志</td></tr>}
