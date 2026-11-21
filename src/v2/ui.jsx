@@ -111,7 +111,7 @@ export function ToastProvider({ children }) {
 export const useToast = () => useContext(ToastCtx);
 
 /* ================= 弹窗 ================= */
-export function Modal({ title, onClose, children, footer, width = 600 }) {
+export function Modal({ title, onClose, children, footer, width = 680 }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);

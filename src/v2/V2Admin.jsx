@@ -32,11 +32,32 @@ const TITLES = {
   files: '文件管理', logs: '操作日志',
 };
 
+const ROUTE_KEYS = Object.keys(TITLES);
+
 export default function V2Admin({ user, onLogout }) {
-  const [page, setPage] = useState('dashboard');
+  const [page, setPage] = useState(() => {
+    // 初始 page 由地址栏决定：#/admin/{key}
+    const h = window.location.hash || '';
+    const seg = (h.split('#/admin/')[1] || '').split('?')[0].split('/')[0];
+    return ROUTE_KEYS.includes(seg) ? seg : 'dashboard';
+  });
   const navigate = useNavigate();
   const toast = useToast();
-  const go = useCallback((p) => { setPage(p); window.scrollTo(0, 0); }, []);
+  // 地址栏 → page（浏览器前进/后退/手输）
+  useEffect(() => {
+    const onHash = () => {
+      const seg = (window.location.hash.split('#/admin/')[1] || '').split('?')[0].split('/')[0];
+      setPage(ROUTE_KEYS.includes(seg) ? seg : 'dashboard');
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  // 点菜单 → page + 地址栏同步
+  const go = useCallback((p) => {
+    setPage(p);
+    window.location.hash = '#/admin/' + p;
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="v2-admin-app">
       <aside className="v2-sidebar">
@@ -530,7 +551,7 @@ function UsersAdmin({ toast }) {
 
       {edit && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setEdit(null); }}>
-          <div className="v2-modal" style={{ width: 520 }}>
+          <div className="v2-modal" style={{ width: 640 }}>
             <div className="v2-md-head"><div className="t">角色与权限 · {edit.u.nickname || edit.u.username}</div><button className="v2-md-close" onClick={() => setEdit(null)}>✕</button></div>
             <div className="v2-md-body">
               <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
