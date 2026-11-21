@@ -8,6 +8,7 @@ import { getAgentDetail } from '../api/agent';
 import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { SceneWorkbench } from './V2Scene.jsx';
+import V2Teacher from './V2Teacher.jsx';
 import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
@@ -39,6 +40,8 @@ async function encodeUserId(userId) {
 
 /** V1 同款智能体唤起：externalUrl 外跳(带登录态)/#/college-query 站内/其余进 V2 对话 */
 async function launchAgentV2(navigate, agentId, user, onChat) {
+  // 智能填报（39）改跳 AI教师工作台内部（不再外跳 dcs）
+  if (agentId === 39) { navigate('/teacher'); return; }
   try {
     const detail = await getAgentDetail(agentId);
     const url = detail.externalUrl || detail.external_url;
@@ -71,6 +74,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout }) {
     { key: 'plaza', label: '首页' },
     { key: 'models', label: '模型服务' },
     { key: 'insight', label: 'AI 数据洞察' },
+    { key: 'teacher', label: 'AI教师工作台' },
     { key: 'dev', label: '智能体开发平台' },
     { key: 'kb', label: '知识库中心' },
   ];
@@ -131,6 +135,7 @@ export function Footer({ onNav, toast }) {
             <div className="h">平台服务</div>
             <div className="lnk" onClick={() => onNav('plaza')}>智能体广场</div>
             <div className="lnk" onClick={() => onNav('models')}>模型服务</div>
+            <div className="lnk" onClick={() => onNav('teacher')}>AI教师工作台</div>
             <div className="lnk" onClick={() => onNav('kb')}>知识库中心</div>
             <div className="lnk" onClick={() => toast('正式版将新窗口打开数据大屏')}>数据大屏</div>
           </div>
@@ -852,6 +857,8 @@ export default function V2App() {
   const { user, guest, casLogin, logout, requireLogin } = useV2User();
   const [loginPrompt, setLoginPrompt] = useState(''); // 敏感操作登录引导
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
+  const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
+  const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
 
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
@@ -874,8 +881,10 @@ export default function V2App() {
       const segs = location.pathname.replace(/^\/+/, '').split('/');
       const p = segs[0] || 'plaza';
       if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) { setPage('insight'); setWorkbench(segs[1]); return; }
+      if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
+      setTeacherWizard(false);
       setWorkbench(null);
-      setPage(['plaza', 'models', 'insight', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
+      setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
     }
   }, [location.pathname, agents, navigate]);
 
@@ -910,6 +919,13 @@ export default function V2App() {
     nav(p);
   }, [nav, requireLogin]);
 
+  // 打开智能填报向导（可带记录 id 继续填报）
+  const openWizard = useCallback((recId) => {
+    setTeacherRec(recId || null);
+    navigate('/teacher/form');
+    window.scrollTo(0, 0);
+  }, [navigate]);
+
   // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
     <>
@@ -939,6 +955,14 @@ export default function V2App() {
         <SceneWorkbench sceneKey={workbench} toast={toast} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
       {page === 'dev' && <Dev toast={toast} />}
+      {page === 'teacher' && (
+        <V2Teacher user={user} requireLogin={requireLogin} toast={toast}
+          wizard={teacherWizard}
+          openRecordId={teacherRec}
+          openWizard={openWizard}
+          onExitWizard={() => { setTeacherWizard(false); setTeacherRec(null); navigate('/teacher'); }}
+          onNav={nav} />
+      )}
       {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
       <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
 

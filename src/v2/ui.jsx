@@ -33,6 +33,10 @@ const PATHS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   code: '<path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/>',
   construction: '<rect x="2.5" y="4" width="19" height="4" rx="1"/><path d="M5.5 8v11M18.5 8v11M9.5 8v11M14.5 8v11"/><path d="M12 12l1.6 4.6L18 18l-4.4 1.4L12 24l-1.6-4.6L6 18l4.4-1.4z" transform="translate(0,-8) scale(.78)"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  chevR: '<polyline points="9 18 15 12 9 6"/>',
+  chevD: '<polyline points="6 9 12 15 18 9"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
 };
 
 /* 建设中卡片图标（工程车/吊钩，主色描边） */
