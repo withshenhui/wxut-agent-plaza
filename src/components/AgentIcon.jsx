@@ -12,17 +12,23 @@ const categoryColors = {
   college: { bg: '#E8F6FF', color: '#0EA5E9' },
 };
 
-// Map emoji to icon key
+// Map emoji to icon key（键统一无变体选择符，查找时归一化）
 const emojiToKey = {
-  '📅': 'calendar', '❤️': 'heart', '💰': 'wallet', '🎓': 'graduate',
+  '📅': 'calendar', '❤': 'heart', '💰': 'wallet', '🎓': 'graduate',
   '🤝': 'handshake', '📊': 'chart', '🚩': 'flag', '💼': 'briefcase',
   '📈': 'trending', '🏭': 'factory', '🔧': 'tool', '🏆': 'trophy',
   '📚': 'books', '🎨': 'palette', '🏢': 'building', '📖': 'book-open',
-  '📋': 'clipboard', '🔄': 'refresh', '📄': 'document', '🏛️': 'landmark',
+  '📋': 'clipboard', '🔄': 'refresh', '📄': 'document', '🏛': 'landmark',
   '👥': 'people', '🔬': 'microscope', '💬': 'chat', '✅': 'check',
-  '📱': 'phone', '🔌': 'plug', '🛡️': 'shield', '🌐': 'globe',
+  '📱': 'phone', '🔌': 'plug', '🛡': 'shield', '🌐': 'globe',
   '🏠': 'house', '💳': 'creditcard', '📝': 'pencil', '🎯': 'target',
-  '💻': 'computer', '🛠️': 'tools', '⚖️': 'scale',
+  '💻': 'computer', '🛠': 'tools', '⚖': 'scale',
+  // 学院专属 emoji（原先 fallback 公文包）
+  '🎛': 'tool', '🚗': 'factory', '🌍': 'globe', '🏞': 'globe', '📡': 'chat', '🏫': 'landmark',
+  // 图标去重新增
+  '🧭': 'target', '⚙': 'tool', '🏗': 'building', '📜': 'clipboard', '🏅': 'trophy',
+  '📑': 'books', '🖥': 'computer', '🧮': 'chart', '🪙': 'wallet', '⚛': 'microscope',
+  '💾': 'document', '☀': 'heart', '🔗': 'globe', '🪪': 'people', '⭐': 'check',
 };
 
 // SVG icons (20x20, stroke-based, matching sidebar style)
@@ -65,7 +71,8 @@ const svgIcons = {
 };
 
 function AgentIcon({ emoji, category, size = 28 }) {
-  const key = emojiToKey[emoji] || 'briefcase';
+  const norm = (emoji || '').replace(/\uFE0F/g, '');
+  const key = emojiToKey[norm] || 'briefcase';
   const colors = categoryColors[category] || categoryColors.other;
   const iconSvg = svgIcons[key] || svgIcons.briefcase;
 

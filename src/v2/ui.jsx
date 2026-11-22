@@ -37,6 +37,62 @@ const PATHS = {
   chevR: '<polyline points="9 18 15 12 9 6"/>',
   chevD: '<polyline points="6 9 12 15 18 9"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  // 语义图标（智能体独立图标，DB icon=emoji 或图标名均可解析）
+  calendar: '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/><path d="M8 14h2M14 14h2M8 17.5h2M14 17.5h2"/>',
+  flag: '<path d="M5 21V4"/><path d="M5 4c2.5-1.5 5-1.5 7 0s4.5 1.5 7 0v9c-2.5 1.5-5 1.5-7 0s-4.5-1.5-7 0"/>',
+  trophy: '<path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 5H5.5a2.5 2.5 0 0 0 0 5H8M16 5h2.5a2.5 2.5 0 0 1 0 5H16"/><path d="M12 14v3M8.5 20.5h7M9.5 20.5c.4-1.8 1.3-2.5 2.5-2.5s2.1.7 2.5 2.5"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.2A4.8 4.8 0 0 0 21 9.5C21 5.9 16.9 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="17.5" cy="10.5" r="1"/>',
+  landmark: '<path d="M3 22h18"/><path d="M5 22V11M9.5 22V11M14.5 22V11M19 22V11"/><path d="M2.5 10L12 3.5 21.5 10z"/>',
+  microscope: '<path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0-7-7"/><circle cx="14" cy="8" r="2"/><path d="M12.5 9.5L10 12"/>',
+  shield: '<path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="M9 11.5l2 2 4-4.5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 3.5 9A14 14 0 0 1 12 21a14 14 0 0 1-3.5-9A14 14 0 0 1 12 3z"/>',
+  house: '<path d="M4 10.5L12 4l8 6.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
+  creditcard: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6 14.5h4"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  wallet: '<path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
+  trending: '<path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+  factory: '<path d="M2.5 20.5V8.5l4 3v-3l4 3V4.5h9v16z"/><path d="M6.5 16.5h.01M10.5 16.5h.01M14.5 16.5h.01M17.5 16.5h.01"/>',
+  refresh: '<path d="M21.5 4.5v5.5h-5.5"/><path d="M20 14.5a8 8 0 1 1-1.9-8.3l3.4 3.3"/>',
+  handshake: '<path d="M20 17l-2-2M4 17l2-2M12 19l-2-2 4-4 2 2 4-4 2 2M2 12l4-4 4 4"/>',
+  bookopen: '<path d="M2.5 4h6a3.5 3.5 0 0 1 3.5 3.5V20a3 3 0 0 0-3-3h-6.5z"/><path d="M21.5 4h-6a3.5 3.5 0 0 0-3.5 3.5V20a3 3 0 0 1 3-3h6.5z"/>',
+  books: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>',
+  plug: '<path d="M9 3v5M15 3v5"/><path d="M6.5 8h11v4a5.5 5.5 0 0 1-11 0z"/><path d="M12 17.5v4"/>',
+  chat: '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/>',
+  scale: '<path d="M12 3.5v17"/><path d="M5 6.5h14"/><path d="M5 6.5l-2.8 6a3 3 0 0 0 5.6 0z"/><path d="M19 6.5l2.8 6a3 3 0 0 1-5.6 0z"/><path d="M8 20.5h8"/>',
+  car: '<path d="M3.5 16v-3.5l2-5A2 2 0 0 1 7.3 6h9.4a2 2 0 0 1 1.8 1.5l2 5V16"/><path d="M3.5 12.5h17"/><circle cx="7.5" cy="16.5" r="1.6"/><circle cx="16.5" cy="16.5" r="1.6"/>',
+  coin: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 8.5L12 12.5l3.5-4"/><path d="M12 12.5V17"/><path d="M9.5 14h5"/>',
+  mountain: '<path d="M8 4.5l4 7.5 2.5-4L21 19.5H3z"/>',
+  signal: '<path d="M2.5 9.5a14 14 0 0 1 19 0"/><path d="M5.5 13a9.5 9.5 0 0 1 13 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  medal: '<circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2L6 3.5h4.5M15.5 10.2L18 3.5h-4.5"/>',
+  star: '<path d="M12 3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.4l6-.9z"/>',
+  presentation: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M7.5 12.5V10M12 12.5V7.5M16.5 12.5v-3"/><path d="M12 16v3.5"/><path d="M8.5 21l3.5-2.5 3.5 2.5"/>',
+  calculator: '<rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01"/>',
+  idcard: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5 16.5c.6-1.8 2-2.5 3.5-2.5s2.9.7 3.5 2.5"/><path d="M14.5 9.5h4.5M14.5 13h4.5M14.5 16.5h3"/>',
+  network: '<circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M12 7.2L6 16M12 7.2l6 8.8M7.2 18h9.6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12h2.5M19 12h2.5M5 5l1.8 1.8M17.2 17.2L19 19M19 5l-1.8 1.8M6.8 17.2L5 19"/>',
+  atom: '<circle cx="12" cy="12" r="1.5"/><ellipse cx="12" cy="12" rx="9" ry="4"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(120 12 12)"/>',
+  seal: '<circle cx="12" cy="13.5" r="5"/><path d="M10 9l-1-5.5h6L14 9"/>',
+  bookmark: '<path d="M6.5 3.5h11a1 1 0 0 1 1 1V21l-6.5-4-6.5 4V4.5a1 1 0 0 1 1-1z"/>',
+  monitor: '<rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M12 17v3.5"/><path d="M8 20.5h8"/>',
+  toolbox: '<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M8 9V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13.5h18"/><path d="M10.5 13.5v2h3v-2"/>',
+};
+
+/* DB icon=emoji → 图标 key（键统一去变体选择符；与 V1 emojiToKey 同源，含学院专属） */
+const EMOJI_KEY = {
+  '📅': 'calendar', '❤': 'heart', '🎯': 'target', '💼': 'briefcase', '🔧': 'wrench',
+  '📋': 'clipboard', '🏢': 'building', '📝': 'pencil', '🚩': 'flag', '🎓': 'grad',
+  '🏆': 'trophy', '🔄': 'refresh', '📱': 'monitor', '📚': 'books', '🎨': 'palette',
+  '💰': 'wallet', '📈': 'trending', '📄': 'doclog', '🔌': 'plug', '💻': 'code',
+  '🔬': 'microscope', '🤝': 'handshake', '🏛': 'landmark', '🛡': 'shield',
+  '🌐': 'globe', '🏠': 'house', '👥': 'users', '📊': 'chart', '🏭': 'factory',
+  '🏞': 'mountain', '📡': 'signal', '🎛': 'sliders', '🚗': 'car', '🌍': 'globe',
+  '🏫': 'landmark', '💬': 'chat', '✅': 'check', '🛠': 'toolbox', '⚖': 'scale',
+  '📖': 'bookopen', '🧭': 'compass', '⚙': 'gear', '🏗': 'construction', '📜': 'seal',
+  '🏅': 'medal', '📑': 'bookmark', '🖥': 'presentation', '🧮': 'calculator',
+  '🪙': 'coin', '⚛': 'atom', '💾': 'chip', '☀': 'sun', '🔗': 'network',
+  '🪪': 'idcard', '⭐': 'star',
 };
 
 /* 建设中卡片图标（工程车/吊钩，主色描边） */
@@ -77,7 +133,11 @@ const XIXI_INLINE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAA
 export function AgentAvatar({ agent, size = 36 }) {
   const isMascot = useMascot(agent);
   if (isMascot) return <img src={size <= 96 ? XIXI_INLINE : './v2-xixi.png'} alt="锡锡" style={{ width: size, height: size, objectFit: 'contain' }} />;
-  return <Icon name={CAT_ICON[agent?.categoryKey] || 'robot'} size={Math.round(size * 0.78)} />;
+  // 每个智能体独立图标：icon 字段优先（图标名或 emoji 均可解析），无则分类默认
+  const raw = agent?.icon ? String(agent.icon).replace(/\uFE0F/g, '') : '';
+  const emojiKey = EMOJI_KEY[raw];
+  const key = PATHS[raw] ? raw : (emojiKey && PATHS[emojiKey] ? emojiKey : null);
+  return <Icon name={key || CAT_ICON[agent?.categoryKey] || 'robot'} size={Math.round(size * 0.78)} />;
 }
 
 /* ================= 学院网关映射（V1 同款） ================= */
