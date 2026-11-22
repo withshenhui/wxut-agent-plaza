@@ -908,6 +908,57 @@ function XixiAdmin({ toast }) {
 
 /* ================= 大模型配置 ================= */
 const PROVIDERS_KEY = 'llm.providers';
+const KB_MODEL_KEYS = [
+  ['kb.embed_base_url', '嵌入模型 API 地址', 'http://210.28.144.245:8014/v1'],
+  ['kb.embed_model', '嵌入模型名称', 'qwen3-embedding-4b'],
+  ['kb.rerank_base_url', '重排模型 API 地址', 'http://210.28.144.245:8015/v1'],
+  ['kb.rerank_model', '重排模型名称', 'bge-reranker-v2-m3'],
+];
+function KbModelCard({ toast }) {
+  const [vals, setVals] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    try {
+      const rs = await Promise.all(KB_MODEL_KEYS.map(([k]) => configApi.getConfig(k).catch(() => null)));
+      const v = {};
+      KB_MODEL_KEYS.forEach(([k, , dft], i) => {
+        const raw = rs[i]?.configValue ?? rs[i];
+        v[k] = (typeof raw === 'string' && raw.trim()) ? raw : dft;
+      });
+      setVals(v);
+    } catch { setVals(Object.fromEntries(KB_MODEL_KEYS.map(([k, , dft]) => [k, dft]))); }
+  };
+  useEffect(() => { load(); }, []);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await Promise.all(KB_MODEL_KEYS.map(([k]) => configApi.updateConfig(k, vals[k] || '')));
+      toast('知识库检索模型配置已保存');
+    } catch (e) { toast('保存失败：' + e.message); } finally { setBusy(false); }
+  };
+  if (!vals) return null;
+  return (
+    <div className="v2-card" style={{ marginTop: 14 }}>
+      <div className="ct">知识库检索模型（校园一体机）</div>
+      <div className="cs">知识库中心向量化与重排序所用的模型 · 与对话大模型相互独立 · 默认使用校园智算一体机</div>
+      <div className="v2-kv-form" style={{ marginTop: 10 }}>
+        {KB_MODEL_KEYS.map(([k, lb]) => (
+          <div className="v2-kv-row" key={k}>
+            <span className="k">{lb}</span>
+            <span className="v"><input className="v2-fm-i" value={vals[k] || ''} onChange={(e) => setVals({ ...vals, [k]: e.target.value })} /></span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+        <button className="v2-btn" disabled={busy} onClick={save}>{busy ? '保存中…' : '保存配置'}</button>
+      </div>
+      <div className="v2-notice warn" style={{ marginTop: 14 }}>
+        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
+        <span>嵌入模型与库内向量强绑定：更换嵌入模型后<b>必须对库内文件逐个「重建索引」</b>（维度须一致），否则检索失效；重排模型可随时切换，异常时自动回退向量相似度排序。</span>
+      </div>
+    </div>
+  );
+}
 function LlmAdmin({ toast }) {
   const [providers, setProviders] = useState(null);
   const [current, setCurrent] = useState(null);
@@ -1001,6 +1052,7 @@ function LlmAdmin({ toast }) {
           </div>
         ) : <div className="v2-card"><div className="v2-loading">暂无供应商，请先添加</div></div>}
       </div>
+      <KbModelCard toast={toast} />
       <div className="v2-notice warn" style={{ marginTop: 14 }}>
         <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>更换大模型供应商会<b>直接影响全平台的对话效果</b>。操作顺序：添加/编辑供应商 → 填写 API 地址与密钥 → 保存 → 设为当前使用。请勿在业务高峰期切换。</span>

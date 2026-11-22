@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { listKbs, createKb, listFiles, deleteFile, rebuildFile, searchInKb } from '../api/kb';
 import { apiBase } from '../api/request';
-import { Icon, XixiLoading } from './ui.jsx';
+import { Icon, XixiLoading, Pager } from './ui.jsx';
 
 /* ============ 知识库中心频道 ============
    交互定稿依据 docs/知识库中心_原型.html（2026-11-22 用户逐轮打磨版）：
@@ -128,6 +128,8 @@ function KbDetail({ kb, onBack, toast, user }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [fpage, setFpage] = useState(1);
+  const PAGE_SIZE = 10;
   const fileRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -187,6 +189,10 @@ function KbDetail({ kb, onBack, toast, user }) {
   };
 
   const processing = (files || []).filter((f) => f.status === 'pending' || f.status === 'processing');
+  const doneFiles = (files || []).filter((f) => f.status === 'done' || f.status === 'failed');
+  const totalPages = Math.max(1, Math.ceil(doneFiles.length / PAGE_SIZE));
+  const curPage = Math.min(fpage, totalPages);
+  const pagedFiles = doneFiles.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   return (
     <>
@@ -218,8 +224,8 @@ function KbDetail({ kb, onBack, toast, user }) {
             <table className="v2-tbl">
               <thead><tr><th>文件</th><th>大小</th><th>问答对</th><th>状态</th><th style={{ width: 150 }}>操作</th></tr></thead>
               <tbody>
-                {(files || []).length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
-                {(files || []).filter((f) => f.status === 'done' || f.status === 'failed').map((f) => (
+                {doneFiles.length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
+                {pagedFiles.map((f) => (
                   <tr key={f.id}>
                     <td><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span> {f.name}</td>
                     <td>{fmtSize(f.sizeBytes)}</td>
@@ -236,6 +242,12 @@ function KbDetail({ kb, onBack, toast, user }) {
                 ))}
               </tbody>
             </table>
+            {doneFiles.length > PAGE_SIZE && (
+              <div className="kbx-pager-row">
+                <span className="kbx-pager-total">共 {doneFiles.length} 个文件 · 第 {curPage}/{totalPages} 页</span>
+                <Pager page={curPage} total={doneFiles.length} size={PAGE_SIZE} onPage={setFpage} />
+              </div>
+            )}
           </div>
         </div>
         <TestPanel kbId={kb.id} toast={toast} />
@@ -249,25 +261,42 @@ function KbDetail({ kb, onBack, toast, user }) {
 function FilePreview({ kbId, file, onClose }) {
   const [docHtml, setDocHtml] = useState(null);
   const [txt, setTxt] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [err, setErr] = useState('');
   const ext = (file.ext || '').toLowerCase();
   const url = `${apiBase}/kb/${kbId}/files/${file.id}/preview`;
 
   useEffect(() => {
-    if (ext === 'docx') {
-      Promise.all([
-        fetch(url, { headers: authHeader() }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); }),
-        import('mammoth/mammoth.browser.js'),
-      ])
-        .then(([buf, mod]) => mod.default.convertToHtml({ arrayBuffer: buf }))
-        .then((res) => { if (res && res.value) setDocHtml(res.value); else setErr('文档解析失败'); })
-        .catch((e) => setErr(e.message || '加载失败'));
-    } else if (ext === 'txt' || ext === 'md') {
-      fetch(url, { headers: authHeader() })
-        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-        .then(setTxt)
-        .catch((e) => setErr(e.message || '加载失败'));
-    }
+    let blobUrl = null;
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(url, { headers: authHeader() });
+        if (!r.ok) {
+          let msg = `HTTP ${r.status}`;
+          try {
+            const j = JSON.parse(await r.text());
+            if (j && j.message) msg = j.message;
+          } catch { /* 非 JSON 错误体，保留状态码 */ }
+          throw new Error(msg);
+        }
+        if (ext === 'txt' || ext === 'md') {
+          if (alive) setTxt(await r.text());
+        } else if (ext === 'docx') {
+          const [buf, mod] = await Promise.all([r.arrayBuffer(), import('mammoth/mammoth.browser.js')]);
+          const res = await mod.default.convertToHtml({ arrayBuffer: buf });
+          if (alive && res && res.value) setDocHtml(res.value);
+          else if (alive) setErr('文档解析失败');
+        } else if (ext === 'pdf') {
+          const b = await r.blob();
+          blobUrl = URL.createObjectURL(b);
+          if (alive) setPdfUrl(blobUrl);
+        }
+      } catch (e) {
+        if (alive) setErr(e.message || '加载失败');
+      }
+    })();
+    return () => { alive = false; if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [file.id]);
 
   return (
@@ -280,9 +309,9 @@ function FilePreview({ kbId, file, onClose }) {
         </div>
         <div className="kbx-prev-b">
           {err && <div className="v2-empty-cell">{err}</div>}
-          {ext === 'pdf' && <iframe src={url} title={file.name} />}
+          {ext === 'pdf' && (pdfUrl ? <iframe src={pdfUrl} title={file.name} /> : !err && <XixiLoading text="锡锡正在加载文档…" />)}
           {ext === 'docx' && (docHtml ? <div className="kbx-prev-doc" dangerouslySetInnerHTML={{ __html: docHtml }} /> : !err && <XixiLoading text="锡锡正在解析文档…" />)}
-          {(ext === 'txt' || ext === 'md') && txt != null && <pre className="kbx-prev-txt">{txt}</pre>}
+          {(ext === 'txt' || ext === 'md') && (txt != null ? <pre className="kbx-prev-txt">{txt}</pre> : !err && <XixiLoading text="锡锡正在加载文档…" />)}
         </div>
       </div>
     </div>
