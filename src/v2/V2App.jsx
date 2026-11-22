@@ -359,7 +359,9 @@ function ChatPage({ agent, onExit }) {
   const bottomRef = useRef(null);
   const isMascot = useMascot(agent);
   const gw = COLLEGE_MODELS[Number(agent.id)];
-  const suggestions = Number(agent.id) === 111 ? SUGGEST_ALL : (agent.categoryKey === 'college' ? SUGGEST_COLLEGE : []);
+  const agentSuggest = (agent.suggest || '').split('|').map((x) => x.trim()).filter(Boolean);
+  const suggestions = agentSuggest.length ? agentSuggest
+    : Number(agent.id) === 111 ? SUGGEST_ALL : (agent.categoryKey === 'college' ? SUGGEST_COLLEGE : []);
   const storageKey = `v2-chat-${agent.id}`;
   const active = convs.find((c) => c.id === activeId);
   const [currentModel, setCurrentModel] = useState('');
