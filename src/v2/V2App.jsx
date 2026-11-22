@@ -188,7 +188,7 @@ export function Footer({ onNav, toast }) {
 /* ============ 首页 hero ============ */
 /* 首页锡锡：气泡文案轮播（打字机 + 换句） */
 const HERO_BUBBLES = [
-  { b: '你好，我是锡锡！', sub: '校园 AI 形象 · 点击和我对话' },
+  { b: '锵锵！锡职大AI中台上线啦！', sub: '呜呜叭叭 ~ 花筒吹起来' },
   { b: '想查学院数据？问我呀', sub: '在校生 · 归寝 · 请假 · 消费 · 科研' },
   { b: '我接入了全校数仓', sub: '11 个学院 + 教职工 + 领导看板' },
   { b: '制度文件也可以问我', sub: '党建 / 教学 / 科研 / 人事 8 大类' },
@@ -220,7 +220,7 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
       <div className="v2-hero-inner">
         <div className="v2-hero-copy">
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
-          <h1>锡职大 <span className="accent">AI中台</span> · 智能体广场</h1>
+          <h1 className="v2-launch-h1"><span className="v2-launch-emoji">🎉</span>锡职大<span className="accent">AI中台</span>上线啦</h1>
           <div className="sub">让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
@@ -242,7 +242,13 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
           </div>
           <div className="v2-hero-mascot">
             <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
+            <div className="v2-confetti-origin" aria-hidden="true">
+              {Array.from({ length: 14 }).map((_, i) => <i key={i} style={{ '--i': i }} />)}
+            </div>
           </div>
+        </div>
+        <div className="v2-fireworks" aria-hidden="true">
+          {Array.from({ length: 10 }).map((_, i) => <span key={i} className={'v2-fw v2-fw-' + (i % 5)} style={{ '--i': i }} />)}
         </div>
       </div>
     </div>
