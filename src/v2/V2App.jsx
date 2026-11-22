@@ -458,7 +458,12 @@ function ChatPage({ agent, onExit }) {
             }
             if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
             else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
-            else if (evtName === 'text') { try { acc += JSON.parse(data).data ?? ''; } catch {} }
+            else if (evtName === 'text') {
+              try { acc += JSON.parse(data).data ?? ''; } catch {}
+              // 逐片上屏：SSE 分片驱动原生打字机效果
+              setToolStatus('');
+              mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc } : m)) }));
+            }
             else if (evtName === 'error') { let m = '服务异常'; try { m = JSON.parse(data).message || m; } catch {} throw new Error(m); }
           }
         }
@@ -554,7 +559,7 @@ function ChatPage({ agent, onExit }) {
             <div className="d">{agent.description || ''}</div>
           </div>
           <div style={{ flex: 1 }} />
-          <span className="v2-model-chip">{gw ? `MCP：${gw}` : '平台默认模型'}</span>
+          <span className="v2-model-chip">{isRag ? '知识库 RAG 问答' : (gw ? `MCP：${gw}` : '平台默认模型')}</span>
         </div>
         <div className="v2-chat-scroll" ref={scrollRef}>
           {msgs.map((m) => (
@@ -605,7 +610,7 @@ function ChatPage({ agent, onExit }) {
         </div>
       </div>
 
-      {/* 右：智能体信息 */}
+      {/* 右：智能体信息（按智能体能力定制：RAG 制度类 / MCP 数据类） */}
       <aside className="v2-chat-side">
         <div className="v2-side-card">
           <div className="t">智能体信息</div>
@@ -616,17 +621,25 @@ function ChatPage({ agent, onExit }) {
           </div>
           <div style={{ marginTop: 14 }}>
             <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{currentModel || (gw ? '平台默认' : '—')}</span></div>
-            <div className="v2-kvv"><span className="k">MCP 服务</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '—'}</span></div>
+            {isRag
+              ? <div className="v2-kvv"><span className="k">知识引擎</span><span className="v">RAG 检索 + 原文引用</span></div>
+              : <div className="v2-kvv"><span className="k">MCP 服务</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '—'}</span></div>}
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
-            <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>
+            {isRag
+              ? <div className="v2-kvv"><span className="k">知识库更新</span><span className="v">部门维护 · 即时生效</span></div>
+              : <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>}
           </div>
         </div>
         <div className="v2-side-card">
           <div className="t">使用提示</div>
           <div style={{ fontSize: 11.5, color: 'var(--p-t3)', lineHeight: 1.75, marginTop: 8 }}>
-            ① 直接用自然语言提问，如「查一下机械学院昨天的晚归人数」。<br />
-            ② 涉及个人信息的查询仅限授权岗位，结果请勿外传。<br />
-            ③ 数据来自学校数仓，考勤类数据约有 1–2 天同步延迟。
+            {isRag
+              ? <>① 直接用自然语言提问，如「{phPool[phIdx % phPool.length] || '教师请假流程是什么'}」。<br />
+                 ② 回答附「原文引用」，点击编号可查看出处文档与条款，重要事项请以原文为准。<br />
+                 ③ 库内没有的问题会如实说明，建议咨询对应主管部门。</>
+              : <>① 直接用自然语言提问，如「查一下机械学院昨天的晚归人数」。<br />
+                 ② 涉及个人信息的查询仅限授权岗位，结果请勿外传。<br />
+                 ③ 数据来自学校数仓，考勤类数据约有 1–2 天同步延迟。</>}
           </div>
         </div>
       </aside>
@@ -639,11 +652,48 @@ function loadConvs(agentId) {
 }
 
 /* ============ 模型服务 ============ */
+function curlOf(m) {
+  const isLocal = (m.provider || '').includes('一体机');
+  const base = isLocal ? 'https://aiask.wxut.edu.cn/llm/v1/chat/completions' : 'https://zhenze-huhehaote.cmecloud.cn/v1/chat/completions';
+  return `curl --location "${base}" \
+--header "Content-Type: application/json" \
+--header "Authorization: Bearer api_key" \
+--data '{
+  "model": "${m.name}",
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "3.11和3.9谁大"}
+  ],
+  "stream": true
+}'`;
+}
+function respOf(m) {
+  return `{
+  "id": "chatd8a3878-f4ed-11ef-8772-5420b763279e",
+  "object": "chat.completion",
+  "created": 1764894852,
+  "model": "${m.name}",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "要比较 3.11 和 3.9 的大小，从高位到低位依次比较。比较十分位：3.11 是 1，3.9 是 9，因为 1 < 9，所以 3.11 < 3.9。因此 3.9 大于 3.11。" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 15, "completion_tokens": 120, "total_tokens": 135 }
+}`;
+}
+
 function Models({ toast }) {
   const [tab, setTab] = useState('general');
   const [q, setQ] = useState('');
   const [mg, setMg] = useState(null);
   const [mv, setMv] = useState(null);
+  const [sel, setSel] = useState(null);
+  const [copied, setCopied] = useState('');
+  const doCopy = (txt, key) => {
+    navigator.clipboard?.writeText(txt).then(() => { setCopied(key); toast('已复制到剪贴板'); setTimeout(() => setCopied(''), 1800); }).catch(() => toast('复制失败，请手动选择复制'));
+  };
   useEffect(() => {
     fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json())
       .then((j) => setMg(j.data?.records || [])).catch(() => setMg([]));
@@ -705,7 +755,7 @@ function Models({ toast }) {
             const logo = provLogo(m);
             const bld = (m.tags || []).includes('建设中');
             return (
-              <div key={m.id} className={`v2-mdl-card${bld ? ' building' : ''}`}>
+              <div key={m.id} className={`v2-mdl-card${bld ? ' building' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setSel(m)} title="点击查看 API 调用说明">
                 <div className="v2-mdl-top">
                   <span className="pv">{logo
                     ? <img src={logo} alt={m.provider || ''} onError={(e) => { e.target.style.display = 'none'; }} />
@@ -726,6 +776,47 @@ function Models({ toast }) {
             );
           }) : <div className="v2-empty">没有找到匹配的模型，换个关键词试试</div>}
         </div>
+        {sel && (
+          <div className="v2-modal-mask" onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
+            <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 720 }}>
+              <div className="v2-md-head">
+                <div className="t">{sel.name} <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--p-t4)' }}>{sel.provider} · {sel.type}</span></div>
+                <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
+              </div>
+              <div className="v2-md-body">
+                {(sel.tags || []).length > 0 && (
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
+                    {(sel.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}
+                  </div>
+                )}
+                {sel.description && (
+                  <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
+                )}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '2px 0 7px' }}>调用前提</div>
+                <div style={{ fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.9, marginBottom: 16 }}>
+                  · 本平台模型经<b>统一网关代理</b>调用，各学院智能体默认使用平台当前生效模型（后台可切换），无需自行申请密钥<br />
+                  · 教师个人开发场景如需直连 API，请联系<b>信息化与数据服务中心</b>（dcc@wxut.edu.cn）开通 API Key 与调用权限<br />
+                  · 下述示例中的 <code style={{ background: 'var(--p-fill)', borderRadius: 4, padding: '1px 6px', fontSize: 11.5 }}>model</code> 参数需与本页模型名完全一致
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '2px 0 7px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)' }}>请求示例（OpenAI 兼容）</div>
+                  <span className="v2-link" style={{ fontSize: 12 }} onClick={() => doCopy(models[0] ? curlOf(sel) : '', 'req')}>{copied === 'req' ? '已复制' : '复制'}</span>
+                </div>
+                <div className="v2-api-code"><pre>{curlOf(sel)}</pre></div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '14px 0 7px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)' }}>响应示例（流式截断）</div>
+                  <span className="v2-link" style={{ fontSize: 12 }} onClick={() => doCopy(respOf(sel), 'resp')}>{copied === 'resp' ? '已复制' : '复制'}</span>
+                </div>
+                <div className="v2-api-code"><pre>{respOf(sel)}</pre></div>
+                {sel.apiDocsUrl && (
+                  <div style={{ fontSize: 12, color: 'var(--p-t3)', marginTop: 12, lineHeight: 1.7 }}>
+                    该模型开放了校内 API 入口：<a href={sel.apiDocsUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--el-primary)' }}>{sel.apiDocsUrl}</a>（Key 权限同上，联系中心开通）
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="v2-banner" style={{ marginTop: 22 }}>
           <div className="ic"><Icon name="doclog" size={26} /></div>
           <div>
