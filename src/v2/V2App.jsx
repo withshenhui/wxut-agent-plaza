@@ -9,6 +9,7 @@ import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
+import V2Knowledge from './V2Knowledge.jsx';
 import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
@@ -638,14 +639,14 @@ function Models({ toast }) {
                   <span className="nm">{m.name}</span>
                 </div>
                 <div className="ds">{m.description || ''}</div>
-                <div className="v2-ft" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid #F3F6FA', gap: 8, flexWrap: 'wrap' }}>
-                  <span>{(m.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 11, color: 'var(--p-t4)' }}>{m.provider || '—'} · {m.type || ''}</span>
+                <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid #F3F6FA' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>{(m.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}</span>
                     {bld
                       ? <span className="v2-dot-off"><i />建设中</span>
                       : <span className="v2-dot-on"><i />{(m.tags || []).includes('接入中') ? '接入中' : '服务中'}</span>}
-                  </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.provider || '—'} · {m.type || ''}</div>
                 </div>
               </div>
             );
@@ -1011,7 +1012,8 @@ export default function V2App() {
           onExitWizard={() => { setTeacherWizard(false); setTeacherRec(null); navigate('/teacher'); }}
           onNav={nav} />
       )}
-      {['campus', 'guide', 'about', 'kb'].includes(page) && <SimplePage kind={page} />}
+      {['campus', 'guide', 'about'].includes(page) && <SimplePage kind={page} />}
+      {page === 'kb' && <V2Knowledge user={user} requireLogin={requireLogin} toast={toast} />}
       <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
 
       {prompt && (
