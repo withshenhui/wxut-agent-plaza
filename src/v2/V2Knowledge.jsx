@@ -127,6 +127,7 @@ function KbDetail({ kb, onBack, toast, user }) {
   const [files, setFiles] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [preview, setPreview] = useState(null);
   const fileRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -189,13 +190,15 @@ function KbDetail({ kb, onBack, toast, user }) {
 
   return (
     <>
-      <div className="v2-sec-head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="lnk" onClick={onBack} style={{ color: 'var(--p-primary)' }}>← 返回</span>
+      <div className="v2-sec-head kbx-detail-head">
+        <a className="v2t-back" onClick={onBack} role="button" tabIndex={0}>
+          <Icon name="back" size={14} />返回频道
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <h2>{kb.name}</h2>
           <span className="tag blue">{kb.visibility === 'private' ? '私有' : kb.visibility === 'dept' ? '部门库' : '公开'}</span>
         </div>
-        <p>{kb.fileCount} 个文件 · {kb.chunkCount} 原文块 · {kb.qaCount} 问答对 · {fmtSize(kb.sizeBytes)} / 500 MB</p>
+        <p>{kb.fileCount} 个文件{kb.chunkCount ? ` · ${kb.chunkCount} 原文块` : ''} · {kb.qaCount} 问答对 · {fmtSize(kb.sizeBytes)} / 500 MB</p>
       </div>
       <div className="v2-body kbx-detail">
         <div className="kbx-left">
@@ -213,21 +216,21 @@ function KbDetail({ kb, onBack, toast, user }) {
           {processing.map((f) => <Pipeline key={f.id} file={f} />)}
           <div className="kbx-files">
             <table className="v2-tbl">
-              <thead><tr><th>文件</th><th>大小</th><th>原文块</th><th>问答对</th><th>状态</th><th>操作</th></tr></thead>
+              <thead><tr><th>文件</th><th>大小</th><th>问答对</th><th>状态</th><th style={{ width: 150 }}>操作</th></tr></thead>
               <tbody>
-                {(files || []).length === 0 && <tr><td colSpan={6} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
+                {(files || []).length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
                 {(files || []).filter((f) => f.status === 'done' || f.status === 'failed').map((f) => (
                   <tr key={f.id}>
                     <td><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span> {f.name}</td>
                     <td>{fmtSize(f.sizeBytes)}</td>
-                    <td>{f.chunkCount ?? '—'}</td>
                     <td>{f.qaCount ?? '—'}</td>
-                    <td>{f.status === 'done' ? <span className="tag green">已解析</span>
+                    <td style={{ whiteSpace: 'nowrap' }}>{f.status === 'done' ? <span className="tag green">已解析</span>
                       : f.status === 'failed' ? <span className="tag red" title={f.errorMsg}>失败</span>
                       : <span className="tag amber">{f.stage || '处理中'}</span>}</td>
-                    <td>
-                      <span className="lnk" onClick={() => rebuild(f.id)}>重建索引</span>
-                      <span className="lnk danger" onClick={() => del(f.id)}>删除</span>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {f.ext !== 'qa' && <span className="lnk" onClick={() => setPreview(f)}>预览</span>}
+                      <span className="lnk" style={{ marginLeft: f.ext !== 'qa' ? 10 : 0 }} onClick={() => rebuild(f.id)}>重建索引</span>
+                      <span className="lnk danger" style={{ marginLeft: 10 }} onClick={() => del(f.id)}>删除</span>
                     </td>
                   </tr>
                 ))}
@@ -237,8 +240,58 @@ function KbDetail({ kb, onBack, toast, user }) {
         </div>
         <TestPanel kbId={kb.id} toast={toast} />
       </div>
+      {preview && <FilePreview kbId={kb.id} file={preview} onClose={() => setPreview(null)} />}
     </>
   );
+}
+
+/* 文件预览弹层：pdf=浏览器原生 iframe / docx=mammoth 转 HTML / txt,md=pre 文本 */
+function FilePreview({ kbId, file, onClose }) {
+  const [docHtml, setDocHtml] = useState(null);
+  const [txt, setTxt] = useState(null);
+  const [err, setErr] = useState('');
+  const ext = (file.ext || '').toLowerCase();
+  const url = `${apiBase}/kb/${kbId}/files/${file.id}/preview`;
+
+  useEffect(() => {
+    if (ext === 'docx') {
+      Promise.all([
+        fetch(url, { headers: authHeader() }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); }),
+        import('mammoth/mammoth.browser.js'),
+      ])
+        .then(([buf, mod]) => mod.default.convertToHtml({ arrayBuffer: buf }))
+        .then((res) => { if (res && res.value) setDocHtml(res.value); else setErr('文档解析失败'); })
+        .catch((e) => setErr(e.message || '加载失败'));
+    } else if (ext === 'txt' || ext === 'md') {
+      fetch(url, { headers: authHeader() })
+        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+        .then(setTxt)
+        .catch((e) => setErr(e.message || '加载失败'));
+    }
+  }, [file.id]);
+
+  return (
+    <div className="kbx-mask" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="kbx-prev">
+        <div className="kbx-prev-h">
+          <span className="kbx-fic {file.ext}">{ext.toUpperCase()}</span>
+          <span className="t">{file.name}</span>
+          <span className="lnk" onClick={onClose}>✕ 关闭</span>
+        </div>
+        <div className="kbx-prev-b">
+          {err && <div className="v2-empty-cell">{err}</div>}
+          {ext === 'pdf' && <iframe src={url} title={file.name} />}
+          {ext === 'docx' && (docHtml ? <div className="kbx-prev-doc" dangerouslySetInnerHTML={{ __html: docHtml }} /> : !err && <XixiLoading text="锡锡正在解析文档…" />)}
+          {(ext === 'txt' || ext === 'md') && txt != null && <pre className="kbx-prev-txt">{txt}</pre>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function authHeader() {
+  const t = localStorage.getItem('user_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
 /* ---------- 新建弹窗 ---------- */
@@ -322,15 +375,17 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
 
   return (
     <>
-      <div className="v2-sec-head">
-        <h2>知识库中心</h2>
-        <p>上传即建库，处理全自动 —— 原文块 + 问答对双粒度入库，答案带出处</p>
+      <div className="v2-sec-head kbx-head">
+        <div>
+          <h2>知识库中心</h2>
+          <p>上传即建库，处理全自动 —— 原文块 + 问答对双粒度入库，答案带出处</p>
+        </div>
         <button className="btn-primary" onClick={() => { if (requireLogin()) setShowNew(true); }}>
           <Icon name="plus" size={13} /> 新建知识库
         </button>
       </div>
       <div className="v2-body">
-        <div className="v2-tabs">
+        <div className="v2-tabs kbx-tabs">
           {TABS.map((t) => (
             <button key={t.key} className={`v2-tab${tab === t.key ? ' on' : ''}`} onClick={() => setTab(t.key)}>{t.label}</button>
           ))}
@@ -347,7 +402,7 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
             {kbs.map((kb) => (
               <div key={kb.id} className="kbx-card" onClick={() => openKb(kb)}>
                 <div className="kbx-card-top">
-                  <div className={`kbx-ic ${kb.visibility}`}><Icon name={kb.visibility === 'private' ? 'file-text' : kb.visibility === 'dept' ? 'users' : 'globe'} size={17} /></div>
+                  <div className={`kbx-ic ${kb.visibility}`}><Icon name={kb.visibility === 'private' ? 'book' : kb.visibility === 'dept' ? 'users' : 'globe'} size={17} /></div>
                   {kb.status === 'pending' ? <span className="tag amber">审核中</span>
                     : kb.visibility === 'dept' ? <span className="tag amber">部门库</span>
                     : kb.visibility === 'public' ? <span className="tag green">公开</span>
@@ -355,7 +410,7 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
                 </div>
                 <div className="kbx-card-t">{kb.name}</div>
                 <div className="kbx-card-d">{kb.description || '—'}</div>
-                <div className="kbx-card-m">{kb.fileCount} 文件 · {kb.chunkCount} 块 · {kb.qaCount} 问答 · {fmtSize(kb.sizeBytes)}</div>
+                <div className="kbx-card-m">{kb.fileCount} 文件{kb.chunkCount ? ` · ${kb.chunkCount} 块` : ''} · {kb.qaCount} 问答 · {fmtSize(kb.sizeBytes)}</div>
               </div>
             ))}
           </div>
