@@ -927,45 +927,50 @@ select.v2t-inp{cursor:pointer}
 .v2-cite .no{color:var(--v2-primary,#4A6CF7);font-weight:700}
 .v2-cite .src{color:var(--v2-t4,#94A3B8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ================= 首页上线庆祝（标题彩带 + 烟花 + 锡锡花筒） ================= */
-.v2-launch-h1{position:relative}
-.v2-launch-emoji{display:inline-block;margin-right:6px;animation:launch-pop 2.2s ease-in-out infinite;transform-origin:bottom center}
-@keyframes launch-pop{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.18) rotate(8deg)}}
-/* 烟花：hero 区右上/左上多点爆开，粒子用 box-shadow 点阵 */
-.v2-fireworks{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
-.v2-fw{position:absolute;width:5px;height:5px;border-radius:50%;opacity:0;
-  animation:fw-burst 2.8s ease-out infinite;animation-delay:calc(var(--i) * .55s)}
-.v2-fw::after{content:"";position:absolute;inset:0;border-radius:50%}
-.v2-fw-0{left:8%;top:22%;background:transparent}
-.v2-fw-0::after{box-shadow:0 -14px #F97316,10px -10px #FBBF24,14px 0 #34D399,10px 10px #60A5FA,0 14px #A78BFA,-10px 10px #F472B6,-14px 0 #FBBF24,-10px -10px #F97316}
-.v2-fw-1{left:30%;top:8%;background:transparent}
-.v2-fw-1::after{box-shadow:0 -18px #60A5FA,13px -13px #34D399,18px 0 #FBBF24,13px 13px #F97316,0 18px #F472B6,-13px 13px #60A5FA,-18px 0 #34D399,-13px -13px #FBBF24}
-.v2-fw-2{left:46%;top:26%;background:transparent}
-.v2-fw-2::after{box-shadow:0 -12px #A78BFA,9px -9px #F97316,12px 0 #F472B6,9px 9px #60A5FA,0 12px #FBBF24,-9px 9px #A78BFA,-12px 0 #34D399,-9px -9px #F472B6}
-.v2-fw-3{left:64%;top:12%;background:transparent}
-.v2-fw-3::after{box-shadow:0 -16px #FBBF24,12px -12px #F472B6,16px 0 #60A5FA,12px 12px #34D399,0 16px #F97316,-12px 12px #FBBF24,-16px 0 #A78BFA,-12px -12px #60A5FA}
-.v2-fw-4{left:86%;top:30%;background:transparent}
-.v2-fw-4::after{box-shadow:0 -13px #34D399,10px -10px #A78BFA,13px 0 #FBBF24,10px 10px #F97316,0 13px #60A5FA,-10px 10px #34D399,-13px 0 #F472B6,-10px -10px #FBBF24}
-@keyframes fw-burst{
-  0%{opacity:0;transform:scale(.2)}
-  8%{opacity:1;transform:scale(.5)}
-  40%{opacity:.95;transform:scale(1)}
-  70%{opacity:0;transform:scale(1.5)}
-  100%{opacity:0;transform:scale(.2)}
-}
-/* 锡锡吹花筒： mascot 左上方喷彩纸 */
-.v2-confetti-origin{position:absolute;left:6%;bottom:64%;width:8px;height:8px;pointer-events:none}
-.v2-confetti-origin i{position:absolute;left:0;top:0;width:7px;height:11px;border-radius:2px;opacity:0;
-  animation:confetti-fly 1.9s ease-out infinite;animation-delay:calc(var(--i) * .14s)}
-.v2-confetti-origin i:nth-child(4n+1){background:#F97316}
-.v2-confetti-origin i:nth-child(4n+2){background:#FBBF24;transform:rotate(24deg)}
-.v2-confetti-origin i:nth-child(4n+3){background:#60A5FA}
-.v2-confetti-origin i:nth-child(4n){background:#F472B6}
-@keyframes confetti-fly{
+/* ================= 首页上线庆祝 v2（NEW 徽标 + 锡锡花筒发射器） ================= */
+.v2-launch-h1 .v2-launch-badge{
+  display:inline-flex;align-items:center;margin-left:12px;vertical-align:6px;
+  font-size:11px;font-weight:800;color:#fff;letter-spacing:1px;
+  background:linear-gradient(135deg,#F97316,#F43F5E);border-radius:7px;padding:3px 10px;
+  box-shadow:0 3px 10px rgba(244,63,94,.35);animation:badge-pulse 2.4s ease-in-out infinite}
+@keyframes badge-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+
+/* 锡锡花筒：左手边锥形发射器 + 纸屑 + 星星（主体左侧不遮脸） */
+.v2-party-popper{position:absolute;left:2%;bottom:56%;width:10px;height:10px;pointer-events:none;z-index:3}
+/* 锥体（CSS 三角+条纹渐变），口朝右上 */
+.v2-party-popper .cone{position:absolute;left:-7px;bottom:-4px;width:0;height:0;
+  border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:26px solid #F43F5E;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.18));
+  transform:rotate(38deg);transform-origin:bottom center;
+  background:clip-path(polygon(0 0,100% 0,50% 100%))}
+.v2-party-popper .cone::after{content:"";position:absolute;left:-8px;top:0;width:16px;height:26px;
+  background:repeating-linear-gradient(115deg,rgba(255,255,255,.75) 0 4px,transparent 4px 9px);
+  clip-path:polygon(0 0,100% 0,50% 100%)}
+/* 纸屑：小矩形，向左上抛洒，带自旋 */
+.v2-party-popper .pp{position:absolute;left:0;bottom:4px;width:6px;height:9px;border-radius:1.5px;opacity:0;
+  animation:pp-fly 1.6s cubic-bezier(.15,.6,.4,1) infinite;animation-delay:calc(var(--i) * .09s)}
+.v2-party-popper .pp:nth-child(4n+2){background:#F43F5E}
+.v2-party-popper .pp:nth-child(4n+3){background:#FBBF24}
+.v2-party-popper .pp:nth-child(4n+4){background:#38BDF8}
+.v2-party-popper .pp:nth-child(4n+5){background:#34D399}
+.v2-party-popper .pp:nth-child(5n){background:#A78BFA}
+@keyframes pp-fly{
   0%{opacity:0;transform:translate(0,0) rotate(0)}
-  10%{opacity:1}
-  100%{opacity:0;transform:translate(calc(var(--i) * 7px - 45px),calc(-70px - var(--i) * 9px)) rotate(calc(var(--i) * 97deg))}
+  8%{opacity:1}
+  100%{opacity:0;transform:translate(calc(-34px - var(--i) * 4.5px),calc(-88px - var(--i) % 7 * 8px)) rotate(calc(160deg + var(--i) * 40deg))}
+}
+/* 星星：四角星形闪光（clip-path），更大更亮，稀疏点缀 */
+.v2-party-popper .star{position:absolute;left:-2px;bottom:8px;width:13px;height:13px;opacity:0;
+  background:#FBBF24;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  filter:drop-shadow(0 0 3px rgba(251,191,36,.7));
+  animation:star-fly 1.9s ease-out infinite;animation-delay:calc(var(--i) * .31s)}
+.v2-party-popper .star:nth-child(3n){background:#FDA4AF;filter:drop-shadow(0 0 3px rgba(244,114,182,.6))}
+.v2-party-popper .star:nth-child(4n){background:#93C5FD;filter:drop-shadow(0 0 3px rgba(147,197,253,.6))}
+@keyframes star-fly{
+  0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}
+  12%{opacity:1;transform:translate(-14px,-20px) scale(1) rotate(40deg)}
+  100%{opacity:0;transform:translate(calc(-52px - var(--i) * 7px),calc(-118px - var(--i) * 6px)) scale(.55) rotate(200deg)}
 }
 @media (prefers-reduced-motion:reduce){
-  .v2-fireworks,.v2-confetti-origin,.v2-launch-emoji{animation:none !important;opacity:.55}
+  .v2-party-popper .pp,.v2-party-popper .star,.v2-launch-h1 .v2-launch-badge{animation:none !important;opacity:.6}
 }
