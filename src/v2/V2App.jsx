@@ -220,7 +220,24 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
       <div className="v2-hero-inner">
         <div className="v2-hero-copy">
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
-          <h1>锡职大 <span className="accent">AI中台</span> · 智能体广场</h1>
+          <h1>锡职大<span className="accent">AI中台</span> · 正式上线啦
+            <span className="v2-confetti-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                <path d="M24 26 L24 40" />
+                <path d="M18.5 24.5 L8 36" /><path d="M29.5 24.5 L40 36" />
+                <path d="M17 21 L4 17" /><path d="M31 21 L44 17" />
+                <path d="M20 17.5 L15 6" /><path d="M28 17.5 L33 6" />
+                <path d="M24 15 L24 6" />
+                <circle cx="4" cy="14" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="44" cy="14" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="13" cy="4" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="35" cy="4" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="6" cy="39" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="42" cy="39" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="24" cy="3" r="1.6" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+          </h1>
           <div className="sub">让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
@@ -241,7 +258,7 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
             <span className="tail" />
           </div>
           <div className="v2-hero-mascot">
-            <img src="./xixi-popper.gif" alt="锡锡 · 正在吹花筒庆祝" />
+            <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
           </div>
         </div>
       </div>
