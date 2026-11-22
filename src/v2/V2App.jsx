@@ -84,6 +84,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
     { key: 'dev', label: '智能体开发平台' },
     { key: 'models', label: '模型服务' },
     { key: 'kb', label: '知识库中心' },
+    { key: 'xixibuddy', label: 'XixiBuddy', href: '/v2/harness/', external: true },
   ];
   return (
     <nav className="v2-topnav">
@@ -92,7 +93,11 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
         <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
       </a>
       <div className="v2-nav-links">
-        {NAVS.map((n) => (
+        {NAVS.map((n) => n.external ? (
+          <a key={n.key} className="v2-nav-link" href={n.href} target="_blank" rel="noreferrer">
+            {n.label}<span className="chip-new">NEW</span>
+          </a>
+        ) : (
           <a key={n.key} className={`v2-nav-link${page === n.key ? ' active' : ''}`}
             href={`#/${n.key === 'plaza' ? '' : n.key}`}
             onClick={(e) => { e.preventDefault(); onNav(n.key); }}>
