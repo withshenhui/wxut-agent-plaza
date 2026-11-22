@@ -431,7 +431,7 @@ function ChatPage({ agent, onExit }) {
     const userMsg = { id: Date.now(), sender: 'user', content };
     mutate(convId, (c) => ({ ...c, title: c.title === '新对话' ? content.slice(0, 20) : c.title, messages: [...c.messages, userMsg] }));
     if (isRag) {
-      setLoading(true); setToolStatus('正在检索知识库…');
+      setLoading(true); setToolStatus('正在思考…');
       const genId = Date.now() + 1;
       mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
       try {
@@ -462,7 +462,7 @@ function ChatPage({ agent, onExit }) {
             else if (evtName === 'error') { let m = '服务异常'; try { m = JSON.parse(data).message || m; } catch {} throw new Error(m); }
           }
         }
-        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, note: '依据：' + (cites || []).length + ' 条知识库出处' } : m)) }));
+        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, note: cites && cites.length ? '依据：' + cites.length + ' 条知识库出处' : null } : m)) }));
       } catch (e) {
         mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
       }
