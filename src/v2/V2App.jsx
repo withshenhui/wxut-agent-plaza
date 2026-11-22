@@ -217,14 +217,10 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
   }, [bIdx]);
   return (
     <div className="v2-hero">
-      <div className="v2-beam" aria-hidden="true"><i /><i /><i /></div>
-
       <div className="v2-hero-inner">
         <div className="v2-hero-copy">
-          <div className="v2-kicker v2-kicker-live">
-            <span className="dot" /> NOW LIVE · 2026.11.22 正式上线 · WUXI UNIVERSITY OF TECHNOLOGY
-          </div>
-          <h1 className="v2-launch-h1"><span className="shine">锡职大AI中台上线啦</span></h1>
+          <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
+          <h1>锡职大 <span className="accent">AI中台</span> · 智能体广场</h1>
           <div className="sub">让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
@@ -246,9 +242,11 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
           </div>
           <div className="v2-hero-mascot">
             <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
-            <div className="v2-xixi-aura" aria-hidden="true">
-              <span className="ripple r1" /><span className="ripple r2" /><span className="ripple r3" />
-              {Array.from({ length: 7 }).map((_, i) => <b key={i} className="mote" style={{ '--i': i }} />)}
+            <div className="v2-mic" aria-hidden="true">
+              <span className="head" />
+              <span className="stem" />
+              <span className="wave w1" /><span className="wave w2" /><span className="wave w3" />
+              <span className="puff" />
             </div>
           </div>
         </div>

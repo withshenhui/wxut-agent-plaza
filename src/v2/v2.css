@@ -928,63 +928,49 @@ select.v2t-inp{cursor:pointer}
 .v2-cite .src{color:var(--v2-t4,#94A3B8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 
-/* ================= 首页上线庆祝 v5（霓虹流光） ================= */
-/* kicker：NOW LIVE 呼吸绿点徽标行 */
-.v2-kicker-live{display:inline-flex;align-items:center;gap:8px !important;
-  background:var(--p-fill);border:1px solid var(--p-line);border-radius:999px;padding:5px 14px !important;
-  letter-spacing:2.5px;font-size:11.5px;color:var(--p-t2)}
-.v2-kicker-live .dot{width:8px;height:8px;border-radius:50%;background:#22C55E;
-  box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:live-pulse 1.8s ease-out infinite}
-@keyframes live-pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-
-/* 标题流光：彩色高光像缎带一样周期性扫过文字 */
-.v2-launch-h1{position:relative}
-.v2-launch-h1 .shine{
-  background:linear-gradient(110deg,var(--aink) 0%,var(--aink) 38%,#4A6CF7 46%,#60A5FA 50%,#4A6CF7 54%,var(--aink) 62%,var(--aink) 100%);
-  background-size:220% 100%;
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;color:transparent;
-  animation:shine-sweep 3.6s linear infinite}
-@keyframes shine-sweep{0%{background-position:120% 0}100%{background-position:-120% 0}}
-
-/* hero 顶部流光轨道：三段彩光在细带上循环滑行 */
-.v2-beam{position:absolute;top:0;left:0;right:0;height:4px;z-index:2;pointer-events:none;
-  background:linear-gradient(90deg,#4A6CF7,#60A5FA,#34D399,#FBBF24,#F43F5E,#A78BFA,#4A6CF7);
-  background-size:300% 100%;animation:beam-flow 7s linear infinite;opacity:.9}
-@keyframes beam-flow{0%{background-position:0 0}100%{background-position:300% 0}}
-.v2-beam i{position:absolute;top:-1.5px;width:7px;height:7px;border-radius:50%;background:#fff;
-  box-shadow:0 0 8px 2px rgba(255,255,255,.9);opacity:0}
-.v2-beam i:nth-child(1){animation:beam-run 3.2s linear infinite}
-.v2-beam i:nth-child(2){animation:beam-run 4.4s linear .8s infinite}
-.v2-beam i:nth-child(3){animation:beam-run 3.8s linear 2s infinite}
-@keyframes beam-run{0%{left:0;opacity:0}6%{opacity:1}94%{opacity:1}100%{left:100%;opacity:0}}
-
-/* 锡锡光环：脚下三圈涟漪扩散 + 七颗光点上升 */
-.v2-xixi-aura{position:absolute;inset:0;pointer-events:none}
-.v2-xixi-aura .ripple{position:absolute;left:50%;bottom:2%;width:56px;height:16px;border-radius:50%;
-  border:2px solid rgba(74,108,247,.4);transform:translateX(-50%) scale(.4);opacity:0;
-  animation:ripple-out 3s ease-out infinite}
-.v2-xixi-aura .r2{animation-delay:1s;border-color:rgba(96,165,250,.35)}
-.v2-xixi-aura .r3{animation-delay:2s;border-color:rgba(52,211,153,.3)}
-@keyframes ripple-out{
-  0%{transform:translateX(-50%) scale(.4);opacity:0}
-  12%{opacity:.9}
-  100%{transform:translateX(-50%) scale(2.1);opacity:0}
+/* ================= 锡锡手持话筒（说话音波） ================= */
+/* 话筒：球头+手柄，位于锡锡身体左侧（右手前），微微摇动 */
+.v2-mic{position:absolute;left:-6%;bottom:18%;width:64px;height:110px;pointer-events:none;z-index:3;
+  animation:mic-sway 3.4s ease-in-out infinite;transform-origin:bottom center}
+.v2-mic .head{position:absolute;left:8px;top:0;width:34px;height:38px;border-radius:50% 50% 44% 44%;
+  background:linear-gradient(135deg,#64748B,#334155);
+  box-shadow:inset -3px -4px 6px rgba(0,0,0,.35),inset 3px 3px 5px rgba(255,255,255,.25),0 3px 8px rgba(15,23,42,.25)}
+.v2-mic .head::before{content:"";position:absolute;inset:5px;border-radius:inherit;
+  background:
+    radial-gradient(circle at 30% 28%,rgba(255,255,255,.4) 0 2.5px,transparent 3px),
+    radial-gradient(circle at 52% 22%,rgba(255,255,255,.3) 0 2px,transparent 2.5px),
+    radial-gradient(circle at 40% 46%,rgba(255,255,255,.22) 0 2px,transparent 2.5px),
+    radial-gradient(circle at 62% 40%,rgba(255,255,255,.18) 0 1.5px,transparent 2px);
+  opacity:.85}
+.v2-mic .head::after{content:"";position:absolute;left:50%;top:100%;width:16px;height:8px;transform:translateX(-50%);
+  background:linear-gradient(#475569,#334155);clip-path:polygon(15% 0,85% 0,100% 100%,0 100%)}
+.v2-mic .stem{position:absolute;left:50%;top:36px;width:9px;height:64px;transform:translateX(-50%) rotate(4deg);
+  transform-origin:top center;border-radius:4px;
+  background:linear-gradient(90deg,#94A3B8,#E2E8F0 35%,#94A3B8 70%,#64748B)}
+.v2-mic .stem::after{content:"";position:absolute;left:50%;top:100%;width:26px;height:12px;transform:translateX(-50%);
+  border-radius:5px;background:linear-gradient(#475569,#1E293B)}
+@keyframes mic-sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+/* 音波：从话筒球头向左上发出三圈弧声波（说话中） */
+.v2-mic .wave{position:absolute;left:-6px;top:2px;width:22px;height:30px;border-radius:50%;
+  border:2.5px solid rgba(74,108,247,.55);border-left-color:transparent;border-bottom-color:transparent;
+  transform:rotate(-38deg) scale(.5);opacity:0;animation:mic-wave 2.1s ease-out infinite}
+.v2-mic .wave.w2{animation-delay:.55s;border-color:rgba(96,165,250,.5);border-left-color:transparent;border-bottom-color:transparent}
+.v2-mic .wave.w3{animation-delay:1.1s;border-color:rgba(52,211,153,.45);border-left-color:transparent;border-bottom-color:transparent}
+@keyframes mic-wave{
+  0%{transform:rotate(-38deg) scale(.5);opacity:0}
+  15%{opacity:.95}
+  100%{transform:rotate(-38deg) scale(1.9);opacity:0}
 }
-.v2-xixi-aura .mote{position:absolute;bottom:6%;width:5px;height:5px;border-radius:50%;opacity:0;
-  animation:mote-up 3.4s ease-in infinite;animation-delay:calc(var(--i) * .48s)}
-.v2-xixi-aura .mote:nth-child(4n+2){background:#60A5FA;box-shadow:0 0 6px rgba(96,165,250,.8);left:32%}
-.v2-xixi-aura .mote:nth-child(4n+3){background:#34D399;box-shadow:0 0 6px rgba(52,211,153,.8);left:52%}
-.v2-xixi-aura .mote:nth-child(4n+4){background:#FBBF24;box-shadow:0 0 6px rgba(251,191,36,.8);left:66%}
-.v2-xixi-aura .mote:nth-child(4n){background:#F472B6;box-shadow:0 0 6px rgba(244,114,182,.8);left:44%}
-@keyframes mote-up{
-  0%{opacity:0;transform:translateY(0) scale(.6)}
-  15%{opacity:.9}
-  100%{opacity:0;transform:translateY(-150px) scale(1.1)}
+/* 气流 puff：话筒口喷出的小气流团（吹话筒的"噗"） */
+.v2-mic .puff{position:absolute;left:-14px;top:14px;width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,rgba(148,163,184,.5),rgba(148,163,184,0) 70%);
+  opacity:0;animation:mic-puff 2.1s ease-out infinite}
+@keyframes mic-puff{
+  0%{opacity:0;transform:translate(0,0) scale(.5)}
+  12%{opacity:.8}
+  100%{opacity:0;transform:translate(-26px,-14px) scale(1.6)}
 }
 @media (prefers-reduced-motion:reduce){
-  .v2-kicker-live .dot,.v2-launch-h1 .shine,.v2-beam,.v2-beam i,
-  .v2-xixi-aura .ripple,.v2-xixi-aura .mote{animation:none !important}
-  .v2-launch-h1 .shine{-webkit-text-fill-color:var(--aink);color:var(--aink)}
-  .v2-xixi-aura .mote{display:none}
+  .v2-mic{animation:none !important}
+  .v2-mic .wave,.v2-mic .puff{animation:none !important;opacity:.4}
 }
