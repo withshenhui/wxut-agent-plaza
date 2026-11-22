@@ -974,3 +974,36 @@ select.v2t-inp{cursor:pointer}
 @media (prefers-reduced-motion:reduce){
   .v2-party-popper .pp,.v2-party-popper .star,.v2-launch-h1 .v2-launch-badge{animation:none !important;opacity:.6}
 }
+
+/* ================= 上线庆祝 v3 增补：彩带拉花 + 全 hero 纸雨 ================= */
+/* 标题上方彩带拉花（拱形彩条） */
+.v2-ribbon{position:absolute;top:-26px;left:4px;right:-6px;height:26px;pointer-events:none}
+.v2-ribbon i{position:absolute;bottom:0;width:3px;border-radius:2px;transform-origin:top center;
+  animation:ribbon-sway 2.6s ease-in-out infinite;animation-delay:calc(var(--i) * .12s)}
+.v2-ribbon i:nth-child(1){left:6%;height:24px;background:#F43F5E}
+.v2-ribbon i:nth-child(2){left:24%;height:19px;background:#FBBF24}
+.v2-ribbon i:nth-child(3){left:42%;height:25px;background:#38BDF8}
+.v2-ribbon i:nth-child(4){left:60%;height:18px;background:#34D399}
+.v2-ribbon i:nth-child(5){left:78%;height:23px;background:#A78BFA}
+@keyframes ribbon-sway{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+.v2-launch-h1{position:relative}
+
+/* 全 hero 纸雨：26 片从顶飘落+摆动 */
+.v2-confetti-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+.v2-confetti-rain i{position:absolute;top:-16px;width:7px;height:12px;border-radius:2px;opacity:0;
+  left:calc(4% + var(--i) * 3.7%);
+  animation:rain-fall linear infinite;
+  animation-duration:calc(3.4s + var(--i) % 5 * .9s);
+  animation-delay:calc(var(--i) * .21s)}
+.v2-confetti-rain i:nth-child(5n+1){background:#F43F5E}
+.v2-confetti-rain i:nth-child(5n+2){background:#FBBF24}
+.v2-confetti-rain i:nth-child(5n+3){background:#38BDF8}
+.v2-confetti-rain i:nth-child(5n+4){background:#34D399}
+.v2-confetti-rain i:nth-child(5n){background:#A78BFA}
+@keyframes rain-fall{
+  0%{opacity:0;transform:translateY(0) translateX(0) rotate(0)}
+  6%{opacity:.9}
+  90%{opacity:.75}
+  100%{opacity:0;transform:translateY(360px) translateX(38px) rotate(300deg)}
+}
+@media (prefers-reduced-motion:reduce){.v2-ribbon i,.v2-confetti-rain i{animation:none !important;opacity:.5}}

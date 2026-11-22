@@ -217,10 +217,13 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
   }, [bIdx]);
   return (
     <div className="v2-hero">
+      <div className="v2-confetti-rain" aria-hidden="true">
+        {Array.from({ length: 26 }).map((_, i) => <i key={i} style={{ '--i': i }} />)}
+      </div>
       <div className="v2-hero-inner">
         <div className="v2-hero-copy">
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
-          <h1 className="v2-launch-h1">锡职大<span className="accent">AI中台</span>上线啦<span className="v2-launch-badge">NEW</span></h1>
+          <h1 className="v2-launch-h1"><span className="v2-ribbon" aria-hidden="true"><i /><i /><i /><i /><i /></span>锡职大<span className="accent">AI中台</span>上线啦<span className="v2-launch-badge">NEW</span></h1>
           <div className="sub">让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，一个广场全部搞定</div>
           <div className="v2-hero-search">
             <Icon name="search" size={17} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
@@ -244,8 +247,8 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
             <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
             <div className="v2-party-popper" aria-hidden="true">
               <span className="cone" />
-              {Array.from({ length: 22 }).map((_, i) => <i key={i} className="pp" style={{ '--i': i }} />)}
-              {Array.from({ length: 6 }).map((_, i) => <b key={i} className="star" style={{ '--i': i }} />)}
+              {Array.from({ length: 30 }).map((_, i) => <i key={i} className="pp" style={{ '--i': i }} />)}
+              {Array.from({ length: 8 }).map((_, i) => <b key={i} className="star" style={{ '--i': i }} />)}
             </div>
           </div>
         </div>
