@@ -346,7 +346,7 @@ function NewKbDialog({ onClose, onCreated, toast }) {
 
 /* ---------- 频道主页 ---------- */
 export default function V2Knowledge({ user, requireLogin, toast }) {
-  const [tab, setTab] = useState('mine');
+  const [tab, setTab] = useState('pub');
   const [kbs, setKbs] = useState(null);
   const [err, setErr] = useState('');
   const [current, setCurrent] = useState(null);
@@ -368,9 +368,9 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
   }
 
   const TABS = [
-    { key: 'mine', label: '我的知识库' },
-    { key: 'dept', label: '部门库' },
-    { key: 'pub', label: '公开库' },
+    { key: 'pub', label: '公开知识库' },
+    { key: 'dept', label: '部门知识库' },
+    { key: 'mine', label: '个人知识库' },
   ];
 
   return (
