@@ -246,7 +246,7 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
             <div className="v2-hstat"><div className="v">{college}</div><div className="k">学院锡锡导员</div></div>
           </div>
         </div>
-        <div className="v2-hero-side" onClick={tryXixi} title="点击和锡锡对话">
+        <div className="v2-hero-side">
           <div className="v2-mascot-ring" />
           <div className="v2-mascot-bubble" style={{ right: 198, top: 'calc(46% - 4px)' }} key={bIdx}>
             <b>{typed}{typed.length < cur.b.length ? <span className="cursor" /> : ''}</b>
@@ -407,7 +407,7 @@ function ChatPage({ agent, onExit }) {
   const welcome = () => ([
     { id: 'w', sender: 'agent', content: (gw || isRag)
       ? (isRag
-        ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我基于学校知识库回答制度与办事流程问题，答案附带原文出处，可点击展开核对。`
+        ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n你可以直接和我聊天，也可以问我学校制度与办事流程问题——涉及制度的问题我会查询知识库并附原文出处。`
         : `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`)
       : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
   ]);
