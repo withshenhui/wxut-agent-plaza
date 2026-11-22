@@ -385,9 +385,12 @@ function ChatPage({ agent, onExit }) {
     });
   };
 
+  const isRag = agent.agentType === 'native-rag';
   const welcome = () => ([
-    { id: 'w', sender: 'agent', content: gw
-      ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`
+    { id: 'w', sender: 'agent', content: (gw || isRag)
+      ? (isRag
+        ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n我基于学校知识库回答制度与办事流程问题，答案附带原文出处，可点击展开核对。`
+        : `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`)
       : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
   ]);
 
@@ -407,6 +410,45 @@ function ChatPage({ agent, onExit }) {
     }
     const userMsg = { id: Date.now(), sender: 'user', content };
     mutate(convId, (c) => ({ ...c, title: c.title === '新对话' ? content.slice(0, 20) : c.title, messages: [...c.messages, userMsg] }));
+    if (isRag) {
+      setLoading(true); setToolStatus('正在检索知识库…');
+      const genId = Date.now() + 1;
+      mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
+      try {
+        const _tk = localStorage.getItem('user_token');
+        const resp = await fetch(`${API_BASE}/kb/${agent.id}/chat?q=${encodeURIComponent(content)}`, {
+          headers: _tk ? { Authorization: `Bearer ${_tk}` } : {},
+        });
+        if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = ''; let acc = ''; let cites = null;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop();
+          for (const part of parts) {
+            const lines = part.split('\n');
+            let evtName = 'message'; let data = '';
+            for (const line of lines) {
+              if (line.startsWith('event:')) evtName = line.slice(6).trim();
+              else if (line.startsWith('data:')) data += line.slice(5);
+            }
+            if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
+            else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
+            else if (evtName === 'text') { try { acc += JSON.parse(data).data ?? ''; } catch {} }
+            else if (evtName === 'error') { let m = '服务异常'; try { m = JSON.parse(data).message || m; } catch {} throw new Error(m); }
+          }
+        }
+        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, note: '依据：' + (cites || []).length + ' 条知识库出处' } : m)) }));
+      } catch (e) {
+        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
+      }
+      setLoading(false); setToolStatus('');
+      return;
+    }
     if (!gw) {
       mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: Date.now() + 1, sender: 'agent', content: '该智能体的对话引擎正在接入中。你可以在广场选择学院锡锡导员或全校数据查询进行实时数据问答。' }] }));
       return;
@@ -506,6 +548,18 @@ function ChatPage({ agent, onExit }) {
                   : m.content
                     ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content) }} />
                     : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
+                {m.sender === 'agent' && !m.streaming && m.citations && m.citations.length > 0 && (
+                  <div className="v2-cites">
+                    <div className="v2-cites-t">原文引用（{m.citations.length}）</div>
+                    {m.citations.map((c) => (
+                      <div key={c.no} className="v2-cite" title={c.q || c.txt || c.a || '点击查看原文'}>
+                        <span className="no">[{c.no}]</span>
+                        <span className={`tag ${c.type === 'qa' ? 'blue' : 'grey'}`}>{c.type === 'qa' ? '问答' : '原文'}</span>
+                        <span className="src">{c.doc}{c.loc ? ` · ${c.loc}` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {m.sender === 'agent' && !m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
               </div>
             </div>
