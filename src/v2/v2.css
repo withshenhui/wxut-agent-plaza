@@ -288,10 +288,10 @@ input,select,textarea{font-family:inherit}
 .v2-lc-i{width:100%;height:46px;border:1.5px solid var(--p-line2);border-radius:11px;padding:0 15px;
   font-size:14px;outline:none;background:#FAFBFD;color:var(--p-text);transition:border-color .15s,background .15s}
 .v2-lc-i:focus{border-color:var(--el-primary);background:var(--p-surface)}
-.v2-lc-submit{width:100%;height:47px;margin-top:8px;font-size:15px;letter-spacing:6px}
+.v2-lc-submit{width:100%;height:47px;margin-top:8px;font-size:15px;letter-spacing:6px;justify-content:center;text-indent:6px}
 .v2-lc-divider{display:flex;align-items:center;gap:12px;margin:22px 0 14px;color:var(--p-t4);font-size:11px}
 .v2-lc-divider:before,.v2-lc-divider:after{content:'';flex:1;height:1px;background:var(--p-line2)}
-.v2-lc-cas{width:100%;height:44px}
+.v2-lc-cas{width:100%;height:44px;justify-content:center}
 .v2-lc-tip{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--p-line);
   font-size:11px;color:var(--p-t4);line-height:1.7}
 .v2-login-err{display:flex;align-items:center;gap:7px;background:#FEECEB;border:1px solid #F8C9C7;color:#8A2E2E;

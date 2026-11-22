@@ -77,7 +77,7 @@ export default function V2Login({ onLoginOk }) {
               <input className="v2-lc-i" type={showPwd ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" autoComplete="current-password" />
             </div>
             <button className="v2-btn lg v2-lc-submit" disabled={loading} type="submit">
-              {loading ? '登录中…' : '登 录'}
+              {loading ? '登录中…' : '登录'}
             </button>
           </form>
           {CAS_ENABLED && (
