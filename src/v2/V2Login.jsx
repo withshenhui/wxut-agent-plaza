@@ -84,7 +84,11 @@ export default function V2Login({ onLoginOk }) {
             <>
               <div className="v2-lc-divider"><span>或</span></div>
               <button className="v2-btn ghost v2-lc-cas"
-                onClick={() => { window.location.href = `${apiBase}/auth/cas-login`; }}>
+                onClick={() => {
+                  const path = window.location.pathname.replace(/\/+$/, '');
+                  const redirect = path && path !== '/' ? `?redirect=${encodeURIComponent(path)}` : '';
+                  window.location.href = `${apiBase}/auth/cas-login${redirect}`;
+                }}>
                 <Icon name="users" size={15} /> 统一身份认证登录
               </button>
             </>

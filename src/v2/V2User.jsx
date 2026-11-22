@@ -109,6 +109,16 @@ export function V2UserProvider({ children }) {
   // guest 派生：未登录即游客
   const isGuest = !user;
 
+  // CAS 回跳等场景：token 在挂载后才写入 localStorage，供回调页主动刷新用户态
+  const refreshUser = useCallback(() => {
+    const t = localStorage.getItem('user_token');
+    if (t) {
+      getUserInfo().then((info) => setUser(info)).catch(() => setUser(null));
+    } else {
+      setUser(null);
+    }
+  }, []);
+
   // 敏感操作鉴权：游客时返回 false 由调用方弹引导框，已登录直接放行
   const requireLogin = () => !!user;
 
@@ -119,7 +129,7 @@ export function V2UserProvider({ children }) {
   const collegeName = user?.collegeName || null;
 
   return (
-    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest: isGuest, enterGuest, exitGuest, requireLogin, hasPerm, hasAnyPerm, dataScope, collegeName }}>
+    <V2UserCtx.Provider value={{ user, setUser, casLogin, logout, loading, guest: isGuest, enterGuest, exitGuest, requireLogin, hasPerm, hasAnyPerm, dataScope, collegeName, refreshUser }}>
       {children}
     </V2UserCtx.Provider>
   );

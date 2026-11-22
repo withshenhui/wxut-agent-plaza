@@ -1,29 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import './v2.css';
 import V2App from './V2App.jsx';
 import V2Admin from './V2Admin.jsx';
 import V2Login from './V2Login.jsx';
 import { ToastProvider } from './ui.jsx';
-import { getUserInfo } from '../api/auth';
-import { V2UserProvider } from './V2User.jsx';
+import { getUserInfo as getAdminInfo } from '../api/auth';
+import { getUserInfo as getUserInfoForUser } from '../api/userAuth';
+import { V2UserProvider, useV2User } from './V2User.jsx';
 
-/* CAS 回调：#/?token=xxx（与 V1 CasCallback 同协议，V2 风格呈现） */
+/* CAS 回调：#/cas-callback?token=xxx（与 V1 CasCallback 同协议，V2 风格呈现）
+ * 注意：token 解析必须用 window.location.hash（V1 同款）——HashRouter 的
+ * useLocation().hash 是二级锚点恒为空，query 在 search 里，用错会永远拿不到 token */
 function V2CasCallback() {
   const navigate = useNavigate();
+  const { refreshUser } = useV2User();
   const [err, setErr] = useState(null);
-  const { hash } = useLocation();
   useEffect(() => {
-    const params = new URLSearchParams(hash.split('?')[1] || '');
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
     const token = params.get('token');
     const error = params.get('error');
     if (error) { setErr(error); return; }
     if (token) {
       localStorage.setItem('user_token', token);
-      getUserInfo().catch(() => localStorage.removeItem('user_token')).finally(() => navigate('/', { replace: true }));
+      getUserInfoForUser()
+        .catch(() => localStorage.removeItem('user_token'))
+        .finally(() => { refreshUser(); navigate('/', { replace: true }); });
     } else navigate('/', { replace: true });
-  }, [hash, navigate]);
+  }, [navigate, refreshUser]);
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F6FA' }}>
       {err ? (
@@ -48,7 +53,7 @@ function V2Entry() {
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (!token) { setChecking(false); return; }
-    getUserInfo()
+    getAdminInfo()
       .then((u) => setUser(u))
       .catch(() => { localStorage.removeItem('admin_token'); })
       .finally(() => setChecking(false));
@@ -66,6 +71,7 @@ function V2Entry() {
     <Routes>
       <Route path="/admin/login" element={<V2Login onLoginOk={(u) => { setUser(u); navigate('/admin/dashboard'); }} />} />
       <Route path="/admin/*" element={user ? <V2Admin user={user} onLogout={logout} /> : <Navigate to="/admin/login" replace />} />
+      <Route path="/cas-callback" element={<V2CasCallback />} />
       <Route path="/*" element={user ? <V2App /> : <V2App />} />
     </Routes>
   );
