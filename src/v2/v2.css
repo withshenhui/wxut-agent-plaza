@@ -927,83 +927,67 @@ select.v2t-inp{cursor:pointer}
 .v2-cite .no{color:var(--v2-primary,#4A6CF7);font-weight:700}
 .v2-cite .src{color:var(--v2-t4,#94A3B8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ================= 首页上线庆祝 v2（NEW 徽标 + 锡锡花筒发射器） ================= */
-.v2-launch-h1 .v2-launch-badge{
-  display:inline-flex;align-items:center;margin-left:12px;vertical-align:6px;
-  font-size:11px;font-weight:800;color:#fff;letter-spacing:1px;
-  background:linear-gradient(135deg,#F97316,#F43F5E);border-radius:7px;padding:3px 10px;
-  box-shadow:0 3px 10px rgba(244,63,94,.35);animation:badge-pulse 2.4s ease-in-out infinite}
-@keyframes badge-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 
-/* 锡锡花筒：左手边锥形发射器 + 纸屑 + 星星（主体左侧不遮脸） */
-.v2-party-popper{position:absolute;left:2%;bottom:56%;width:10px;height:10px;pointer-events:none;z-index:3}
-/* 锥体（CSS 三角+条纹渐变），口朝右上 */
-.v2-party-popper .cone{position:absolute;left:-7px;bottom:-4px;width:0;height:0;
-  border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:26px solid #F43F5E;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.18));
-  transform:rotate(38deg);transform-origin:bottom center;
-  background:clip-path(polygon(0 0,100% 0,50% 100%))}
-.v2-party-popper .cone::after{content:"";position:absolute;left:-8px;top:0;width:16px;height:26px;
-  background:repeating-linear-gradient(115deg,rgba(255,255,255,.75) 0 4px,transparent 4px 9px);
-  clip-path:polygon(0 0,100% 0,50% 100%)}
-/* 纸屑：小矩形，向左上抛洒，带自旋 */
-.v2-party-popper .pp{position:absolute;left:0;bottom:4px;width:6px;height:9px;border-radius:1.5px;opacity:0;
-  animation:pp-fly 1.6s cubic-bezier(.15,.6,.4,1) infinite;animation-delay:calc(var(--i) * .09s)}
-.v2-party-popper .pp:nth-child(4n+2){background:#F43F5E}
-.v2-party-popper .pp:nth-child(4n+3){background:#FBBF24}
-.v2-party-popper .pp:nth-child(4n+4){background:#38BDF8}
-.v2-party-popper .pp:nth-child(4n+5){background:#34D399}
-.v2-party-popper .pp:nth-child(5n){background:#A78BFA}
-@keyframes pp-fly{
-  0%{opacity:0;transform:translate(0,0) rotate(0)}
-  8%{opacity:1}
-  100%{opacity:0;transform:translate(calc(-34px - var(--i) * 4.5px),calc(-88px - var(--i) % 7 * 8px)) rotate(calc(160deg + var(--i) * 40deg))}
+/* ================= 首页上线庆祝 v4（上线印章 + 升空气球 + 纸飞机 + 锡锡星闪） ================= */
+.v2-launch-h1{position:relative;display:inline-block}
+.v2-launch-stamp{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  width:88px;height:88px;margin-left:18px;vertical-align:middle;transform:rotate(-8deg);
+  animation:stamp-in .7s cubic-bezier(.2,1.6,.4,1) .3s both}
+.v2-launch-stamp .ring{position:absolute;inset:0;border-radius:50%;border:2.5px solid #E11D48;opacity:.85}
+.v2-launch-stamp .ring::after{content:"";position:absolute;inset:4px;border-radius:50%;border:1px solid #E11D48;opacity:.55}
+.v2-launch-stamp .date{font-size:12px;font-weight:800;color:#E11D48;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.v2-launch-stamp .txt{font-size:14px;font-weight:900;color:#E11D48;letter-spacing:3px;margin-top:1px}
+.v2-launch-stamp .spark{position:absolute;width:5px;height:5px;background:#FBBF24;border-radius:50%;
+  box-shadow:0 0 6px 1px rgba(251,191,36,.8);opacity:0;animation:stamp-spark 1.8s ease-in-out infinite}
+.v2-launch-stamp .s1{top:-4px;right:10px;animation-delay:.2s}
+.v2-launch-stamp .s2{bottom:6px;left:-2px;animation-delay:.8s}
+.v2-launch-stamp .s3{top:24px;right:-6px;animation-delay:1.3s}
+@keyframes stamp-in{from{opacity:0;transform:rotate(-8deg) scale(2.2)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
+@keyframes stamp-spark{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.15)}}
+
+.v2-balloons{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.v2-balloons .bl{position:absolute;bottom:-70px;width:30px;height:38px;border-radius:50% 50% 48% 48%/55% 55% 45% 45%;
+  opacity:.85;animation:bl-rise linear infinite;
+  animation-duration:calc(9s + var(--i) * 1.7s);animation-delay:calc(var(--i) * 1.3s);
+  left:calc(5% + var(--i) * 10.5%)}
+.v2-balloons .bl::before{content:"";position:absolute;left:50%;top:100%;width:1.5px;height:52px;background:linear-gradient(#94A3B8,transparent);transform:translateX(-50%)}
+.v2-balloons .bl::after{content:"";position:absolute;left:14%;top:12%;width:8px;height:12px;border-radius:50%;background:rgba(255,255,255,.55);transform:rotate(-18deg)}
+.v2-balloons .bl-0{background:radial-gradient(circle at 34% 30%,#FDA4AF,#F43F5E)}
+.v2-balloons .bl-1{background:radial-gradient(circle at 34% 30%,#FDE68A,#F59E0B)}
+.v2-balloons .bl-2{background:radial-gradient(circle at 34% 30%,#A5B4FC,#6366F1)}
+@keyframes bl-rise{
+  0%{transform:translateY(0) translateX(0) rotate(-2deg);opacity:0}
+  8%{opacity:.85}
+  50%{transform:translateY(-190px) translateX(26px) rotate(3deg)}
+  100%{transform:translateY(-420px) translateX(-14px) rotate(-3deg);opacity:0}
 }
-/* 星星：四角星形闪光（clip-path），更大更亮，稀疏点缀 */
-.v2-party-popper .star{position:absolute;left:-2px;bottom:8px;width:13px;height:13px;opacity:0;
-  background:#FBBF24;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
-  filter:drop-shadow(0 0 3px rgba(251,191,36,.7));
-  animation:star-fly 1.9s ease-out infinite;animation-delay:calc(var(--i) * .31s)}
-.v2-party-popper .star:nth-child(3n){background:#FDA4AF;filter:drop-shadow(0 0 3px rgba(244,114,182,.6))}
-.v2-party-popper .star:nth-child(4n){background:#93C5FD;filter:drop-shadow(0 0 3px rgba(147,197,253,.6))}
-@keyframes star-fly{
-  0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}
-  12%{opacity:1;transform:translate(-14px,-20px) scale(1) rotate(40deg)}
-  100%{opacity:0;transform:translate(calc(-52px - var(--i) * 7px),calc(-118px - var(--i) * 6px)) scale(.55) rotate(200deg)}
+
+.v2-plane-track{position:absolute;left:-70px;top:30%;width:100%;height:200px;pointer-events:none;z-index:2}
+.v2-plane{position:absolute;color:var(--el-primary);opacity:0;
+  animation:plane-fly 7.5s cubic-bezier(.35,.1,.55,1) 1s infinite}
+.v2-plane::after{content:"";position:absolute;right:26px;top:11px;width:130px;height:1.5px;
+  background:repeating-linear-gradient(90deg,var(--el-primary-l3) 0 7px,transparent 7px 14px);opacity:.6}
+@keyframes plane-fly{
+  0%{opacity:0;transform:translate(0,60px) rotate(6deg)}
+  6%{opacity:1}
+  50%{transform:translate(48vw,-70px) rotate(4deg)}
+  82%{opacity:1}
+  100%{opacity:0;transform:translate(96vw,-160px) rotate(2deg)}
 }
+
+.v2-xixi-sparkles{position:absolute;inset:0;pointer-events:none}
+.v2-xixi-sparkles .tw{position:absolute;width:12px;height:12px;background:#FBBF24;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  filter:drop-shadow(0 0 4px rgba(251,191,36,.65));opacity:0;
+  animation:tw-twinkle 2.8s ease-in-out infinite;animation-delay:calc(var(--i) * .55s)}
+.v2-xixi-sparkles .tw:nth-child(1){left:-4%;top:12%}
+.v2-xixi-sparkles .tw:nth-child(2){left:-14%;top:42%;background:#FDA4AF;filter:drop-shadow(0 0 4px rgba(244,114,182,.6))}
+.v2-xixi-sparkles .tw:nth-child(3){left:2%;bottom:16%;background:#93C5FD;filter:drop-shadow(0 0 4px rgba(147,197,253,.6))}
+.v2-xixi-sparkles .tw:nth-child(4){left:-20%;bottom:36%;width:9px;height:9px}
+.v2-xixi-sparkles .tw:nth-child(5){left:8%;top:38%;width:8px;height:8px;background:#86EFAC;filter:drop-shadow(0 0 4px rgba(134,239,172,.6))}
+@keyframes tw-twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:.95;transform:scale(1) rotate(45deg)}}
+
 @media (prefers-reduced-motion:reduce){
-  .v2-party-popper .pp,.v2-party-popper .star,.v2-launch-h1 .v2-launch-badge{animation:none !important;opacity:.6}
+  .v2-launch-stamp,.v2-launch-stamp .spark,.v2-balloons .bl,.v2-plane,.v2-xixi-sparkles .tw{animation:none !important}
+  .v2-launch-stamp{opacity:1}.v2-balloons,.v2-plane-track{display:none}.v2-xixi-sparkles .tw{opacity:.6}
 }
-
-/* ================= 上线庆祝 v3 增补：彩带拉花 + 全 hero 纸雨 ================= */
-/* 标题上方彩带拉花（拱形彩条） */
-.v2-ribbon{position:absolute;top:-26px;left:4px;right:-6px;height:26px;pointer-events:none}
-.v2-ribbon i{position:absolute;bottom:0;width:3px;border-radius:2px;transform-origin:top center;
-  animation:ribbon-sway 2.6s ease-in-out infinite;animation-delay:calc(var(--i) * .12s)}
-.v2-ribbon i:nth-child(1){left:6%;height:24px;background:#F43F5E}
-.v2-ribbon i:nth-child(2){left:24%;height:19px;background:#FBBF24}
-.v2-ribbon i:nth-child(3){left:42%;height:25px;background:#38BDF8}
-.v2-ribbon i:nth-child(4){left:60%;height:18px;background:#34D399}
-.v2-ribbon i:nth-child(5){left:78%;height:23px;background:#A78BFA}
-@keyframes ribbon-sway{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
-.v2-launch-h1{position:relative}
-
-/* 全 hero 纸雨：26 片从顶飘落+摆动 */
-.v2-confetti-rain{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
-.v2-confetti-rain i{position:absolute;top:-16px;width:7px;height:12px;border-radius:2px;opacity:0;
-  left:calc(4% + var(--i) * 3.7%);
-  animation:rain-fall linear infinite;
-  animation-duration:calc(3.4s + var(--i) % 5 * .9s);
-  animation-delay:calc(var(--i) * .21s)}
-.v2-confetti-rain i:nth-child(5n+1){background:#F43F5E}
-.v2-confetti-rain i:nth-child(5n+2){background:#FBBF24}
-.v2-confetti-rain i:nth-child(5n+3){background:#38BDF8}
-.v2-confetti-rain i:nth-child(5n+4){background:#34D399}
-.v2-confetti-rain i:nth-child(5n){background:#A78BFA}
-@keyframes rain-fall{
-  0%{opacity:0;transform:translateY(0) translateX(0) rotate(0)}
-  6%{opacity:.9}
-  90%{opacity:.75}
-  100%{opacity:0;transform:translateY(360px) translateX(38px) rotate(300deg)}
-}
-@media (prefers-reduced-motion:reduce){.v2-ribbon i,.v2-confetti-rain i{animation:none !important;opacity:.5}}
