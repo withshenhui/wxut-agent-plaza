@@ -11,6 +11,7 @@ import * as userApi from '../api/user';
 import * as logApi from '../api/log';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
+import * as feedbackApi from '../api/feedback';
 
 const MENU = [
   { key: 'dashboard', icon: 'dashboard', label: '仪表盘' },
@@ -20,6 +21,7 @@ const MENU = [
   { key: 'users', icon: 'users', label: '用户管理' },
 ];
 const SUB_MENU = [
+  { key: 'feedback', icon: 'send', label: '意见反馈' },
   { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
   { key: 'llm', icon: 'sliders', label: '大模型配置' },
   { key: 'basic', icon: 'gear', label: '基础配置' },
@@ -28,7 +30,7 @@ const SUB_MENU = [
 ];
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
-  users: '用户管理', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
+  users: '用户管理', feedback: '意见反馈', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
   files: '文件管理', logs: '操作日志',
 };
 
@@ -193,6 +195,7 @@ export default function V2Admin({ user, onLogout }) {
           {page === 'categories' && <CatsAdmin toast={toast} />}
           {page === 'models' && <ModelsAdmin toast={toast} />}
           {page === 'users' && <UsersAdmin toast={toast} />}
+          {page === 'feedback' && <FeedbackAdmin toast={toast} />}
           {page === 'xixi' && <XixiAdmin toast={toast} />}
           {page === 'llm' && <LlmAdmin toast={toast} />}
           {page === 'basic' && <BasicAdmin toast={toast} />}
@@ -1107,6 +1110,114 @@ function FilesAdmin({ toast }) {
         </table>
         <div className="v2-tbl-foot"><span>共 {recs.length} 个文件</span></div>
       </div>
+    </>
+  );
+}
+
+/* ================= 意见反馈 ================= */
+const FB_TYPES = ['功能建议', '问题报告', '体验反馈', '其他'];
+const FB_SOURCES = [
+  { key: 'xixibuddy', label: 'XixiBuddy 客户端' },
+  { key: 'web', label: '网页端' },
+];
+function FeedbackAdmin({ toast }) {
+  const [list, setList] = useState(null);
+  const [page, setPage] = useState(1);
+  const [typeF, setTypeF] = useState('');
+  const [srcF, setSrcF] = useState('');
+  const [stF, setStF] = useState('');
+  const [qInput, setQInput] = useState('');
+  const [q, setQ] = useState('');
+  const [detail, setDetail] = useState(null);
+  const load = () => {
+    setList(null);
+    feedbackApi.listFeedback({ page, size: 20, ftype: typeF || undefined, source: srcF || undefined, status: stF === '' ? undefined : Number(stF), q: q || undefined })
+      .then((d) => setList(d)).catch(() => setList({ records: [], total: 0 }));
+  };
+  useEffect(() => { const t = setTimeout(() => setQ(qInput), 300); return () => clearTimeout(t); }, [qInput]);
+  useEffect(load, [page, typeF, srcF, stF, q]);
+  const pending = (list?.records || []).filter((r) => !r.status).length;
+  const mark = async (row, status) => {
+    try {
+      await feedbackApi.updateFeedbackStatus(row.id, status);
+      toast(status ? '已标记为已处理' : '已重新打开');
+      if (detail?.id === row.id) setDetail({ ...detail, status });
+      load();
+    } catch (e) { toast('失败：' + e.message); }
+  };
+  const srcLabel = (s) => (FB_SOURCES.find((x) => x.key === s) || { label: s || '未知来源' }).label;
+  return (
+    <>
+      <div className="v2-page-head">
+        <div><div className="v2-ph-title">意见反馈</div><div className="v2-ph-sub">各端提交的用户反馈（XixiBuddy 客户端 / 反馈页）· 按时间倒序</div></div>
+      </div>
+      <div className="v2-filter-bar">
+        <select className="v2-select" value={typeF} onChange={(e) => { setPage(1); setTypeF(e.target.value); }}>
+          <option value="">全部类型</option>
+          {FB_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select className="v2-select" value={srcF} onChange={(e) => { setPage(1); setSrcF(e.target.value); }}>
+          <option value="">全部来源</option>
+          {FB_SOURCES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+        </select>
+        <select className="v2-select" value={stF} onChange={(e) => { setPage(1); setStF(e.target.value); }}>
+          <option value="">全部状态</option>
+          <option value="0">未处理</option>
+          <option value="1">已处理</option>
+        </select>
+        <input className="v2-search" value={qInput} onChange={(e) => setQInput(e.target.value)} placeholder="搜索内容 / 联系方式" style={{ width: 210 }} />
+        {(typeF || srcF || stF || q || qInput) && <button className="v2-link" onClick={() => { setTypeF(''); setSrcF(''); setStF(''); setQInput(''); setQ(''); }}>清除筛选</button>}
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>{stF === '0' ? `本页未处理 ${pending} 条` : ''}</span>
+      </div>
+      {!list ? <TableSkeleton rows={8} /> : (
+        <div className="v2-tbl-wrap">
+          <table className="v2-table">
+            <thead><tr><th>提交时间</th><th>类型</th><th>来源</th><th>反馈内容</th><th>联系方式</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              {(list.records || []).map((r) => (
+                <tr key={r.id}>
+                  <td className="num" style={{ color: 'var(--p-t4)', whiteSpace: 'nowrap' }}>{(r.createdAt || r.created_at || '').toString().replace('T', ' ').slice(0, 19)}</td>
+                  <td><span className={`v2-tag ${r.ftype === '问题报告' ? 'mid' : r.ftype === '功能建议' ? 'blue' : ''}`}>{r.ftype || '—'}</span></td>
+                  <td style={{ color: 'var(--p-t2)', whiteSpace: 'nowrap', fontSize: 12.5 }}>{srcLabel(r.source)}</td>
+                  <td style={{ whiteSpace: 'normal', maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.content}>{r.content}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{r.contact || <span style={{ color: 'var(--p-t4)' }}>未留</span>}</td>
+                  <td><span className={`v2-tag ${r.status ? 'ok' : 'mid'}`}>{r.status ? '已处理' : '未处理'}</span></td>
+                  <td>
+                    <button className="v2-link" onClick={() => setDetail(r)}>查看</button>
+                    <button className="v2-link" onClick={() => mark(r, r.status ? 0 : 1)}>{r.status ? '重新打开' : '标记处理'}</button>
+                  </td>
+                </tr>
+              ))}
+              {!(list.records || []).length && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--p-t4)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <Icon name="send" size={36} style={{ color: '#C9D6E8' }} />
+                    <div style={{ fontSize: 13 }}>暂无反馈{(typeF || srcF || stF || q) ? '，试试调整筛选条件' : '，用户提交后会出现在这里'}</div>
+                  </div>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="v2-tbl-foot">
+            <span>共 {list.total ?? 0} 条反馈</span>
+            <Pager page={page} total={list.total ?? 0} size={20} onPage={setPage} />
+          </div>
+        </div>
+      )}
+      {detail && (
+        <Modal title={`反馈详情 #${detail.id}`} onClose={() => setDetail(null)}
+          footer={<>
+            <button className="v2-btn ghost" onClick={() => setDetail(null)}>关闭</button>
+            <button className="v2-btn" onClick={() => mark(detail, detail.status ? 0 : 1)}>{detail.status ? '重新打开' : '标记为已处理'}</button>
+          </>}>
+          <div className="v2-fm-row"><span className="v2-fm-label">提交时间</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{(detail.createdAt || detail.created_at || '').toString().replace('T', ' ').slice(0, 19)}</div></div>
+          <div className="v2-fm-row"><span className="v2-fm-label">类型 / 来源</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{detail.ftype || '—'} · {srcLabel(detail.source)}</div></div>
+          <div className="v2-fm-row"><span className="v2-fm-label">联系方式</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{detail.contact || '未留'}</div></div>
+          <div className="v2-fm-row"><span className="v2-fm-label">反馈内容</span><div className="v2-fm-body"><div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, padding: '12px 14px', background: '#F7F9FC', borderRadius: 8, fontSize: 13.5, color: 'var(--aink)' }}>{detail.content}</div></div></div>
+          {detail.version && <div className="v2-fm-row"><span className="v2-fm-label">客户端版本</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{detail.version}</div></div>}
+          {detail.deviceInfo && <div className="v2-fm-row"><span className="v2-fm-label">设备信息</span><div className="v2-fm-body" style={{ fontSize: 12, color: 'var(--p-t3)', wordBreak: 'break-all', lineHeight: 1.6 }}>{detail.deviceInfo}</div></div>}
+        </Modal>
+      )}
     </>
   );
 }
