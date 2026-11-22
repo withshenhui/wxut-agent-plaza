@@ -9,6 +9,7 @@ import * as catApi from '../api/category';
 import * as modelApi from '../api/model';
 import * as userApi from '../api/user';
 import * as logApi from '../api/log';
+import ClientAdmin from './V2ClientAdmin.jsx';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
 import * as feedbackApi from '../api/feedback';
@@ -24,6 +25,7 @@ const SUB_MENU = [
   { key: 'feedback', icon: 'send', label: '意见反馈' },
   { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
   { key: 'llm', icon: 'sliders', label: '大模型配置' },
+  { key: 'clients', icon: 'download', label: '客户端管理' },
   { key: 'basic', icon: 'gear', label: '基础配置' },
   { key: 'files', icon: 'folder', label: '文件管理' },
   { key: 'logs', icon: 'doclog', label: '操作日志' },
@@ -31,7 +33,7 @@ const SUB_MENU = [
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
   users: '用户管理', feedback: '意见反馈', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
-  files: '文件管理', logs: '操作日志',
+  clients: '客户端管理', files: '文件管理', logs: '操作日志',
 };
 
 const ROUTE_KEYS = Object.keys(TITLES);
@@ -198,6 +200,7 @@ export default function V2Admin({ user, onLogout }) {
           {page === 'feedback' && <FeedbackAdmin toast={toast} />}
           {page === 'xixi' && <XixiAdmin toast={toast} />}
           {page === 'llm' && <LlmAdmin toast={toast} />}
+          {page === 'clients' && <ClientAdmin toast={toast} />}
           {page === 'basic' && <BasicAdmin toast={toast} />}
           {page === 'files' && <FilesAdmin toast={toast} />}
           {page === 'logs' && <LogsAdmin />}
