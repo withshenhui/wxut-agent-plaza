@@ -132,9 +132,9 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
 
   useEffect(() => { setDwTab('signal'); }, [detail]);
   useEffect(() => {
-    if (!detail || (sceneKey !== 'safety' && sceneKey !== 'mental')) { setDetailData(null); return; }
+    if (!detail) { setDetailData(null); return; }
     setDetailData(null);
-    const p = new URLSearchParams({ studentId: detail.id });
+    const p = new URLSearchParams({ studentId: detail.id, view: sceneKey });
     if (hasWindow) p.set('windowDays', win);
     fetch(`${API_BASE}/insight/scene/detail?` + p, { headers: authHeaders })
       .then((r) => r.json()).then((j) => setDetailData(j.data)).catch(() => setDetailData(null));
@@ -339,10 +339,25 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
               <button className="v2-md-close" onClick={() => setDetail(null)}>✕</button>
             </div>
             <div className="v2-md-body">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
                 <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level] ? LVL[detail.level][0] : ''}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>{cfg.title}信号</span>
               </div>
+              {detailData && (detailData.profile || detailData.dorm) && (
+                <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 13px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 10.5, color: 'var(--p-t3)', marginBottom: 6 }}>学籍档案</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12, lineHeight: 1.7 }}>
+                    {detailData.profile && [
+                      detailData.profile.jg && <span key="jg">籍贯 <b style={{ color: 'var(--aink)' }}>{detailData.profile.jg}</b></span>,
+                      detailData.profile.sy && <span key="sy">生源地 <b style={{ color: 'var(--aink)' }}>{String(detailData.profile.sy).slice(0, 24)}</b></span>,
+                      detailData.profile.tx && <span key="tx" style={{ flexBasis: '100%' }}>通讯地址 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.profile.tx}</b></span>,
+                      detailData.profile.mz && <span key="mz">{detailData.profile.mz}</span>,
+                      detailData.profile.zz && <span key="zz">{detailData.profile.zz}</span>,
+                    ].filter(Boolean)}
+                    {detailData.dorm && <span key="dm" style={{ flexBasis: '100%' }}>宿舍 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.dorm}</b></span>}
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
                 {cfg.miniKpis(detail).map(([l, v]) => (
                   <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
@@ -351,14 +366,15 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                   </div>
                 ))}
               </div>
-              {(sceneKey === 'safety' || sceneKey === 'mental') ? (
-                <div className="dw-tabs">
-                  <button className={dwTab === 'signal' ? 'on' : ''} onClick={() => setDwTab('signal')}>信号分解</button>
-                  <button className={dwTab === 'leave' ? 'on' : ''} onClick={() => setDwTab('leave')}>明细 · 请假核验</button>
-                </div>
-              ) : null}
-              {((sceneKey !== 'safety' && sceneKey !== 'mental') || dwTab === 'signal') && (<>
-              <div style={{ fontSize: (sceneKey === 'safety' || sceneKey === 'mental') ? 13 : 13, fontWeight: 600, color: 'var(--aink)', margin: '4px 0 9px' }}>信号分解</div>
+              <div className="dw-tabs">
+                <button className={dwTab === 'signal' ? 'on' : ''} onClick={() => setDwTab('signal')}>信号分解</button>
+                {sceneKey === 'safety' && <button className={dwTab === 'leave' ? 'on' : ''} onClick={() => setDwTab('leave')}>明细 · 请假核验</button>}
+                {sceneKey === 'mental' && <button className={dwTab === 'leave' ? 'on' : ''} onClick={() => setDwTab('leave')}>明细 · 请假核验</button>}
+                {sceneKey === 'academic' && <button className={dwTab === 'score' ? 'on' : ''} onClick={() => setDwTab('score')}>明细 · 成绩单</button>}
+                {sceneKey === 'funding' && <button className={dwTab === 'trend' ? 'on' : ''} onClick={() => setDwTab('trend')}>明细 · 消费趋势</button>}
+              </div>
+              {dwTab === 'signal' && (<>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '4px 0 9px' }}>信号分解</div>
               {cfg.detailSignals(detail).map(([nm, v, low]) => (
                 <div key={nm} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--p-t2)' }}>{nm}</span>
@@ -389,6 +405,51 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+              {sceneKey === 'academic' && dwTab === 'score' && detailData && (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 6px' }}>
+                    {detailData.term ? `${detailData.term} 学期成绩单${detailData.scores ? '（' + detailData.scores.length + ' 门）' : ''}` : '暂无成绩记录'}
+                  </div>
+                  {detailData.scores && (
+                    <div style={{ maxHeight: 230, overflowY: 'auto', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '4px 10px' }}>
+                      {detailData.scores.map((sc, i) => {
+                        const fail = Number(sc.cj) < 60 || ['不及格', '缺考', '作弊'].includes(String(sc.cj));
+                        return (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #F3F6FA', fontSize: 12 }}>
+                            <span style={{ color: 'var(--p-t2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 250 }}>{sc.kcmc}<span style={{ color: 'var(--p-t4)', fontSize: 10.5 }}> · {sc.kclb} · {sc.xf}学分</span></span>
+                            <span style={{ fontWeight: 700, color: fail ? 'var(--abad)' : 'var(--aink)' }}>{String(sc.cj)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 8, lineHeight: 1.7 }}>
+                    干扰项提示：挂科可能与家庭变故、健康、转专业适应等相关，先看单科分布（是集中某类课还是普遍低分）再约谈；成绩数仓停更于该学期，最新情况以教务为准。
+                  </div>
+                </div>
+              )}
+              {sceneKey === 'funding' && dwTab === 'trend' && detailData && (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '16px 0 6px' }}>食堂消费趋势（按周 · 观察窗内）</div>
+                  {detailData.consumption && detailData.consumption.length > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, padding: '0 2px' }}>
+                      {(() => {
+                        const maxA = Math.max(...detailData.consumption.map((c) => Number(c.amt) || 0), 1);
+                        return detailData.consumption.map((c, i) => (
+                          <div key={i} style={{ flex: 1, textAlign: 'center' }} title={`第${c.wk}周：${c.meals}顿 / ${c.amt}元`}>
+                            <div style={{ background: 'linear-gradient(180deg,#4A6CF7,#8BA3FF)', borderRadius: '4px 4px 0 0', height: Math.max((Number(c.amt) || 0) / maxA * 70, 3), marginBottom: 4, opacity: 0.5 + 0.5 * (Number(c.amt) || 0) / maxA }} />
+                            <div style={{ fontSize: 9.5, color: 'var(--p-t4)' }}>W{c.wk}</div>
+                            <div style={{ fontSize: 9, color: 'var(--p-t3)' }}>{c.meals}顿</div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  ) : <div style={{ fontSize: 12, color: 'var(--p-t4)', padding: '8px 0' }}>观察窗内无食堂消费记录</div>}
+                  <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 8, lineHeight: 1.7 }}>
+                    干扰项提示：单顿均价低可能是节俭习惯或减肥；先看曲线形态——长期平稳的低消费是习惯，断崖式下降才值得关注；结合是否请假离校、是否恰逢实习期排除正常原因。
+                  </div>
                 </div>
               )}
               <SceneDetailAI detail={detail} cfg={cfg} detailData={detailData} />

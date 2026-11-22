@@ -572,6 +572,7 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
   const [k, setK] = useState(null);
   const [colleges, setColleges] = useState(null);
   const [list, setList] = useState(null);
+  const [detailData, setDetailData] = useState(null);
   const [listLoading, setListLoading] = useState(false);
   const listFresh = useRef(true);
   const [pageNum, setPageNum] = useState(1);
@@ -612,6 +613,15 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
   }, [win, filters.level, filters.college, filters.q, pageNum]);
 
   useEffect(() => { setPageNum(1); }, [win, filters.level, filters.college, filters.q]);
+
+  useEffect(() => {
+    if (!detail) { setDetailData(null); return; }
+    setDetailData(null);
+    const p = new URLSearchParams({ studentId: detail.id, view: 'funding', windowDays: win });
+    fetch(`${API_BASE}/insight/scene/detail?` + p, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => setDetailData(j.data)).catch(() => setDetailData(null));
+    // eslint-disable-next-line
+  }, [detail]);
 
   const rows = ((list && list.records) || []).filter((r) => !filters.grade || r.grade === filters.grade);
   const collegeNames = (colleges || []).map((c) => c.n);
@@ -837,10 +847,25 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
               <button className="v2-md-close" onClick={() => setDetail(null)}>✕</button>
             </div>
             <div className="v2-md-body">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
                 <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level][0]}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>综合消费分位 <b style={{ color: 'var(--aink)' }}>P{detail.pct}</b> · 同{detail.college}{detail.grade}基准</span>
               </div>
+              {detailData && (detailData.profile || detailData.dorm) && (
+                <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 13px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 10.5, color: 'var(--p-t3)', marginBottom: 6 }}>学籍档案</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12, lineHeight: 1.7 }}>
+                    {detailData.profile && [
+                      detailData.profile.jg && <span key="jg">籍贯 <b style={{ color: 'var(--aink)' }}>{detailData.profile.jg}</b></span>,
+                      detailData.profile.sy && <span key="sy">生源地 <b style={{ color: 'var(--aink)' }}>{String(detailData.profile.sy).slice(0, 24)}</b></span>,
+                      detailData.profile.tx && <span key="tx" style={{ flexBasis: '100%' }}>通讯地址 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.profile.tx}</b></span>,
+                      detailData.profile.mz && <span key="mz">{detailData.profile.mz}</span>,
+                      detailData.profile.zz && <span key="zz">{detailData.profile.zz}</span>,
+                    ].filter(Boolean)}
+                    {detailData.dorm && <span key="dm" style={{ flexBasis: '100%' }}>宿舍 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.dorm}</b></span>}
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
                 {[['观察窗就餐', `${detail.meals} 顿`], ['单顿均价', `${Number(detail.price).toFixed(2)} 元`], ['观察窗支出', `${detail.spend} 元`], ['消费分位', `P${Math.round(Number(detail.pct) || 0)}`]].map(([l, v]) => (
                   <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
@@ -852,6 +877,7 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
               <div className="dw-tabs">
                 <button className={fdTab === 'signal' ? 'on' : ''} onClick={() => setFdTab('signal')}>信号分解</button>
                 <button className={fdTab === 'check' ? 'on' : ''} onClick={() => setFdTab('check')}>排除项核验</button>
+                <button className={fdTab === 'trend' ? 'on' : ''} onClick={() => setFdTab('trend')}>明细 · 消费趋势</button>
               </div>
               {fdTab === 'signal' && (<>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>信号分解（百分位 = 同学院同年级相对位置）</div>
@@ -874,6 +900,28 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
                 </div>
               ))}
               </>)}
+              {fdTab === 'trend' && detailData && (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 6px' }}>食堂消费趋势（按周 · 观察窗内）</div>
+                  {detailData.consumption && detailData.consumption.length > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, padding: '0 2px' }}>
+                      {(() => {
+                        const maxA = Math.max(...detailData.consumption.map((c) => Number(c.amt) || 0), 1);
+                        return detailData.consumption.map((c, i) => (
+                          <div key={i} style={{ flex: 1, textAlign: 'center' }} title={`第${c.wk}周：${c.meals}顿 / ${c.amt}元`}>
+                            <div style={{ background: 'linear-gradient(180deg,#4A6CF7,#8BA3FF)', borderRadius: '4px 4px 0 0', height: Math.max((Number(c.amt) || 0) / maxA * 70, 3), marginBottom: 4, opacity: 0.5 + 0.5 * (Number(c.amt) || 0) / maxA }} />
+                            <div style={{ fontSize: 9.5, color: 'var(--p-t4)' }}>W{c.wk}</div>
+                            <div style={{ fontSize: 9, color: 'var(--p-t3)' }}>{c.meals}顿</div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  ) : <div style={{ fontSize: 12, color: 'var(--p-t4)', padding: '8px 0' }}>观察窗内无食堂消费记录</div>}
+                  <div style={{ fontSize: 11, color: 'var(--p-t4)', marginTop: 8, lineHeight: 1.7 }}>
+                    干扰项提示：单顿均价低可能是节俭习惯或减肥；先看曲线形态——长期平稳的低消费是习惯，断崖式下降才值得关注；结合是否请假离校、是否恰逢实习期排除正常原因。
+                  </div>
+                </div>
+              )}
               <DetailAiInsight detail={detail} />
             </div>
           </div>
