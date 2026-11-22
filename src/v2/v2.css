@@ -930,5 +930,5 @@ select.v2t-inp{cursor:pointer}
 
 
 /* 标题撒花图标（静态描边 SVG，庆祝意象） */
-.v2-confetti-icon{display:inline-flex;vertical-align:-6px;margin-left:8px;color:#F59E0B}
-.v2-confetti-icon svg{width:34px;height:34px}
+.v2-confetti-icon{display:inline-flex;vertical-align:-4px;margin-left:9px;color:#F59E0B}
+.v2-confetti-icon svg{width:30px;height:30px}

@@ -222,19 +222,15 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
           <h1>锡职大<span className="accent">AI中台</span> · 正式上线啦
             <span className="v2-confetti-icon" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                <path d="M24 26 L24 40" />
-                <path d="M18.5 24.5 L8 36" /><path d="M29.5 24.5 L40 36" />
-                <path d="M17 21 L4 17" /><path d="M31 21 L44 17" />
-                <path d="M20 17.5 L15 6" /><path d="M28 17.5 L33 6" />
-                <path d="M24 15 L24 6" />
-                <circle cx="4" cy="14" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="44" cy="14" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="13" cy="4" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="35" cy="4" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="6" cy="39" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="42" cy="39" r="1.6" fill="currentColor" stroke="none" />
-                <circle cx="24" cy="3" r="1.6" fill="currentColor" stroke="none" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 10.6 2.9 21l10.4-1.6a1.4 1.4 0 0 0 .8-2.4L6.9 9.8a1.4 1.4 0 0 0-2.4.8z"/>
+                <path d="M7.4 13.7l3.4 3.4"/>
+                <path d="M11.5 8.5 13 4"/>
+                <path d="M14.5 11.5 19 10"/>
+                <path d="M11 14 8.5 16.5"/>
+                <circle cx="17" cy="5" r="1.15" fill="currentColor" stroke="none"/>
+                <circle cx="21" cy="8.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="16.5" cy="15" r="1" fill="currentColor" stroke="none"/>
               </svg>
             </span>
           </h1>
