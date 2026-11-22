@@ -232,6 +232,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
     esRef.current = es;
     const cur = { fields: [], summary: '' };
     let total = 0;
+    let finished = false;
     es.onmessage = (ev) => {
       let d; try { d = JSON.parse(ev.data); } catch { return; }
       if (d.type === 'start') { total = d.total || 0; setLogLines((L) => [...L, { k: 'SYSTEM', v: `流水线就绪 · 共 ${d.total} 项字段`, sys: true }]); }
@@ -250,13 +251,34 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
       }
       if (d.type === 'nend' && d.index !== undefined) { const f = cur.fields[d.index]; if (f) { f.val = d.val; setFields([...cur.fields]); } }
       if (d.type === 'done') {
-        es.close(); setStreaming(false);
+        finished = true; es.close(); setStreaming(false);
         getRecord(rid).then((rec) => { setRecord(rec); setFields(rec.fields || []); setSummary((rec.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || ''); setStep(4); }).catch(() => setStep(4));
       }
-      if (d.type === 'error') { es.close(); setStreaming(false); toast(d.message || '流水线异常'); }
+      if (d.type === 'error') { finished = true; es.close(); setStreaming(false); toast(d.message || '流水线异常'); }
       if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
     };
-    es.onerror = () => { es.close(); setStreaming(false); };
+    es.onerror = () => {
+      es.close(); setStreaming(false);
+      if (finished) return;
+      toast('AI 连接中断，锡锡仍在后台生成，稍后将自动恢复…');
+      // 后端不依赖连接存活会跑完落库：轮询记录，总结生成后自动进入步骤4
+      let n = 0;
+      const poll = setInterval(async () => {
+        n += 1;
+        try {
+          const rec = await getRecord(rid);
+          const sum = (rec.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || '';
+          if (sum) {
+            clearInterval(poll);
+            setRecord(rec); setFields(rec.fields || []); setSummary(sum); setStep(4);
+            toast('AI 填报已完成，请核对');
+          } else if (n >= 20) {
+            clearInterval(poll);
+            toast('后台生成时间较长，请稍后从「我的填报记录 · 继续填报」查看');
+          }
+        } catch { /* 记录暂时不可读，继续轮询 */ }
+      }, 15000);
+    };
   };
 
   const pushLog = (k, v, amb) => {
@@ -290,7 +312,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
       }
       if (d.type === 'error') { es.close(); setStreaming(false); toast(d.message || '润色失败'); }
     };
-    es.onerror = () => { es.close(); setStreaming(false); };
+    es.onerror = () => { es.close(); setStreaming(false); toast('AI 润色连接中断，请稍后重试'); };
   };
   const doExport = () => {
     if (!record) return;
