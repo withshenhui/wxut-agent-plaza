@@ -241,13 +241,7 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
             <span className="tail" />
           </div>
           <div className="v2-hero-mascot">
-            <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" />
-            <div className="v2-mic" aria-hidden="true">
-              <span className="head" />
-              <span className="stem" />
-              <span className="wave w1" /><span className="wave w2" /><span className="wave w3" />
-              <span className="puff" />
-            </div>
+            <img src="./xixi-popper.gif" alt="锡锡 · 正在吹花筒庆祝" />
           </div>
         </div>
       </div>
