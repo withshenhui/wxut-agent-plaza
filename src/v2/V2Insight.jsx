@@ -93,6 +93,7 @@ function OverviewTab() {
   const [agents, setAgents] = useState(null);
   const [models, setModels] = useState(null);
   const [kbSt, setKbSt] = useState(null);
+  const [ov, setOv] = useState(null);   // 真实总览（在校生/近7天对话/学院活跃/场景分布）
 
   useEffect(() => {
     fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
@@ -111,6 +112,9 @@ function OverviewTab() {
         qa: arr.reduce((s, k) => s + (k.qaCount || 0), 0),
       });
     }).catch(() => setKbSt(KB_FALLBACK));
+    // 公开总览（真实数据：在校生/近7天对话/学院活跃/场景分布）
+    fetch(`${API_BASE}/insight/overview`).then((r) => r.json())
+      .then((j) => setOv(j && j.data ? j.data : null)).catch(() => setOv(null));
   }, []);
 
   const st = useMemo(() => {
@@ -150,7 +154,18 @@ function OverviewTab() {
     return <div style={{ padding: '60px 0' }}><XixiLoading text="AI加载数据中" /></div>;
   }
 
-  const maxTrend = Math.max(...OV.trend.map((x) => x[1]));
+  // 真实数据（缺省回退示例，保证不空）
+  const chat7d = (ov && Array.isArray(ov.chat7d) && ov.chat7d.length) ? ov.chat7d : null;
+  const trend = chat7d ? chat7d.map((x) => [x.d, x.n]) : OV.trend;
+  const chat7Total = chat7d ? chat7d.reduce((s, x) => s + (x.n || 0), 0) : null;
+  const students = (ov && ov.students && ov.students.count != null) ? ov.students : null;
+  const collegeAct = (ov && Array.isArray(ov.collegeActivity) && ov.collegeActivity.length) ? ov.collegeActivity.map((x) => [x.name, x.n]) : OV.collegeActivity;
+  const scenes = (() => {
+    const rows = (ov && Array.isArray(ov.scenes)) ? ov.scenes : [];
+    const tot = rows.reduce((s, x) => s + (x.n || 0), 0);
+    return (rows.length && tot) ? rows.map((x) => [String(x.label || '').replace(/^\uFEFF/, '').trim(), Math.round((x.n / tot) * 100)]) : OV.scenes;
+  })();
+  const maxTrend = Math.max(1, ...trend.map((x) => x[1]));
   const maxTop = Math.max(1, ...st.top.map((a) => a.visitCount || 0));
   const maxCat = Math.max(1, ...st.cats.map(([, c]) => c.n));
   const maxProv = Math.max(1, ...st.provs.map(([, v]) => v));
@@ -164,8 +179,8 @@ function OverviewTab() {
         {/* KPI 行 */}
         <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
           {[
-            { lb: '在校生', vl: '15,103', cmp: '学籍口径 · 数据日期 11-18', bar: 'var(--el-primary)' },
-            { lb: '今日智能体对话', vl: '2,580', cmp: '覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)' },
+            { lb: '在校生', vl: students ? fmt(students.count) : '—', cmp: students ? `学籍口径（在校） · 数据日期 ${students.asOf}` : '学籍数仓加载中', bar: 'var(--el-primary)' },
+            { lb: '近 7 天对话', vl: chat7Total == null ? '—' : fmt(chat7Total), cmp: '按天累计 · 覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)' },
             { lb: '智能体广场', vl: `${fmt(st.list.length)}<small>个</small>`, cmp: `已上线 ${st.online.length} · 建设中 ${st.building.length} · 累计访问 ${fmt(st.visits)} 次`, bar: '#8B5CF6', html: true },
             { lb: '平台模型', vl: `${fmt(st.ms.length)}<small>个</small>`, cmp: `本地部署 ${st.local.length} · 云端合作 ${st.ms.length - st.local.length}`, bar: 'var(--p-success)', html: true },
           ].map((k) => (
@@ -185,12 +200,12 @@ function OverviewTab() {
           <div className="v2-card">
             <div className="ct">近 7 日对话趋势</div>
             <div className="cs">柱=当日对话量 · 折线=走向</div>
-            <ComboTrendChart data={OV.trend} />
+            <ComboTrendChart data={trend} />
           </div>
           <div className="v2-card">
             <div className="ct">对话场景分布</div>
             <div className="cs">按智能体分类聚合</div>
-            <DonutChart data={OV.scenes} unit="%" centerLabel="场景占比" />
+            <DonutChart data={scenes} unit="%" centerLabel="场景占比" />
           </div>
           <div className="v2-card">
             <div className="ct">模型能力画像</div>
@@ -213,8 +228,8 @@ function OverviewTab() {
           </div>
           <div className="v2-card">
             <div className="ct">各学院使用活跃度</div>
-            <div className="cs">近 30 日访问指数</div>
-            <AreaTrendChart data={OV.collegeActivity.map(([n, v]) => [n, v])} />
+            <div className="cs">按学院聚合智能体访问量</div>
+            <AreaTrendChart data={collegeAct.map(([n, v]) => [n, v])} />
           </div>
           <div className="v2-card">
             <div className="ct">智能体分类分布</div>
@@ -929,11 +944,35 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
               </>)}
               {fdTab === 'check' && (<>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '12px 0 9px' }}>排除项核验</div>
-              {[['观察窗内请假离校 0 天（无「人不在校」干扰）'], ['消费数据覆盖 29 / 30 天（完整性达标）'], ['无大额异常消费（单笔 ≤ 25 元）']].map((t) => (
-                <div key={t} style={{ display: 'flex', gap: 9, fontSize: 12.5, color: 'var(--p-t2)', padding: '6px 0' }}>
-                  <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>✓</span>{t}
+              {(() => {
+                const L = detailData || {};
+                const ld = L.leaveDays != null ? L.leaveDays : null;
+                const lc = (L.leaves || []).length;
+                const cd = L.coverDays != null ? L.coverDays : null;
+                const ma = L.maxAmt != null ? Number(L.maxAmt).toFixed(1) : null;
+                const items = [
+                  { ok: ld != null && ld === 0, text: ld == null ? '请假数据统计中…' : `观察窗内请假离校 ${ld} 天${lc ? `（${lc} 条记录）` : ''}${ld === 0 ? '，无「人不在校」干扰' : '，请核对请假期间实际去向'}` },
+                  { ok: cd != null && cd >= Math.round(win * 0.9), text: cd == null ? '消费覆盖统计中…' : `消费数据覆盖 ${cd} / ${win} 天（完整性${cd >= Math.round(win * 0.9) ? '达标' : '不足，分位可靠性下降'}）` },
+                  { ok: ma != null && Number(ma) <= 25, text: ma == null ? '大额核验统计中…' : `单笔最大消费 ${ma} 元（${Number(ma) <= 25 ? '无大额异常' : '存在大额消费，请人工核对'}）` },
+                ];
+                return items.map(({ ok, text }) => (
+                  <div key={text} style={{ display: 'flex', gap: 9, fontSize: 12.5, color: 'var(--p-t2)', padding: '6px 0' }}>
+                    <span style={{ color: ok ? 'var(--p-success)' : '#D97706', fontWeight: 700, flexShrink: 0 }}>{ok ? '✓' : '⚠'}</span>{text}
+                  </div>
+                ));
+              })()}
+              {detailData && detailData.leaves && detailData.leaves.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--aink)', margin: '10px 0 4px' }}>观察窗内请假记录</div>
+                  <div style={{ maxHeight: 130, overflowY: 'auto', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '4px 10px' }}>
+                    {detailData.leaves.map((l, i) => (
+                      <div key={i} style={{ fontSize: 11.5, color: 'var(--p-t3)', padding: '4px 0', borderBottom: '1px solid #F3F6FA', lineHeight: 1.6 }}>
+                        {String(l.start_date).slice(0, 10)} ~ {String(l.end_date).slice(0, 10)}（{l.qjlx}）{l.reason ? '：' + l.reason : ''}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
               </>)}
               {fdTab === 'trend' && detailData && (
                 <div>
