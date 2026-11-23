@@ -905,7 +905,7 @@ function Models({ toast }) {
           </div>
         </div>
         {sel && selBox && (
-          <div className="v2-modal-mask" style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
+          <div className="v2-modal-mask" style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', background: 'transparent' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
             <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
@@ -914,7 +914,7 @@ function Models({ toast }) {
                 </div>
                 <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
               </div>
-              <div className="v2-md-body">
+              <div className="v2-md-body" style={{ paddingBottom: 18 }}>
                 {sel.description && (
                   <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
                 )}
@@ -934,11 +934,6 @@ function Models({ toast }) {
                   <span className="v2-link" style={{ fontSize: 12 }} onClick={() => doCopy(respOf(sel), 'resp')}>{copied === 'resp' ? '已复制' : '复制'}</span>
                 </div>
                 <div className="v2-api-code"><pre>{respOf(sel)}</pre></div>
-                {sel.apiDocsUrl && (
-                  <div style={{ fontSize: 12, color: 'var(--p-t3)', marginTop: 12, lineHeight: 1.7 }}>
-                    该模型开放了校内 API 入口：<a href={sel.apiDocsUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--el-primary)' }}>{sel.apiDocsUrl}</a>（Key 权限同上，联系中心开通）
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1217,6 +1212,7 @@ export default function V2App() {
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
+  const [teacherTpl, setTeacherTpl] = useState(null);  // 智能填报：地址栏 #/teacher/form/{模板id} 中的模板
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
   const [kbBadge, setKbBadge] = useState(0);   // 知识库：后台处理完成未读提示（红点）
   const [resolved, setResolved] = useState(undefined); // 前台功能注册表（undefined=加载中）：导航/守卫唯一来源
@@ -1308,6 +1304,7 @@ export default function V2App() {
     const f = featureByKey(resolved, p);
     if (f && !gateCheck(f, ctx)) { setPage('plaza'); setWorkbench(null); setTeacherWizard(false); return; }
     setTeacherWizard(p === 'teacher' && segs[1] === 'form');
+    setTeacherTpl(p === 'teacher' && segs[1] === 'form' && segs[2] ? Number(segs[2]) : null);
     setWorkbench(null);
     setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
   }, [location.pathname, agents, navigate, resolved]);
@@ -1402,6 +1399,7 @@ export default function V2App() {
         <V2Teacher user={user} requireLogin={requireLogin} toast={toast}
           wizard={teacherWizard}
           openRecordId={teacherRec}
+          initialTplId={teacherTpl}
           openWizard={openWizard}
           onExitWizard={() => { setTeacherWizard(false); setTeacherRec(null); navigate('/teacher'); }}
           onNav={nav} />
