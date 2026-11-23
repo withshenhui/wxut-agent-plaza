@@ -793,6 +793,13 @@ function Models({ toast }) {
   const [mg, setMg] = useState(null);
   const [mv, setMv] = useState(null);
   const [sel, setSel] = useState(null);
+  const [selBox, setSelBox] = useState(null); // 详情弹窗居中范围：右侧内容列的视口x区间（不含左侧筛选）
+  const mainRef = useRef(null);
+  const openSel = (m) => {
+    setSel(m);
+    const r = mainRef.current && mainRef.current.getBoundingClientRect();
+    setSelBox(r ? { left: r.left, width: r.width } : null);
+  };
   const [copied, setCopied] = useState('');
   const [fProv, setFProv] = useState({});   // 左侧筛选：供应商
   const [fType, setFType] = useState({});   // 左侧筛选：模型类型
@@ -898,13 +905,13 @@ function Models({ toast }) {
               ))}
             </div>
           </aside>
-          <div className="v2-mdl-main">
+          <div className="v2-mdl-main" ref={mainRef}>
         <div className="v2-model-grid" style={{ marginTop: 0 }}>
           {list.length ? list.map((m) => {
             const logo = provLogo(m);
             const bld = (m.tags || []).includes('建设中');
             return (
-              <div key={m.id} className={`v2-mdl-card${bld ? ' building' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setSel(m)} title="点击查看 API 调用说明">
+              <div key={m.id} className={`v2-mdl-card${bld ? ' building' : ''}`} style={{ cursor: 'pointer' }} onClick={() => openSel(m)} title="点击查看 API 调用说明">
                 <div className="v2-mdl-top">
                   <span className="pv">{logo
                     ? <img src={logo} alt={m.provider || ''} onError={(e) => { e.target.style.display = 'none'; }} />
@@ -933,8 +940,8 @@ function Models({ toast }) {
         )}
           </div>
         </div>
-        {sel && (
-          <div className="v2-modal-mask" onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
+        {sel && selBox && (
+          <div className="v2-modal-mask" style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
             <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
