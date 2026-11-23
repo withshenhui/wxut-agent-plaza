@@ -26,6 +26,7 @@ export function EmploymentWorkbench({ onBack, toast, user, dataScope }) {
     </div>
   );
 
+  const normCity = (c) => (String(c == null ? '' : c).replace(/[\[\]"]/g, '').split(',').filter(Boolean).join('、')) || '未填';
   const cityList = (arr) => (arr || []).filter((x) => x && x.city).slice(0, 8);
   const maxOf = (arr) => Math.max(1, ...(arr || []).map((x) => Number(x.n) || 0));
 
@@ -70,7 +71,7 @@ export function EmploymentWorkbench({ onBack, toast, user, dataScope }) {
               <div className="v2-card">
                 <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 10 }}>学生意向 · 城市分布</div>
                 {cityList(data.intentByCity).length === 0 && <div className="v2-empty" style={{ padding: 18, lineHeight: 1.8 }}>暂无学生意向数据——学生使用「智慧就业助手」对话并表达意向后自动汇总</div>}
-                {cityList(data.intentByCity).map((x) => <Bar key={x.city} name={x.city} value={Number(x.n)} max={maxOf(cityList(data.intentByCity))} />)}
+                {cityList(data.intentByCity).map((x) => <Bar key={x.city} name={normCity(x.city)} value={Number(x.n)} max={maxOf(cityList(data.intentByCity))} />)}
               </div>
             </div>
 
