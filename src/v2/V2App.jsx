@@ -907,7 +907,7 @@ function Models({ toast }) {
         {sel && selBox && (
           <>
             <div className="v2-modal-mask" style={{ background: 'rgba(15,23,42,.16)' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }} />
-            <div style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
+            <div style={{ position: 'fixed', left: selBox.left, top: 60, width: selBox.width, height: 'calc(100vh - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
               <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)', pointerEvents: 'auto' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
@@ -1039,8 +1039,7 @@ function DevGuide({ onClose, toast }) {
   );
 }
 
-function Dev({ toast }) {
-  const [showGuide, setShowGuide] = useState(false);
+function Dev({ toast, onGuide }) {
   const feats = [
     ['code', '可视化编排', '拖拽节点搭建工作流，条件分支、循环、并行皆可编排，所见即所得。'],
     ['chip', '模型自由选择', '接入平台模型池：本地部署的通用与垂类模型、外部合作模型，按需调用。'],
@@ -1055,7 +1054,6 @@ function Dev({ toast }) {
     ['03', '开发与调试', '登录平台创建应用，编排工作流、配置提示词与知识库，实时预览调试效果。'],
     ['04', '审核上架', '调试完成后提交审核；审核通过即可上架智能体广场，供全校师生使用。'],
   ];
-  if (showGuide) return <DevGuide onClose={() => { navigate('/dev'); window.scrollTo(0, 0); }} toast={toast} />;
   return (
     <>
       <div className="v2-hero" style={{ background: 'linear-gradient(135deg,#f6f9ff,#fff 55%,#f0f5ff)', textAlign: 'left' }}>
@@ -1068,7 +1066,7 @@ function Dev({ toast }) {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
               <button className="v2-btn lg" onClick={() => window.open('https://aiagent.wxut.edu.cn/apps', '_blank')}>进入开发平台 →</button>
-              <button className="v2-btn ghost lg" onClick={() => { navigate('/dev/guide'); window.scrollTo(0, 0); }}>使用指南</button>
+              <button className="v2-btn ghost lg" onClick={onGuide}>使用指南</button>
               <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>已开通账号 · 学校统一身份认证登录</span>
             </div>
           </div>
@@ -1212,6 +1210,7 @@ export default function V2App() {
   const [prompt, setPrompt] = useState(null);
   const setLoginPrompt = (msg) => setPrompt({ msg, kind: 'login' });
   const setPermPrompt = (msg) => setPrompt({ msg, kind: 'perm' });
+  const [showGuide, setShowGuide] = useState(false);   // 开发平台·操作指南（#/dev/guide）路由化
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
@@ -1403,7 +1402,9 @@ export default function V2App() {
       {page === 'insight' && ['safety', 'academic', 'mental'].includes(workbench) && (
         <SceneWorkbench sceneKey={workbench} toast={toast} user={user} canExport={hasPerm('insight.export')} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
-      {page === 'dev' && <Dev toast={toast} />}
+      {page === 'dev' && (showGuide
+        ? <DevGuide onClose={() => { navigate('/dev'); window.scrollTo(0, 0); }} toast={toast} />
+        : <Dev toast={toast} onGuide={() => { navigate('/dev/guide'); window.scrollTo(0, 0); }} />)}
       {page === 'teacher' && (
         <V2Teacher user={user} requireLogin={requireLogin} toast={toast}
           wizard={teacherWizard}
