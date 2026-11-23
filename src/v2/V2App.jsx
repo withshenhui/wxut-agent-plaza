@@ -109,7 +109,6 @@ export const NAV_DEFAULTS = [
   { key: 'dev', label: '智能体开发平台' },
   { key: 'models', label: '模型服务' },
   { key: 'kb', label: '知识库中心' },
-  { key: 'xixibuddy', label: 'XixiBuddy', href: '/v2/harness/', external: true, isNew: true },
 ];
 
 /** 读取 v2.nav 配置（公开可读）；空数组/加载失败/null → null（走代码默认） */
@@ -240,7 +239,7 @@ export function Footer({ onNav, toast }) {
             <div className="h">了解平台</div>
             <div className="lnk" onClick={() => onNav('campus')}>数智化校园 · AI科普</div>
             <div className="lnk" onClick={() => onNav('guide')}>操作指南</div>
-            <div className="lnk" onClick={() => window.open('/agent-plaza/feedback.html', '_blank')}>意见反馈</div>
+            <div className="lnk" onClick={() => window.open('/feedback?source=web', '_blank')}>意见反馈</div>
             <div className="lnk" onClick={() => onNav('about')}>关于我们</div>
           </div>
           <div className="v2-foot-col">
@@ -865,7 +864,7 @@ function Models({ toast }) {
       </div>
       <div className="v2-sec-head v2-models-head">
         <h2>模型服务</h2>
-        <p>学校本地部署与外部合作的大模型能力统一纳管 · 智能体经平台统一调用 · 公测期间服务可能偶发波动，敬请谅解</p>
+        <p>学校本地部署与外部合作的大模型能力统一纳管 · 智能体经平台统一调用</p>
       </div>
       <div className="v2-body" style={{ maxWidth: 1240 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
@@ -1164,14 +1163,53 @@ function Dev({ toast }) {
   );
 }
 
-/* ============ 简单内容页（campus/guide/about/kb 建设中） ============ */
+/* ============ 操作指南（指南枢纽：平台上手 + 开发平台 / XixiBuddy 指南入口） ============ */
+function GuideHub() {
+  return (
+    <>
+      <div className="v2-sec-head"><h2>操作指南</h2><p>平台三步上手 · 开发平台与桌面客户端指南入口</p></div>
+      <div className="v2-body" style={{ maxWidth: 900 }}>
+        <div className="v2-banner">
+          <div className="ic"><Icon name="book" size={26} /></div>
+          <div>
+            <div className="t">三步上手 AI中台</div>
+            <div className="d">① 使用统一身份认证登录（游客可先浏览广场与模型服务） → ② 在智能体广场选一个智能体：查学院数据、问制度、聊就业 → ③ 按需深入：知识库中心文档问答 · AI 数据洞察工作台 · AI 教师工作台。</div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, marginTop: 16 }}>
+          <div className="v2-card" style={{ cursor: 'pointer' }} onClick={() => { window.location.hash = '#/dev'; window.scrollTo(0, 0); }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EEF2FF', color: 'var(--el-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="code" size={19} /></div>
+              <div><div className="ct">智能体开发平台 · 使用指南</div><div className="cs">面向开发者与各部门</div></div>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--p-t2)', marginTop: 12, lineHeight: 1.7 }}>
+              从申请开通到上架广场的完整路径：联系信息化与数据服务中心申请开发者账号 → 登录平台 → 创建应用 → 可视化编排（提示词 / 知识库挂载 / MCP 数据接入）→ 调试预览 → 审核上架智能体广场。入口见「智能体开发平台」页内使用指南。
+            </div>
+            <div className="lnk" style={{ marginTop: 12 }}>进入智能体开发平台 →</div>
+          </div>
+          <div className="v2-card" style={{ cursor: 'pointer' }} onClick={() => window.open('/v2/harness/guide', '_blank')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EEF2FF', color: 'var(--el-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="ext" size={19} /></div>
+              <div><div className="ct">XixiBuddy 桌面客户端 · 操作指南</div><div className="cs">面向全体师生</div></div>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--p-t2)', marginTop: 12, lineHeight: 1.7 }}>
+              下载安装桌面客户端 → 统一身份认证登录 → 与锡锡对话查校园数据、问制度、使用校园技能。图文手册涵盖安装、登录、日常使用与常见问题，可在线阅读。
+            </div>
+            <div className="lnk" style={{ marginTop: 12 }}>打开完整指南（新窗口）→</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============ 简单内容页（campus/about 建设中；guide 走指南枢纽） ============ */
 function SimplePage({ kind }) {
   const MAP = {
     campus: ['数智化校园建设规划', '以 AI中台 为底座，教学 · 科研 · 管理 · 服务四线并进的智慧校园蓝图'],
-    guide: ['操作指南', '三步上手 AI中台 · 完整手册可下载留存'],
     about: ['关于 AI中台', '无锡职业技术大学 · 信息化与数据服务中心 出品'],
-    kb: ['知识库中心', '上传你的资料，AI 帮你读 —— 文档可检索、可提问、答案带出处'],
   };
+  if (kind === 'guide') return <GuideHub />;
   const [t, d] = MAP[kind] || MAP.campus;
   return (
     <>
