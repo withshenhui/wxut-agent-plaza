@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate } from 'react-router-dom';
-import { Icon, Modal, Switch, Pager, useToast, AgentAvatar, CAT_ICON } from './ui.jsx';
+import { Icon, Modal, Switch, Pager, useToast, AgentAvatar, CAT_ICON, confirmDialog } from './ui.jsx';
 import * as agentApi from '../api/agent';
 import * as catApi from '../api/category';
 import * as modelApi from '../api/model';
@@ -12,6 +12,7 @@ import * as logApi from '../api/log';
 import ClientAdmin from './V2ClientAdmin.jsx';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
+import { NAV_DEFAULTS } from './V2App.jsx';
 import * as feedbackApi from '../api/feedback';
 
 const MENU = [
@@ -26,6 +27,7 @@ const SUB_MENU = [
   { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
   { key: 'llm', icon: 'sliders', label: '大模型配置' },
   { key: 'clients', icon: 'download', label: '客户端管理' },
+  { key: 'nav', icon: 'ext', label: '导航菜单' },
   { key: 'basic', icon: 'gear', label: '基础配置' },
   { key: 'files', icon: 'folder', label: '文件管理' },
   { key: 'logs', icon: 'doclog', label: '操作日志' },
@@ -33,7 +35,7 @@ const SUB_MENU = [
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
   users: '用户管理', feedback: '意见反馈', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
-  clients: '客户端管理', files: '文件管理', logs: '操作日志',
+  clients: '客户端管理', files: '文件管理', logs: '操作日志', nav: '导航菜单',
 };
 
 const ROUTE_KEYS = Object.keys(TITLES);
@@ -202,6 +204,7 @@ export default function V2Admin({ user, onLogout }) {
           {page === 'llm' && <LlmAdmin toast={toast} />}
           {page === 'clients' && <ClientAdmin toast={toast} />}
           {page === 'basic' && <BasicAdmin toast={toast} />}
+          {page === 'nav' && <NavAdmin toast={toast} />}
           {page === 'files' && <FilesAdmin toast={toast} />}
           {page === 'logs' && <LogsAdmin />}
         </div>
@@ -220,8 +223,8 @@ function Dashboard({ go }) {
     Promise.all([
       fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json()),
       fetch(`${API_BASE}/categories`).then((r) => r.json()),
-      fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
-      fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=general&size=200`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=vertical&size=200`).then((r) => r.json()),
       userApi.listUsers({ page: 1, size: 200 }).catch(() => null),
     ]).then(([a, c, g, v, us]) => {
       const agents = a.data?.records || [];
@@ -375,7 +378,7 @@ function AgentsAdmin({ toast }) {
     } catch (e) { toast('保存失败：' + e.message); }
   };
   const del = async (a) => {
-    if (!window.confirm(`确认删除智能体「${a.name}」？删除后卡片从广场即时消失，不可恢复。`)) return;
+    if (!(await confirmDialog({ title: '删除智能体', text: `确认删除「${a.name}」？删除后卡片从广场即时消失，不可恢复。`, okText: '删除', danger: true }))) return;
     try { await agentApi.deleteAgent(a.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
   const [catF, setCatF] = useState('');
@@ -542,7 +545,7 @@ function CatsAdmin({ toast }) {
     } catch (e) { toast('保存失败：' + e.message); }
   };
   const del = async (c) => {
-    if (!window.confirm(`确认删除分类「${c.label}」？`)) return;
+    if (!(await confirmDialog({ title: '删除分类', text: `确认删除分类「${c.label}」？`, okText: '删除', danger: true }))) return;
     try { await catApi.deleteCategory(c.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
   if (!list) return (
@@ -611,8 +614,8 @@ function ModelsAdmin({ toast }) {
   const [edit, setEdit] = useState(null);
   const load = () => {
     Promise.all([
-      fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()),
-      fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=general&size=200`).then((r) => r.json()),
+      fetch(`${API_BASE}/models?category=vertical&size=200`).then((r) => r.json()),
     ]).then(([g, v]) => setList([...(g.data?.records || []), ...(v.data?.records || [])]))
       .catch(() => { setList([]); toast('加载失败'); });
   };
@@ -625,7 +628,7 @@ function ModelsAdmin({ toast }) {
     } catch (e) { toast('保存失败：' + e.message); }
   };
   const del = async (m) => {
-    if (!window.confirm(`确认删除模型「${m.name}」？`)) return;
+    if (!(await confirmDialog({ title: '删除模型', text: `确认删除模型「${m.name}」？`, okText: '删除', danger: true }))) return;
     try { await modelApi.deleteModel(m.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
   if (!list) return (
@@ -739,20 +742,31 @@ function UsersAdmin({ toast }) {
     try { await userApi.updateUserStatus(u.id, u.status === 1 ? 0 : 1); toast(u.status === 1 ? `已禁用「${u.nickname || u.username}」` : `已启用「${u.nickname || u.username}」`); load(); } catch (e) { toast('失败：' + e.message); }
   };
   const reset = async (u) => {
-    if (!window.confirm(`确认重置「${u.nickname || u.username}」的密码？重置后请第一时间通知用户。`)) return;
+    if (!(await confirmDialog({ title: '重置密码', text: `确认重置「${u.nickname || u.username}」的密码？重置后请第一时间通知用户。`, okText: '重置', danger: true }))) return;
     const pwd = 'Wxit@' + Math.random().toString(36).slice(2, 8);
     try { await userApi.resetPassword(u.id, pwd); toast(`已重置，新初始密码：${pwd}（请通知用户）`); } catch (e) { toast('失败：' + e.message); }
   };
   const openEdit = (u) => {
-    setEdit({ u, role: u.role || 'user', collegeId: u.collegeId ?? '' });
+    setEdit({ u, role: u.role || 'user', collegeId: u.collegeId ?? '', devEntry: undefined });
+    // 加载该用户当前权限（dev.entry 状态驱动开关；游客/失败按 false 处理不阻塞弹窗）
+    userApi.getUserPerms(u.id)
+      .then((perms) => {
+        const on = Array.isArray(perms) && perms.includes('dev.entry');
+        setEdit((e) => e && e.u.id === u.id ? { ...e, devEntry: on, devEntryInitial: on } : e);
+      })
+      .catch(() => { setEdit((e) => e && e.u.id === u.id ? { ...e, devEntry: false, devEntryInitial: false } : e); });
   };
   const saveEdit = async () => {
-    const { u, role, collegeId } = edit;
+    const { u, role, collegeId, devEntry, devEntryInitial } = edit;
     try {
       await userApi.updateUser(u.id, {
         role,
         collegeId: collegeId === '' ? null : Number(collegeId),
       });
+      // dev.entry 有变化才写（避免普通老师无记录时也写一行 granted=0）
+      if (devEntry !== undefined && devEntryInitial !== undefined && devEntry !== devEntryInitial) {
+        await userApi.setUserPerm(u.id, 'dev.entry', devEntry);
+      }
       toast(`已保存「${u.nickname || u.username}」的角色与权限`);
       setEdit(null);
       load();
@@ -857,6 +871,20 @@ function UsersAdmin({ toast }) {
                 </div>
               </div>
             </div>
+              {/* 功能权限（申请开通制入口）：dev.entry 智能体开发平台 */}
+              <div className="v2-scope-explain" style={{ marginBottom: 14 }}>
+                <div className="h"><Icon name="code" size={15} /> 功能权限 · 申请开通制</div>
+                <div className="b" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Switch on={!!edit.devEntry} onChange={(v) => setEdit({ ...edit, devEntry: v })} title="智能体开发平台" />
+                  <div style={{ flex: 1 }}>
+                    <b>智能体开发平台（dev.entry）</b>
+                    <div style={{ marginTop: 2 }}>
+                      开发平台实行申请开通制：老师由所在学院 / 部门向<b>信息化与数据服务中心</b>提出申请，
+                      审核通过后在此勾选开通；未开通者平台入口不可用（有统一身份认证账号也不开放）。
+                    </div>
+                  </div>
+                </div>
+              </div>
             <div className="v2-md-foot">
               <button className="v2-btn ghost" onClick={() => setEdit(null)}>取消</button>
               <button className="v2-btn" onClick={saveEdit}>保存</button>
@@ -915,6 +943,18 @@ const KB_MODEL_KEYS = [
   ['kb.rerank_model', '重排模型名称', 'bge-reranker-v2-m3'],
 ];
 function KbModelCard({ toast }) {
+  // 文档解析服务（校园一体机）状态
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfHealth, setPdfHealth] = useState(null);
+  useEffect(() => {
+    configApi.getConfig('pdf.parse_url').then((r) => setPdfUrl((r && r.configValue) || '')).catch(() => {});
+    fetch(`${API_BASE}/form/parse-service/health`, { headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` } })
+      .then((r) => r.json()).then((j) => setPdfHealth(j.data || null)).catch(() => setPdfHealth({ online: false }));
+  }, []);
+  const savePdf = async () => {
+    try { await configApi.updateConfig('pdf.parse_url', pdfUrl || ''); toast('文档解析服务配置已保存'); }
+    catch (e) { toast('保存失败：' + e.message); }
+  };
   const [vals, setVals] = useState(null);
   const [busy, setBusy] = useState(false);
   const load = async () => {
@@ -955,6 +995,20 @@ function KbModelCard({ toast }) {
       <div className="v2-notice warn" style={{ marginTop: 14 }}>
         <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>嵌入模型与库内向量强绑定：更换嵌入模型后<b>必须对库内文件逐个「重建索引」</b>（维度须一致），否则检索失效；重排模型可随时切换，异常时自动回退向量相似度排序。</span>
+      </div>
+      <div style={{ height: 1, background: 'var(--p-line)', margin: '18px 0' }} />
+      <div className="ct">文档解析服务（校园智算一体机）</div>
+      <div className="cs">智能填报「上传文件自动回填」所用 · PDF 解析引擎（PyMuPDF）部署于一体机，中台经此地址调用；服务不可达时自动回退中台内置解析</div>
+      <div className="v2-kv-form" style={{ marginTop: 10 }}>
+        <div className="v2-kv-row">
+          <span className="k">服务地址</span>
+          <span className="v"><input className="v2-fm-i" value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} placeholder="http://210.28.144.245:8016/parse" /></span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button className="v2-btn" onClick={savePdf}>保存配置</button>
+        {pdfHealth && <span className={`v2-tag ${pdfHealth.online ? 'green' : 'red'}`}>{pdfHealth.online ? '服务在线' : '服务离线'}</span>}
+        <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>支持 PDF / Word / Excel 文本解析 · 扫描件需拍摄设备支持</span>
       </div>
     </div>
   );
@@ -1009,7 +1063,7 @@ function LlmAdmin({ toast }) {
     } catch (e) { toast('切换失败：' + e.message); }
   };
   const remove = async (p) => {
-    if (!window.confirm(`确认删除供应商「${p.name}」？`)) return;
+    if (!(await confirmDialog({ title: '删除供应商', text: `确认删除供应商「${p.name}」？`, okText: '删除', danger: true }))) return;
     const next = providers.filter((x) => x.id !== p.id);
     await configApi.updateConfig(PROVIDERS_KEY, JSON.stringify(next));
     setProviders(next); setSel(next[0] || null); toast('已删除');
@@ -1056,6 +1110,124 @@ function LlmAdmin({ toast }) {
       <div className="v2-notice warn" style={{ marginTop: 14 }}>
         <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>更换大模型供应商会<b>直接影响全平台的对话效果</b>。操作顺序：添加/编辑供应商 → 填写 API 地址与密钥 → 保存 → 设为当前使用。请勿在业务高峰期切换。</span>
+      </div>
+    </>
+  );
+}
+
+/* ================= 导航菜单 ================= */
+const BUILTIN_NAV_KEYS = new Set(NAV_DEFAULTS.map((d) => d.key));
+function NavAdmin({ toast }) {
+  const [items, setItems] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const load = () => configApi.getConfig('v2.nav')
+    .then((d) => {
+      let arr = null;
+      try { const a = JSON.parse(d?.configValue || '[]'); if (Array.isArray(a) && a.length) arr = a; } catch { /* 走默认 */ }
+      const seed = (arr || NAV_DEFAULTS.map((x) => ({ key: x.key, label: x.label, href: x.href || '' })))
+        .map((x) => ({
+          key: String(x.key || '').trim() || 'c' + Math.random().toString(36).slice(2, 7),
+          label: String(x.label || '').trim(),
+          href: String(x.href || '').trim(),
+          isNew: !!x.isNew,
+          hidden: !!x.hidden,
+        }));
+      setItems(seed);
+    })
+    .catch(() => setItems(NAV_DEFAULTS.map((x) => ({ key: x.key, label: x.label, href: x.href || '', isNew: !!x.isNew, hidden: false }))));
+  useEffect(() => { load(); }, []);
+  if (!items) return <div className="v2-loading">加载中…</div>;
+
+  const patch = (i, kv) => setItems(items.map((x, j) => (j === i ? { ...x, ...kv } : x)));
+  const move = (i, d) => {
+    const j = i + d;
+    if (j < 0 || j >= items.length) return;
+    const next = items.slice();
+    const [it] = next.splice(i, 1);
+    next.splice(j, 0, it);
+    setItems(next);
+  };
+  const addCustom = () => setItems([...items, { key: 'c' + Date.now().toString(36), label: '新链接', href: 'https://', isNew: false, hidden: false }]);
+  const remove = async (i) => { if (await confirmDialog({ title: '删除菜单项', text: '确认删除该菜单项？', okText: '删除', danger: true })) setItems(items.filter((_, j) => j !== i)); };
+  const save = async () => {
+    if (items.some((x) => !BUILTIN_NAV_KEYS.has(x.key) && !x.href)) { toast('自定义项必须填写链接地址'); return; }
+    setSaving(true);
+    try {
+      await configApi.updateConfig('v2.nav', JSON.stringify(items));
+      toast('导航菜单已保存，前台刷新后生效'); load();
+    } catch (e) { toast('保存失败：' + e.message); }
+    setSaving(false);
+  };
+  const reset = async () => {
+    if (!(await confirmDialog({ title: '恢复默认导航', text: '恢复默认导航？当前配置将被清空（前台回到代码默认菜单）。', okText: '恢复', danger: true }))) return;
+    // 写 '[]' 而非 ''：@RequestBody 空 body 会 500，前端空数组同样走代码默认
+    configApi.updateConfig('v2.nav', '[]')
+      .then(() => { toast('已恢复默认导航'); load(); })
+      .catch((e) => toast('操作失败：' + e.message));
+  };
+  const visible = items.filter((x) => !x.hidden);
+
+  const th = { fontSize: 11.5, color: 'var(--p-t3)', fontWeight: 600, textAlign: 'left', padding: '6px 10px', borderBottom: '1.5px solid var(--p-line)' };
+  return (
+    <>
+      <div className="v2-page-head">
+        <div><div className="v2-ph-title">导航菜单</div><div className="v2-ph-sub">前台顶栏导航的顺序 / 名称 / 显隐 / 自定义外链（sys_config: v2.nav，前台免登录可读）</div></div>
+      </div>
+      <div className="v2-card" style={{ maxWidth: 900 }}>
+        <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--p-t3)' }}>
+          实时预览：<span style={{ color: 'var(--p-t2)' }}>{visible.length ? visible.map((x) => x.label).join('　·　') : '（当前没有可见菜单项）'}</span>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ ...th, width: 64 }}>排序</th>
+              <th style={{ ...th }}>名称</th>
+              <th style={{ ...th, width: 240 }}>链接地址（自定义项）</th>
+              <th style={{ ...th, width: 70 }}>NEW</th>
+              <th style={{ ...th, width: 70 }}>显示</th>
+              <th style={{ ...th, width: 60 }}>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((x, i) => {
+              const builtin = BUILTIN_NAV_KEYS.has(x.key);
+              const tdx = { padding: '7px 10px', borderBottom: '1px solid var(--p-line2)', verticalAlign: 'middle' };
+              return (
+                <tr key={x.key} style={{ opacity: x.hidden ? 0.45 : 1 }}>
+                  <td style={tdx}>
+                    <button className="v2-mini-btn" disabled={i === 0} onClick={() => move(i, -1)} title="上移">↑</button>
+                    <button className="v2-mini-btn" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="下移" style={{ marginLeft: 4 }}>↓</button>
+                  </td>
+                  <td style={tdx}>
+                    <input className="v2-fm-i" value={x.label} onChange={(e) => patch(i, { label: e.target.value })} style={{ width: 160 }} />
+                    <span style={{ marginLeft: 8, fontSize: 10.5, color: 'var(--p-t4)' }}>{builtin ? `内置 · ${x.key}` : '自定义'}</span>
+                  </td>
+                  <td style={tdx}>
+                    {builtin && (x.key === 'xixibuddy')
+                      ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>{x.href || NAV_DEFAULTS.find((d) => d.key === 'xixibuddy')?.href}（内置项，可留空走默认）</span>
+                      : builtin
+                        ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>—（站内页面，无需地址）</span>
+                        : <input className="v2-fm-i" value={x.href} placeholder="https://…" onChange={(e) => patch(i, { href: e.target.value })} style={{ width: '100%' }} />}
+                  </td>
+                  <td style={tdx}><Switch on={x.isNew} onChange={(v) => patch(i, { isNew: v })} title="NEW 角标" /></td>
+                  <td style={tdx}><Switch on={!x.hidden} onChange={(v) => patch(i, { hidden: !v })} title="显示/隐藏" /></td>
+                  <td style={tdx}>
+                    {!builtin && <button className="v2-mini-btn" onClick={() => remove(i)} title="删除">✕</button>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button className="v2-btn" onClick={save} disabled={saving}>{saving ? '保存中…' : '保存配置'}</button>
+          <button className="v2-btn ghost" onClick={addCustom}>＋ 添加自定义链接</button>
+          <div style={{ flex: 1 }} />
+          <button className="v2-btn ghost" onClick={reset}>恢复默认</button>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--p-t4)', lineHeight: 1.7 }}>
+          说明：首页（plaza）不在配置中时固定保留在首位；「AI 数据洞察 / AI教师工作台」对无权限账号自动隐藏（权限优先于本配置）；配置为空或加载失败时前台走代码默认菜单。
+        </div>
       </div>
     </>
   );
@@ -1127,7 +1299,7 @@ function FilesAdmin({ toast }) {
   };
   useEffect(() => { load(); }, []);
   const del = async (f) => {
-    if (!window.confirm(`确认删除「${f.originalName || f.fileName || f.id}」？`)) return;
+    if (!(await confirmDialog({ title: '删除文件', text: `确认删除「${f.originalName || f.fileName || f.id}」？`, okText: '删除', danger: true }))) return;
     try { await fileApi.deleteFile(f.id); toast('已删除'); load(); } catch (e) { toast('删除失败：' + e.message); }
   };
   if (!list) return <div className="v2-loading">加载中…</div>;
@@ -1270,7 +1442,17 @@ function FeedbackAdmin({ toast }) {
           <div className="v2-fm-row"><span className="v2-fm-label">联系方式</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{detail.contact || '未留'}</div></div>
           <div className="v2-fm-row"><span className="v2-fm-label">反馈内容</span><div className="v2-fm-body"><div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, padding: '12px 14px', background: '#F7F9FC', borderRadius: 8, fontSize: 13.5, color: 'var(--aink)' }}>{detail.content}</div></div></div>
           {detail.version && <div className="v2-fm-row"><span className="v2-fm-label">客户端版本</span><div className="v2-fm-body" style={{ color: 'var(--p-t2)' }}>{detail.version}</div></div>}
-          {detail.deviceInfo && <div className="v2-fm-row"><span className="v2-fm-label">设备信息</span><div className="v2-fm-body" style={{ fontSize: 12, color: 'var(--p-t3)', wordBreak: 'break-all', lineHeight: 1.6 }}>{detail.deviceInfo}</div></div>}
+          {(() => {
+            const dev = detail.deviceInfo || detail.device_info || '';
+            if (!dev) return null;
+            const sep = dev.indexOf('; screen_resolution=');
+            const ua = sep > -1 ? dev.slice(0, sep) : dev;
+            const res = sep > -1 ? dev.slice(sep + '; screen_resolution='.length) : '';
+            return (<>
+              <div className="v2-fm-row"><span className="v2-fm-label">设备环境</span><div className="v2-fm-body" style={{ fontSize: 12, color: 'var(--p-t3)', wordBreak: 'break-all', lineHeight: 1.6 }}>{ua}</div></div>
+              {res && <div className="v2-fm-row"><span className="v2-fm-label">屏幕</span><div className="v2-fm-body" style={{ fontSize: 12, color: 'var(--p-t3)', lineHeight: 1.6 }}>{res}</div></div>}
+            </>);
+          })()}
         </Modal>
       )}
     </>
