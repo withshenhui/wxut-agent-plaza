@@ -12,7 +12,7 @@ import * as logApi from '../api/log';
 import ClientAdmin from './V2ClientAdmin.jsx';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
-import { NAV_DEFAULTS } from './V2App.jsx';
+import FeaturesAdmin from './V2FeaturesAdmin.jsx';
 import * as feedbackApi from '../api/feedback';
 
 const MENU = [
@@ -27,7 +27,7 @@ const SUB_MENU = [
   { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
   { key: 'llm', icon: 'sliders', label: '大模型配置' },
   { key: 'clients', icon: 'download', label: '客户端管理' },
-  { key: 'nav', icon: 'ext', label: '导航菜单' },
+  { key: 'features', icon: 'ext', label: '前台功能管理' },
   { key: 'basic', icon: 'gear', label: '基础配置' },
   { key: 'files', icon: 'folder', label: '文件管理' },
   { key: 'logs', icon: 'doclog', label: '操作日志' },
@@ -35,7 +35,7 @@ const SUB_MENU = [
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
   users: '用户管理', feedback: '意见反馈', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
-  clients: '客户端管理', files: '文件管理', logs: '操作日志', nav: '导航菜单',
+  clients: '客户端管理', files: '文件管理', logs: '操作日志', features: '前台功能管理',
 };
 
 const ROUTE_KEYS = Object.keys(TITLES);
@@ -204,7 +204,7 @@ export default function V2Admin({ user, onLogout }) {
           {page === 'llm' && <LlmAdmin toast={toast} />}
           {page === 'clients' && <ClientAdmin toast={toast} />}
           {page === 'basic' && <BasicAdmin toast={toast} />}
-          {page === 'nav' && <NavAdmin toast={toast} />}
+          {page === 'features' && <FeaturesAdmin toast={toast} />}
           {page === 'files' && <FilesAdmin toast={toast} />}
           {page === 'logs' && <LogsAdmin />}
         </div>
@@ -1110,124 +1110,6 @@ function LlmAdmin({ toast }) {
       <div className="v2-notice warn" style={{ marginTop: 14 }}>
         <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="warn" size={15} /></span>
         <span>更换大模型供应商会<b>直接影响全平台的对话效果</b>。操作顺序：添加/编辑供应商 → 填写 API 地址与密钥 → 保存 → 设为当前使用。请勿在业务高峰期切换。</span>
-      </div>
-    </>
-  );
-}
-
-/* ================= 导航菜单 ================= */
-const BUILTIN_NAV_KEYS = new Set(NAV_DEFAULTS.map((d) => d.key));
-function NavAdmin({ toast }) {
-  const [items, setItems] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const load = () => configApi.getConfig('v2.nav')
-    .then((d) => {
-      let arr = null;
-      try { const a = JSON.parse(d?.configValue || '[]'); if (Array.isArray(a) && a.length) arr = a; } catch { /* 走默认 */ }
-      const seed = (arr || NAV_DEFAULTS.map((x) => ({ key: x.key, label: x.label, href: x.href || '' })))
-        .map((x) => ({
-          key: String(x.key || '').trim() || 'c' + Math.random().toString(36).slice(2, 7),
-          label: String(x.label || '').trim(),
-          href: String(x.href || '').trim(),
-          isNew: !!x.isNew,
-          hidden: !!x.hidden,
-        }));
-      setItems(seed);
-    })
-    .catch(() => setItems(NAV_DEFAULTS.map((x) => ({ key: x.key, label: x.label, href: x.href || '', isNew: !!x.isNew, hidden: false }))));
-  useEffect(() => { load(); }, []);
-  if (!items) return <div className="v2-loading">加载中…</div>;
-
-  const patch = (i, kv) => setItems(items.map((x, j) => (j === i ? { ...x, ...kv } : x)));
-  const move = (i, d) => {
-    const j = i + d;
-    if (j < 0 || j >= items.length) return;
-    const next = items.slice();
-    const [it] = next.splice(i, 1);
-    next.splice(j, 0, it);
-    setItems(next);
-  };
-  const addCustom = () => setItems([...items, { key: 'c' + Date.now().toString(36), label: '新链接', href: 'https://', isNew: false, hidden: false }]);
-  const remove = async (i) => { if (await confirmDialog({ title: '删除菜单项', text: '确认删除该菜单项？', okText: '删除', danger: true })) setItems(items.filter((_, j) => j !== i)); };
-  const save = async () => {
-    if (items.some((x) => !BUILTIN_NAV_KEYS.has(x.key) && !x.href)) { toast('自定义项必须填写链接地址'); return; }
-    setSaving(true);
-    try {
-      await configApi.updateConfig('v2.nav', JSON.stringify(items));
-      toast('导航菜单已保存，前台刷新后生效'); load();
-    } catch (e) { toast('保存失败：' + e.message); }
-    setSaving(false);
-  };
-  const reset = async () => {
-    if (!(await confirmDialog({ title: '恢复默认导航', text: '恢复默认导航？当前配置将被清空（前台回到代码默认菜单）。', okText: '恢复', danger: true }))) return;
-    // 写 '[]' 而非 ''：@RequestBody 空 body 会 500，前端空数组同样走代码默认
-    configApi.updateConfig('v2.nav', '[]')
-      .then(() => { toast('已恢复默认导航'); load(); })
-      .catch((e) => toast('操作失败：' + e.message));
-  };
-  const visible = items.filter((x) => !x.hidden);
-
-  const th = { fontSize: 11.5, color: 'var(--p-t3)', fontWeight: 600, textAlign: 'left', padding: '6px 10px', borderBottom: '1.5px solid var(--p-line)' };
-  return (
-    <>
-      <div className="v2-page-head">
-        <div><div className="v2-ph-title">导航菜单</div><div className="v2-ph-sub">前台顶栏导航的顺序 / 名称 / 显隐 / 自定义外链（sys_config: v2.nav，前台免登录可读）</div></div>
-      </div>
-      <div className="v2-card" style={{ maxWidth: 900 }}>
-        <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--p-t3)' }}>
-          实时预览：<span style={{ color: 'var(--p-t2)' }}>{visible.length ? visible.map((x) => x.label).join('　·　') : '（当前没有可见菜单项）'}</span>
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ ...th, width: 64 }}>排序</th>
-              <th style={{ ...th }}>名称</th>
-              <th style={{ ...th, width: 240 }}>链接地址（自定义项）</th>
-              <th style={{ ...th, width: 70 }}>NEW</th>
-              <th style={{ ...th, width: 70 }}>显示</th>
-              <th style={{ ...th, width: 60 }}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((x, i) => {
-              const builtin = BUILTIN_NAV_KEYS.has(x.key);
-              const tdx = { padding: '7px 10px', borderBottom: '1px solid var(--p-line2)', verticalAlign: 'middle' };
-              return (
-                <tr key={x.key} style={{ opacity: x.hidden ? 0.45 : 1 }}>
-                  <td style={tdx}>
-                    <button className="v2-mini-btn" disabled={i === 0} onClick={() => move(i, -1)} title="上移">↑</button>
-                    <button className="v2-mini-btn" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="下移" style={{ marginLeft: 4 }}>↓</button>
-                  </td>
-                  <td style={tdx}>
-                    <input className="v2-fm-i" value={x.label} onChange={(e) => patch(i, { label: e.target.value })} style={{ width: 160 }} />
-                    <span style={{ marginLeft: 8, fontSize: 10.5, color: 'var(--p-t4)' }}>{builtin ? `内置 · ${x.key}` : '自定义'}</span>
-                  </td>
-                  <td style={tdx}>
-                    {builtin && (x.key === 'xixibuddy')
-                      ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>{x.href || NAV_DEFAULTS.find((d) => d.key === 'xixibuddy')?.href}（内置项，可留空走默认）</span>
-                      : builtin
-                        ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>—（站内页面，无需地址）</span>
-                        : <input className="v2-fm-i" value={x.href} placeholder="https://…" onChange={(e) => patch(i, { href: e.target.value })} style={{ width: '100%' }} />}
-                  </td>
-                  <td style={tdx}><Switch on={x.isNew} onChange={(v) => patch(i, { isNew: v })} title="NEW 角标" /></td>
-                  <td style={tdx}><Switch on={!x.hidden} onChange={(v) => patch(i, { hidden: !v })} title="显示/隐藏" /></td>
-                  <td style={tdx}>
-                    {!builtin && <button className="v2-mini-btn" onClick={() => remove(i)} title="删除">✕</button>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button className="v2-btn" onClick={save} disabled={saving}>{saving ? '保存中…' : '保存配置'}</button>
-          <button className="v2-btn ghost" onClick={addCustom}>＋ 添加自定义链接</button>
-          <div style={{ flex: 1 }} />
-          <button className="v2-btn ghost" onClick={reset}>恢复默认</button>
-        </div>
-        <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--p-t4)', lineHeight: 1.7 }}>
-          说明：首页（plaza）不在配置中时固定保留在首位；「AI 数据洞察 / AI教师工作台」对无权限账号自动隐藏（权限优先于本配置）；配置为空或加载失败时前台走代码默认菜单。
-        </div>
       </div>
     </>
   );
