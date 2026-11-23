@@ -914,7 +914,7 @@ function Models({ toast }) {
                 </div>
                 <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
               </div>
-              <div className="v2-md-body" style={{ paddingBottom: 18 }}>
+              <div className="v2-md-body" style={{ paddingTop: 24, paddingBottom: 24 }}>
                 {sel.description && (
                   <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
                 )}
