@@ -47,7 +47,7 @@ export function EmploymentWorkbench({ onBack, toast, user, dataScope }) {
           <div className="xab-avatar"><img src="./v2-xixi.png" alt="锡锡" /></div>
           <div className="xab-body">
             <span className="xab-label">AI就业洞察</span>
-            <span className="xab-text">岗位库来自公开校招渠道（江苏 91job 等），每日自动同步；学生通过「智慧就业助手」对话即可获得个性化推荐。</span>
+            <span className="xab-text">岗位库来自多家公开招聘平台，每日自动同步；学生通过「智慧就业助手」对话即可获得个性化推荐。</span>
           </div>
         </div>
 
@@ -159,7 +159,7 @@ export function EmploymentJobCards({ jobs }) {
             </div>
           ) : null}
           <div className="emp-src">
-            来源：{j.source === '91job' ? '江苏 91job · 省毕业生就业服务平台' : (j.source || '公开校招渠道')}
+            来源：{j.source === '91job' ? '公开招聘平台' : (j.source || '公开校招渠道')}
             {j.url ? <a href={j.url} target="_blank" rel="noreferrer">查看原文</a> : null}
             　信息仅供参考，以招聘单位官方发布为准
           </div>

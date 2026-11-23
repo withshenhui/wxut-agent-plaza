@@ -723,13 +723,13 @@ function ChatPage({ agent, onExit }) {
           <div style={{ marginTop: 14 }}>
             <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{currentModel || (gw ? '平台默认' : '—')}</span></div>
             {isEmp
-              ? <div className="v2-kvv"><span className="k">匹配引擎</span><span className="v">学籍画像 + 岗位库 + 大模型精排</span></div>
+              ? <div className="v2-kvv"><span className="k">匹配引擎</span><span className="v">学籍画像 + 岗位库</span></div>
               : isRag
               ? <div className="v2-kvv"><span className="k">知识引擎</span><span className="v">RAG 检索 + 原文引用</span></div>
               : <div className="v2-kvv"><span className="k">MCP 服务</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '—'}</span></div>}
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
             {isEmp
-              ? <div className="v2-kvv"><span className="k">岗位库更新</span><span className="v">91job 江苏 · 每日自动同步</span></div>
+              ? <div className="v2-kvv"><span className="k">岗位库更新</span><span className="v">主流招聘网站 · 每日自动同步</span></div>
               : isRag
               ? <div className="v2-kvv"><span className="k">知识库更新</span><span className="v">部门维护 · 即时生效</span></div>
               : <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>}
