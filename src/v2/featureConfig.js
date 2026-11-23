@@ -1,0 +1,110 @@
+// 前台功能注册表（唯一事实来源：sys_config v2.features，配置覆盖本默认）
+// 零 import 纯模块：可被 `node --test` 直接加载，不引入 axios/react。
+// FEATURE_DEFAULTS 须与后端 src/main/resources/feature-defaults.json 逐字一致（R1：nav 6 项，无 xixibuddy）。
+export const FEATURE_DEFAULTS = {
+  version: 1,
+  nav: [
+    { key: 'plaza', label: '首页', hidden: false },
+    { key: 'insight', label: 'AI 数据洞察', hidden: false },
+    { key: 'teacher', label: 'AI教师工作台', hidden: false },
+    { key: 'dev', label: '智能体开发平台', hidden: false },
+    { key: 'models', label: '模型服务', hidden: false },
+    { key: 'kb', label: '知识库中心', hidden: false }
+  ],
+  features: [
+    { key: 'plaza', label: '智能体广场', group: '核心', kind: 'page', route: '/', api: '/api/v1/agents',
+      enabled: true, gate: 'guest', permKey: 'plaza.view', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+    { key: 'models', label: '模型服务', group: '工具', kind: 'page', route: '/models', api: '/api/v1/models',
+      enabled: true, gate: 'guest', permKey: null },
+    { key: 'chat', label: '智能体对话', group: '核心', kind: 'route', route: '/chat/:id', api: '/api/v1/chat',
+      navHidden: true, enabled: true, gate: 'login', permKey: 'chat.college',
+      defaults: { user: true, college_admin: true, leader: true, admin: true } },
+    { key: 'insight', label: 'AI 数据洞察', group: '数据洞察', kind: 'channel', route: '/insight', api: '/api/v1/insight',
+      enabled: true, gate: 'perm', permKey: null,
+      children: [
+        { key: 'funding', label: '精准资助分析', enabled: true, gate: 'perm', permKey: 'insight.funding', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+        { key: 'safety', label: '学生安全分析', enabled: true, gate: 'perm', permKey: 'insight.safety', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+        { key: 'academic', label: '学业预警分析', enabled: true, gate: 'perm', permKey: 'insight.academic', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+        { key: 'mental', label: '心理关怀分析', enabled: true, gate: 'perm', permKey: 'insight.mental', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+        { key: 'employment', label: '就业分析', enabled: true, gate: 'perm', permKey: 'insight.employment', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+        { key: 'export', label: '名单导出', enabled: true, gate: 'perm', permKey: 'insight.export', defaults: { user: true, college_admin: true, leader: true, admin: true } }
+      ] },
+    { key: 'teacher', label: 'AI教师工作台', group: '教师', kind: 'channel', route: '/teacher', api: '/api/v1/form',
+      enabled: true, gate: 'perm', permKey: 'teacher.form',
+      defaults: { user: true, college_admin: true, leader: true, admin: true },
+      children: [
+        { key: 'form', label: '智能填报', enabled: true, gate: 'perm', permKey: 'teacher.form', defaults: { user: true, college_admin: true, leader: true, admin: true } }
+      ] },
+    { key: 'kb', label: '知识库中心', group: '工具', kind: 'channel', route: '/kb', api: '/api/v1/kb',
+      enabled: true, gate: 'login', permKey: 'kb.use', defaults: { user: true, college_admin: true, leader: true, admin: true } },
+    { key: 'dev', label: '智能体开发平台', group: '工具', kind: 'channel', route: '/dev', api: '/api/v1/sso/entry',
+      enabled: true, gate: 'perm', permKey: 'dev.entry',
+      defaults: { user: false, college_admin: true, leader: true, admin: true } },
+    { key: 'chat.all', label: '全校锡锡对话', group: '权限项', kind: 'perm', permKey: 'chat.all',
+      defaults: { user: false, college_admin: false, leader: true, admin: true } },
+    { key: 'admin.dashboard', label: '管理后台', group: '权限项', kind: 'perm', permKey: 'admin.dashboard',
+      defaults: { user: false, college_admin: true, leader: false, admin: true } },
+    { key: 'admin.agent', label: '后台·智能体管理', group: '权限项', kind: 'perm', permKey: 'admin.agent',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.model', label: '后台·模型管理', group: '权限项', kind: 'perm', permKey: 'admin.model',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.user', label: '后台·用户管理', group: '权限项', kind: 'perm', permKey: 'admin.user',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.config', label: '后台·系统配置', group: '权限项', kind: 'perm', permKey: 'admin.config',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.file', label: '后台·文件管理', group: '权限项', kind: 'perm', permKey: 'admin.file',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.log', label: '后台·操作日志', group: '权限项', kind: 'perm', permKey: 'admin.log',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'admin.xixi', label: '后台·锡锡导员', group: '权限项', kind: 'perm', permKey: 'admin.xixi',
+      defaults: { user: false, college_admin: false, leader: false, admin: true } },
+    { key: 'campus', label: '数智化校园', group: '内容', kind: 'page', route: '/campus', navHidden: true, enabled: true, gate: 'guest', permKey: null },
+    { key: 'guide', label: '操作指南', group: '内容', kind: 'page', route: '/guide', navHidden: true, enabled: true, gate: 'guest', permKey: null },
+    { key: 'about', label: '关于我们', group: '内容', kind: 'page', route: '/about', navHidden: true, enabled: true, gate: 'guest', permKey: null },
+    { key: 'feedback', label: '意见反馈', group: '内容', kind: 'external', href: '/feedback?source=web', enabled: true, gate: 'guest', permKey: null },
+    { key: 'xixibuddy', label: 'XixiBuddy', group: '内容', kind: 'external', href: '/v2/harness/', navHidden: true, enabled: true, gate: 'guest', permKey: null }
+  ]
+};
+
+const isPermVisible = (f, user, perms) => {
+  if (!f || f.gate !== 'perm') return true;
+  if (!user) return true;                       // 游客全显
+  if (f.permKey) return perms.includes(f.permKey);
+  return (f.children || []).some((c) => !c.permKey || perms.includes(c.permKey));
+};
+
+export function resolveFeatures(cfg) {
+  const src = (cfg && Array.isArray(cfg.features) && cfg.features.length) ? cfg : FEATURE_DEFAULTS;
+  const nav = (cfg && Array.isArray(cfg.nav) && cfg.nav.length) ? cfg.nav : FEATURE_DEFAULTS.nav;
+  const list = src.features;
+  const byKey = {};
+  for (const f of list) { byKey[f.key] = f; for (const c of (f.children || [])) byKey[f.key + '.' + c.key] = c; }
+  return { nav, list, byKey };
+}
+
+export function featureByKey(resolved, key) {
+  return (resolved && resolved.byKey && resolved.byKey[key]) || null;
+}
+
+export function needOf(feature) {
+  if (!feature) return { gate: 'guest', permKey: null };
+  return { gate: feature.gate || 'guest', permKey: feature.permKey || null };
+}
+
+export function renderNavs(resolved, { user, perms = [] } = {}) {
+  const out = [];
+  for (const n of resolved.nav) {
+    if (n.hidden) continue;
+    const f = resolved.byKey[n.key];
+    if (f && f.enabled === false) continue;                 // 整体停用
+    if (n.external && n.href) { out.push({ ...n, external: true }); continue; }
+    if (f && !isPermVisible(f, user, perms)) continue;      // 登录无权限隐藏
+    out.push({ key: n.key, label: n.label || (f && f.label) || n.key, isNew: !!n.isNew, navHidden: !!(f && f.navHidden) });
+  }
+  return out;
+}
+
+export function loadFeatureConfig() {
+  // 由 V2App 注入的 getPublicConfig 调用（见 Task 6）；此处仅声明约定
+  return null;
+}
