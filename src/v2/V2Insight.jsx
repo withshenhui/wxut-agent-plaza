@@ -130,7 +130,6 @@ function OverviewTab() {
 
     const ms = models || [];
     const local = ms.filter((m) => (m.tags || []).includes('本地部署'));
-    const free = ms.filter((m) => (m.tags || []).includes('校园免费'));
     const provMap = new Map();
     ms.forEach((m) => provMap.set(m.provider, (provMap.get(m.provider) || 0) + 1));
     const provs = [...provMap.entries()].sort((x, y) => y[1] - x[1]);
@@ -144,7 +143,7 @@ function OverviewTab() {
       .sort((x, y) => y[1] - x[1]);
     const kbVisits = kb.reduce((s, [, v]) => s + v, 0);
 
-    return { list, online, building, visits, cats, top, rec, ms, local, free, provs, types, generalN, kb, kbVisits };
+    return { list, online, building, visits, cats, top, rec, ms, local, provs, types, generalN, kb, kbVisits };
   }, [agents, models]);
 
   if (agents === null || models === null) {
@@ -168,7 +167,7 @@ function OverviewTab() {
             { lb: '在校生', vl: '15,103', cmp: '学籍口径 · 数据日期 11-18', bar: 'var(--el-primary)' },
             { lb: '今日智能体对话', vl: '2,580', cmp: '覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)' },
             { lb: '智能体广场', vl: `${fmt(st.list.length)}<small>个</small>`, cmp: `已上线 ${st.online.length} · 建设中 ${st.building.length} · 累计访问 ${fmt(st.visits)} 次`, bar: '#8B5CF6', html: true },
-            { lb: '平台模型', vl: `${fmt(st.ms.length)}<small>个</small>`, cmp: `本地部署 ${st.local.length} · 云端合作 ${st.ms.length - st.local.length} · 校园免费 ${st.free.length}`, bar: 'var(--p-success)', html: true },
+            { lb: '平台模型', vl: `${fmt(st.ms.length)}<small>个</small>`, cmp: `本地部署 ${st.local.length} · 云端合作 ${st.ms.length - st.local.length}`, bar: 'var(--p-success)', html: true },
           ].map((k) => (
             <div key={k.lb} className="v2-kpi">
               <span className="bar" style={{ background: k.bar }} />
@@ -239,7 +238,6 @@ function OverviewTab() {
               ['垂类模型', st.ms.length - st.generalN, 'var(--p-secondary)'],
               ['本地部署（一体机）', st.local.length, 'var(--p-success)'],
               ['云端合作', st.ms.length - st.local.length, '#8B5CF6'],
-              ['校园免费', st.free.length, 'var(--p-accent)'],
             ].map(([name, v, c]) => (
               <div key={name} className="v2-hbar-row">
                 <span className="v2-hbar-name" style={{ width: 108 }}>{name}</span>
@@ -863,7 +861,7 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
 
       {detail && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setDetail(null); }}>
-          <div className="v2-modal" style={{ width: 480 }}>
+          <div className="v2-modal" style={{ width: 860 }}>
             <div className="v2-md-head">
               <div className="t">{detail.name} <span style={{ fontWeight: 400, color: 'var(--p-t4)', fontSize: 13 }}>{detail.id} · {detail.college} · {detail.grade}</span></div>
               <button className="v2-md-close" onClick={() => setDetail(null)}>✕</button>
@@ -873,22 +871,37 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
                 <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level][0]}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>综合消费分位 <b style={{ color: 'var(--aink)' }}>P{detail.pct}</b> · 同{detail.college}{detail.grade}基准</span>
               </div>
-              {detailData && (detailData.profile || detailData.dorm) && (
-                <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 13px', marginBottom: 14 }}>
-                  <div style={{ fontSize: 10.5, color: 'var(--p-t3)', marginBottom: 6 }}>学籍档案</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12, lineHeight: 1.7 }}>
-                    {detailData.profile && [
-                      detailData.profile.jg && <span key="jg">籍贯 <b style={{ color: 'var(--aink)' }}>{detailData.profile.jg}</b></span>,
-                      detailData.profile.sy && <span key="sy">生源地 <b style={{ color: 'var(--aink)' }}>{String(detailData.profile.sy).slice(0, 24)}</b></span>,
-                      detailData.profile.tx && <span key="tx" style={{ flexBasis: '100%' }}>通讯地址 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.profile.tx}</b></span>,
-                      detailData.profile.mz && <span key="mz">{detailData.profile.mz}</span>,
-                      detailData.profile.zz && <span key="zz">{detailData.profile.zz}</span>,
-                    ].filter(Boolean)}
-                    {detailData.dorm && <span key="dm" style={{ flexBasis: '100%' }}>宿舍 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.dorm}</b></span>}
+              <div style={{ display: 'flex', gap: 14, alignItems: 'stretch', flexWrap: 'wrap' }}>
+              {(() => {
+                const P = (detailData && detailData.profile) || {};
+                const v = (x) => (x && String(x).trim()) ? <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{x}</b> : <span style={{ color: '#C0C6CC' }}>—</span>;
+                return (
+                <div style={{ width: 252, flexShrink: 0, background: 'var(--p-fill)', borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--p-t3)', marginBottom: 9, letterSpacing: 1 }}>学生档案 · 人工判断参考</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 10px', fontSize: 12 }}>
+                    {[['姓名', detail.name], ['学号', detail.id], ['学院', String(detail.college || '').slice(0, 5)], ['年级', detail.grade],
+                      ['籍贯', P.jg], ['生源地', P.sy ? String(P.sy).slice(0, 12) : ''], ['民族', P.mz], ['政治面貌', P.zz],
+                      ['出生日期', P.cs ? String(P.cs).slice(0, 10) : '']].map(([l, x]) => (
+                      <div key={l} style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: 'var(--p-t4)', marginBottom: 1 }}>{l}</div>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v(x)}</div>
+                      </div>
+                    ))}
                   </div>
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[['家庭住址', P.tx], ['宿舍', detailData && detailData.dorm]].map(([l, x]) => (
+                      <div key={l}>
+                        <div style={{ fontSize: 10, color: 'var(--p-t4)', marginBottom: 1 }}>{l}</div>
+                        <div style={{ fontSize: 12, lineHeight: 1.5 }}>{v(x)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 10, lineHeight: 1.6, borderTop: '1px solid #E7EDF5', paddingTop: 8 }}>档案来自学籍库（部分学生字段缺失显示 —），供谈心谈话与家庭情况复核参考。</div>
                 </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
+                );
+              })()}
+              <div style={{ flex: 1, minWidth: 300 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 9, marginBottom: 18 }}>
                 {[['观察窗就餐', `${detail.meals} 顿`], ['单顿均价', `${Number(detail.price).toFixed(2)} 元`], ['观察窗支出', `${detail.spend} 元`], ['消费分位', `P${Math.round(Number(detail.pct) || 0)}`]].map(([l, v]) => (
                   <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
                     <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l}</div>
@@ -945,6 +958,8 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
                 </div>
               )}
               <DetailAiInsight detail={detail} />
+              </div>
+              </div>
             </div>
           </div>
         </div>

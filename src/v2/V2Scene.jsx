@@ -333,7 +333,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
 
       {detail && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setDetail(null); }}>
-          <div className="v2-modal" style={{ width: 480 }}>
+          <div className="v2-modal" style={{ width: 860 }}>
             <div className="v2-md-head">
               <div className="t">{detail.name} <span style={{ fontWeight: 400, color: 'var(--p-t4)', fontSize: 13 }}>{detail.id} · {detail.college} · {detail.grade}</span></div>
               <button className="v2-md-close" onClick={() => setDetail(null)}>✕</button>
@@ -343,22 +343,37 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                 <span className={`v2-light ${detail.level}`} style={{ fontSize: 12 }}><i className="bulb" /><span className="lt">{LVL[detail.level] ? LVL[detail.level][0] : ''}</span></span>
                 <span style={{ fontSize: 12, color: 'var(--p-t4)' }}>{cfg.title}信号</span>
               </div>
-              {detailData && (detailData.profile || detailData.dorm) && (
-                <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 13px', marginBottom: 14 }}>
-                  <div style={{ fontSize: 10.5, color: 'var(--p-t3)', marginBottom: 6 }}>学籍档案</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12, lineHeight: 1.7 }}>
-                    {detailData.profile && [
-                      detailData.profile.jg && <span key="jg">籍贯 <b style={{ color: 'var(--aink)' }}>{detailData.profile.jg}</b></span>,
-                      detailData.profile.sy && <span key="sy">生源地 <b style={{ color: 'var(--aink)' }}>{String(detailData.profile.sy).slice(0, 24)}</b></span>,
-                      detailData.profile.tx && <span key="tx" style={{ flexBasis: '100%' }}>通讯地址 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.profile.tx}</b></span>,
-                      detailData.profile.mz && <span key="mz">{detailData.profile.mz}</span>,
-                      detailData.profile.zz && <span key="zz">{detailData.profile.zz}</span>,
-                    ].filter(Boolean)}
-                    {detailData.dorm && <span key="dm" style={{ flexBasis: '100%' }}>宿舍 <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{detailData.dorm}</b></span>}
+              <div style={{ display: 'flex', gap: 14, alignItems: 'stretch', flexWrap: 'wrap' }}>
+              {(() => {
+                const P = (detailData && detailData.profile) || {};
+                const v = (x) => (x && String(x).trim()) ? <b style={{ color: 'var(--aink)', fontWeight: 600 }}>{x}</b> : <span style={{ color: '#C0C6CC' }}>—</span>;
+                return (
+                <div style={{ width: 252, flexShrink: 0, background: 'var(--p-fill)', borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--p-t3)', marginBottom: 9, letterSpacing: 1 }}>学生档案 · 人工判断参考</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 10px', fontSize: 12 }}>
+                    {[['姓名', detail.name], ['学号', detail.id], ['学院', String(detail.college || '').slice(0, 5)], ['年级', detail.grade],
+                      ['籍贯', P.jg], ['生源地', P.sy ? String(P.sy).slice(0, 12) : ''], ['民族', P.mz], ['政治面貌', P.zz],
+                      ['出生日期', P.cs ? String(P.cs).slice(0, 10) : '']].map(([l, x]) => (
+                      <div key={l} style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: 'var(--p-t4)', marginBottom: 1 }}>{l}</div>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v(x)}</div>
+                      </div>
+                    ))}
                   </div>
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[['家庭住址', P.tx], ['宿舍', detailData && detailData.dorm]].map(([l, x]) => (
+                      <div key={l}>
+                        <div style={{ fontSize: 10, color: 'var(--p-t4)', marginBottom: 1 }}>{l}</div>
+                        <div style={{ fontSize: 12, lineHeight: 1.5 }}>{v(x)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 10, lineHeight: 1.6, borderTop: '1px solid #E7EDF5', paddingTop: 8 }}>档案来自学籍库（部分学生字段缺失显示 —），供谈心谈话与家庭情况复核参考。</div>
                 </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginBottom: 18 }}>
+                );
+              })()}
+              <div style={{ flex: 1, minWidth: 300 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 9, marginBottom: 18 }}>
                 {cfg.miniKpis(detail).map(([l, v]) => (
                   <div key={l} style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '10px 11px' }}>
                     <div style={{ fontSize: 10.5, color: 'var(--p-t3)' }}>{l}</div>
@@ -453,6 +468,8 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                 </div>
               )}
               <SceneDetailAI detail={detail} cfg={cfg} detailData={detailData} />
+              </div>
+              </div>
             </div>
           </div>
         </div>
