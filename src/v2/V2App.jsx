@@ -907,8 +907,8 @@ function Models({ toast }) {
         {sel && selBox && (
           <>
             <div className="v2-modal-mask" style={{ background: 'rgba(15,23,42,.16)' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }} />
-            <div style={{ position: 'fixed', left: selBox.left, top: 60, width: selBox.width, height: 'calc(100vh - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
-              <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)', pointerEvents: 'auto' }}>
+            <div style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
+              <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, height: 'calc(100vh - 180px)', pointerEvents: 'auto' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
                   <div className="t" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.name}</div>
@@ -916,7 +916,8 @@ function Models({ toast }) {
                 </div>
                 <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
               </div>
-              <div className="v2-md-body" style={{ paddingTop: 40, paddingBottom: 40 }}>
+              <div className="v2-md-body" style={{ paddingTop: 40, paddingBottom: 40, flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ margin: 'auto 0' }}>
                 {sel.description && (
                   <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
                 )}
@@ -936,6 +937,7 @@ function Models({ toast }) {
                   <span className="v2-link" style={{ fontSize: 12 }} onClick={() => doCopy(respOf(sel), 'resp')}>{copied === 'resp' ? '已复制' : '复制'}</span>
                 </div>
                 <div className="v2-api-code"><pre>{respOf(sel)}</pre></div>
+                </div>
               </div>
             </div>
             </div>
