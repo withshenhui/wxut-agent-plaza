@@ -13,6 +13,7 @@ import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
 import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards } from './V2Employment.jsx';
 import { XixiLoading, confirmDialog } from './ui.jsx';
+import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -100,69 +101,30 @@ async function launchAgentV2(navigate, agentId, user, onChat) {
 }
 
 /* ============ 顶栏 ============ */
-/** 顶栏导航默认项（权限过滤后的"基础形状"）；后台「导航菜单」页编辑 sys_config `v2.nav`
- *  覆盖顺序/名称/显隐/自定义外链。导出给管理后台做编辑器的默认种子，避免两处漂移。 */
-export const NAV_DEFAULTS = [
-  { key: 'plaza', label: '首页' },
-  { key: 'insight', label: 'AI 数据洞察', permGate: true },
-  { key: 'teacher', label: 'AI教师工作台', permGate: true },
-  { key: 'dev', label: '智能体开发平台' },
-  { key: 'models', label: '模型服务' },
-  { key: 'kb', label: '知识库中心' },
-];
+/** 兼容导出：后台「导航菜单」页（V2Admin.NavAdmin，Task 7 移除）仍从本模块 import 默认种子。
+ *  改为由功能注册表 FEATURE_DEFAULTS.nav 派生，避免与注册表两处漂移；Task 6 起前台顶栏不再使用它。 */
+export const NAV_DEFAULTS = FEATURE_DEFAULTS.nav.map((n) => ({ key: n.key, label: n.label }));
 
-/** 读取 v2.nav 配置（公开可读）；空数组/加载失败/null → null（走代码默认） */
-export function loadNavConfig() {
-  return getPublicConfig('v2.nav')
-    .then((d) => {
-      try {
-        const a = JSON.parse(d?.configValue || '[]');
-        return Array.isArray(a) && a.length ? a : null;
-      } catch { return null; }
-    })
-    .catch(() => null);
-}
-
-/** 配置 + 权限 → 实际渲染的导航列表：
- *  配置顺序即展示顺序；hidden 隐藏；label/new 可覆盖；permGate 项无权限时强制隐藏；
- *  自定义项（href）原样输出；首页（plaza）未在配置中出现时固定保留在首位。 */
-export function resolveNavs(cfg, { showInsight, showTeacher }) {
-  const permOk = { insight: showInsight, teacher: showTeacher };
-  const base = NAV_DEFAULTS.filter((d) => !d.permGate || permOk[d.key]);
-  if (!cfg || !cfg.length) return base;
-  const byKey = new Map(base.map((d) => [d.key, d]));
-  const out = [];
-  for (const it of cfg) {
-    if (!it || it.hidden) continue;
-    const key = String(it.key || '').trim();
-    if (byKey.has(key)) {
-      const d = byKey.get(key);
-      out.push({ ...d, label: (it.label || '').trim() || d.label, isNew: !!it.isNew });
-      byKey.delete(key);
-    } else if (it.href && String(it.href).trim()) {
-      out.push({ key: key || 'c' + out.length, label: (it.label || '').trim() || '链接',
-        href: String(it.href).trim(), external: true, isNew: !!it.isNew });
-    }
+/** 功能注册表守卫（纯函数）：三处入口（直链 effect / guardNav / launch）统一走这里。
+ *  - 功能缺失或 enabled=false → 未开放提示；
+ *  - gate=login 且未登录 → 登录引导；
+ *  - gate=perm 且已登录缺权限 → 权限提示。
+ *  游客（无 user）始终放行浏览，仅在受控动作被触发时提示登录（保持既有行为）。 */
+function gateCheck(feature, { user, perms, requireLogin, setLoginPrompt, setPermPrompt }) {
+  if (!feature || feature.enabled === false) { setPermPrompt('该功能暂未开放'); return false; }
+  const { gate, permKey } = needOf(feature);
+  if (gate === 'login' && !requireLogin()) { setLoginPrompt('该功能需要登录后使用'); return false; }
+  if (gate === 'perm' && user && permKey && !perms.includes(permKey)) {
+    setPermPrompt('该功能未对您的账号开放，如需使用请联系管理员（dcc@wxit.edu.cn）');
+    return false;
   }
-  if (!out.some((n) => n.key === 'plaza')) out.unshift({ key: 'plaza', label: '首页' });
-  return out;
+  return true;
 }
 
-export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge }) {
-  const has = (k) => Array.isArray(perms) && perms.includes(k);
-  const canInsight = has('insight.funding') || has('insight.safety') || has('insight.academic') || has('insight.mental');
-  const canTeacher = has('teacher.form');
-  // 游客全显（展示性导航，点进去由守卫引导登录/提示无权限）
-  const showInsight = !user || canInsight;
-  const showTeacher = !user || canTeacher;
-  // 后台可配置导航：加载期间不渲染链接（避免闪现待隐藏项），失败走默认
-  const [navCfg, setNavCfg] = useState(undefined);
-  useEffect(() => {
-    let alive = true;
-    loadNavConfig().then((v) => { if (alive) setNavCfg(v); });
-    return () => { alive = false; };
-  }, []);
-  const NAVS = resolveNavs(navCfg, { showInsight, showTeacher });
+/** 顶栏导航：完全由功能注册表驱动（V2App 统一加载 resolved 后经 prop 传入）。
+ *  加载期间（resolved===undefined）不渲染链接，避免闪现待隐藏项。 */
+export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge, resolved }) {
+  const NAVS = resolved === undefined ? [] : renderNavs(resolved, { user, perms });
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
@@ -170,13 +132,13 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbB
         <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
       </a>
       <div className="v2-nav-links">
-        {navCfg === undefined ? null : NAVS.map((n) => n.external ? (
+        {resolved === undefined ? null : NAVS.map((n) => n.external ? (
           <a key={n.key} className="v2-nav-link" href={n.href} target="_blank" rel="noreferrer">
             {n.label}{n.isNew && <span className="chip-new">NEW</span>}
           </a>
         ) : (
           <a key={n.key} className={`v2-nav-link${page === n.key ? ' active' : ''}`}
-            href={`#/${n.key === 'plaza' ? '' : n.key}`}
+            href={n.key === 'plaza' ? '#/' : `#/${n.key}`}
             onClick={(e) => { e.preventDefault(); onNav(n.key); }}>
             {n.label}{n.isNew && <span className="chip-new">NEW</span>}
             {n.key === 'kb' && kbBadge > 0 && <span className="v2-nav-badge" />}
@@ -214,7 +176,9 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbB
 }
 
 /* ============ 页脚 ============ */
-export function Footer({ onNav, toast }) {
+export function Footer({ onNav, toast, resolved }) {
+  // 管理后台入口随功能注册表显隐（admin.dashboard.enabled===false 时隐藏）；其余内容页入口不变
+  const showAdmin = !resolved || resolved.byKey['admin.dashboard']?.enabled !== false;
   return (
     <footer className="v2-site-foot">
       <div className="v2-foot-inner">
@@ -247,7 +211,7 @@ export function Footer({ onNav, toast }) {
             <div className="lnk" onClick={() => onNav('dev')}>智能体开发平台</div>
             <div className="lnk" onClick={() => onNav('guide')}>上架广场指引</div>
             <div className="lnk" onClick={() => onNav('kb')}>知识库（文档问答）</div>
-            <div className="lnk" onClick={() => { window.location.hash = '#/admin/login'; window.scrollTo(0, 0); }}>AI中台管理后台</div>
+            {showAdmin && <div className="lnk" onClick={() => { window.location.hash = '#/admin/login'; window.scrollTo(0, 0); }}>AI中台管理后台</div>}
           </div>
           <div className="v2-foot-col">
             <div className="h">联系我们</div>
@@ -1245,7 +1209,7 @@ export default function V2App() {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, guest, casLogin, logout, requireLogin, hasPerm, hasAnyPerm, dataScope } = useV2User();
+  const { user, guest, casLogin, logout, requireLogin, hasPerm, dataScope } = useV2User();
   // 敏感操作引导弹窗：{msg, kind} kind='login'(未登录引导登录) | 'perm'(已登录但无权限，纯提示)
   const [prompt, setPrompt] = useState(null);
   const setLoginPrompt = (msg) => setPrompt({ msg, kind: 'login' });
@@ -1255,6 +1219,7 @@ export default function V2App() {
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
   const [kbBadge, setKbBadge] = useState(0);   // 知识库：后台处理完成未读提示（红点）
+  const [resolved, setResolved] = useState(undefined); // 前台功能注册表（undefined=加载中）：导航/守卫唯一来源
   const pageRef = useRef(page); pageRef.current = page;
   const tokenRef = useRef(null); tokenRef.current = typeof localStorage !== 'undefined' ? localStorage.getItem('user_token') : null;
 
@@ -1297,6 +1262,20 @@ export default function V2App() {
   // 进入知识库频道 → 清掉完成红点
   useEffect(() => { if (page === 'kb') setKbBadge(0); }, [page]);
 
+  // 前台功能注册表（sys_config `v2.features`，公开可读）：导航与守卫的唯一来源。
+  // 解析失败/空配置 → resolveFeatures(null) 回退代码默认（FEATURE_DEFAULTS）。
+  useEffect(() => {
+    let alive = true;
+    getPublicConfig('v2.features')
+      .then((d) => {
+        let cfg = null;
+        try { const a = JSON.parse(d?.configValue || 'null'); cfg = a && typeof a === 'object' ? a : null; } catch { cfg = null; }
+        if (alive) setResolved(resolveFeatures(cfg));
+      })
+      .catch(() => { if (alive) setResolved(resolveFeatures(null)); });
+    return () => { alive = false; };
+  }, []);
+
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
   useEffect(() => {
     const m = location.pathname.match(/^\/chat\/(\d+)/);
@@ -1312,23 +1291,26 @@ export default function V2App() {
         // 列表已加载但找不到（如直接刷 URL）→ 拉详情
         getAgentDetail(id).then((d) => setChatAgent(d)).catch(() => navigate('/', { replace: true }));
       }
-    } else {
-      setChatAgent(null);
-      const segs = location.pathname.replace(/^\/+/, '').split('/');
-      const p = segs[0] || 'plaza';
-      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental', 'employment'].includes(segs[1])) {
-      if (!user) { setPage('insight'); return; } // 游客直入工作台 → 停在频道首页
-      const need = 'insight.' + segs[1];
-      if (!hasPerm(need)) { setPage('insight'); setPermPrompt('该分析工作台未对您的账号开放'); return; }
+      return;
+    }
+    setChatAgent(null);
+    const segs = location.pathname.replace(/^\/+/, '').split('/');
+    const p = segs[0] || 'plaza';
+    if (resolved === undefined) return; // 注册表未就绪 → 加载后再路由（避免误判回退首页）
+    const ctx = { user, perms: (user && user.perms) || [], requireLogin, setLoginPrompt, setPermPrompt };
+    // 数据洞察子工作台直链：游客停在频道首页；已登录按注册表 gate 校验
+    if (p === 'insight' && ['funding', 'safety', 'academic', 'mental', 'employment'].includes(segs[1])) {
+      if (!user) { setPage('insight'); return; }
+      if (!gateCheck(resolved.byKey['insight.' + segs[1]], ctx)) { setPage('insight'); return; }
       setPage('insight'); setWorkbench(segs[1]); return;
     }
-      if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
-      if (p === 'dev' && user && !hasPerm('dev.entry')) { setPage('plaza'); setPermPrompt('智能体开发平台实行申请开通制：请由所在学院/部门向信息化与数据服务中心申请，开通后方可使用'); return; }
-      setTeacherWizard(false);
-      setWorkbench(null);
-      setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
-    }
-  }, [location.pathname, agents, navigate]);
+    // 页面/频道直链：统一走注册表 gate（游客放行浏览，登录后缺权限/未开放拦截）
+    const f = featureByKey(resolved, p);
+    if (f && !gateCheck(f, ctx)) { setPage('plaza'); setWorkbench(null); setTeacherWizard(false); return; }
+    setTeacherWizard(p === 'teacher' && segs[1] === 'form');
+    setWorkbench(null);
+    setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
+  }, [location.pathname, agents, navigate, resolved]);
 
   useEffect(() => {
     // includeBuilding=1：前台也取建设中卡片（显示工程图标，排序沉底）
@@ -1348,9 +1330,12 @@ export default function V2App() {
   // V1 同款智能体唤起：externalUrl 外跳(带 sys.user_id)/college-query 进 V2 流式对话/其余进 V2 对话
   const launch = useCallback((a) => {
     if (!a) return;
-    // 游客使用智能体：引导登录
-    if (!requireLogin()) { setLoginPrompt('使用智能体对话需要登录'); return; }
-    // RBAC 前端预检（后端为最终防线）：锡锡随数据范围——scope=all（含学院=全校）放行全部；
+    // 功能注册表门（chat.gate='login'）：游客使用智能体 → 引导登录（配置未就绪时保持原登录预检）
+    const gateCtx = { user, perms: (user && user.perms) || [], requireLogin, setLoginPrompt, setPermPrompt };
+    if (resolved !== undefined) {
+      if (!gateCheck(featureByKey(resolved, 'chat'), gateCtx)) return;
+    } else if (!requireLogin()) { setLoginPrompt('使用智能体对话需要登录'); return; }
+    // RBAC 数据范围预检（后端为最终防线）：锡锡随数据范围——scope=all（含学院=全校）放行全部；
     // college 范围锁本院
     if (a.collegeId != null && user && dataScope !== 'all') {
       if (a.collegeId !== user.collegeId) {
@@ -1360,20 +1345,16 @@ export default function V2App() {
     launchAgentV2(navigate, a.id, user, (detail) => {
       navigate(`/chat/${a.id}`);
     });
-  }, [navigate, user, requireLogin, dataScope]);
+  }, [navigate, user, requireLogin, dataScope, resolved]);
 
-  // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
-  const guardNav = useCallback((p, label) => {
-    if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
-    if (p === 'dev' && user && !hasPerm('dev.entry')) { setPermPrompt('智能体开发平台实行申请开通制：请由所在学院/部门向信息化与数据服务中心申请，开通后方可使用'); return; }
-    if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.employment'])) {
-      setPermPrompt('AI数据洞察面向学工线老师开放'); return;
-    }
-    if (p === 'teacher' && user && !hasPerm('teacher.form')) {
-      setPermPrompt('AI教师工作台暂未对您的账号开放'); return;
+  // 页面/频道守卫：统一走功能注册表 gateCheck（游客放行浏览，登录后按 gate/权限拦截）
+  const guardNav = useCallback((p) => {
+    if (resolved !== undefined) {
+      const ctx = { user, perms: (user && user.perms) || [], requireLogin, setLoginPrompt, setPermPrompt };
+      if (!gateCheck(featureByKey(resolved, p), ctx)) return;
     }
     nav(p);
-  }, [nav, requireLogin, user, hasPerm, hasAnyPerm]);
+  }, [nav, resolved, user, requireLogin]);
 
   // 打开智能填报向导（可带记录 id 继续填报）
   const openWizard = useCallback((recId) => {
@@ -1385,18 +1366,18 @@ export default function V2App() {
   // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
     <>
-      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
+      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} resolved={resolved} />
       <ChatPage agent={chatAgent} onExit={() => nav('plaza')} />
     </>
   );
 
   return (
     <>
-      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} kbBadge={kbBadge} />
+      <TopNav page={page} onNav={guardNav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} kbBadge={kbBadge} resolved={resolved} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && (agents.length === 0 && !loadErr
         ? <div className="v2-body" style={{ paddingTop: 120 }}><XixiLoading text="锡锡正在为您准备广场…" /></div>
-        : <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />)}
+        : <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={guardNav} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />)}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
         <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
@@ -1427,7 +1408,7 @@ export default function V2App() {
       )}
       {['campus', 'guide', 'about'].includes(page) && <SimplePage kind={page} />}
       {page === 'kb' && <V2Knowledge user={user} requireLogin={requireLogin} toast={toast} />}
-      <Footer onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} toast={toast} />
+      <Footer onNav={guardNav} toast={toast} resolved={resolved} />
 
       {prompt && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setPrompt(null); }}>
