@@ -31,7 +31,11 @@ function scoreTag(s) {
 
 /* ---------- 里程碑流水线（读 kb_file.status/stage） ---------- */
 function Pipeline({ file }) {
-  const curIdx = STAGES.findIndex((s) => s.key === file.stage);
+  // stage 可带进度：如 "qa:12/38"、"embed:40/152"
+  const stageRaw = file.stage || '';
+  const stageKey = stageRaw.split(':')[0];
+  const stageProg = stageRaw.indexOf(':') > -1 ? stageRaw.split(':')[1] : '';
+  const curIdx = STAGES.findIndex((s) => s.key === stageKey);
   const failed = file.status === 'failed';
   const done = file.status === 'done';
   return (
@@ -48,13 +52,13 @@ function Pipeline({ file }) {
           return (
             <div key={s.key} className={`kbx-pstep ${state}`}>
               <span className="kbx-pdot">{state === 'done' ? '✓' : i + 1}</span>
-              <div className="nm">{s.label}</div>
+              <div className="nm">{s.label}{state === 'run' && stageProg ? <span className="pg">{stageProg}</span> : ''}</div>
             </div>
           );
         })}
       </div>
       {failed && file.errorMsg && <div className="kbx-pipe-err">失败原因：{file.errorMsg}</div>}
-      {!failed && !done && file.stage === 'qa' && <div className="kbx-pipe-note">正在逐段生成问答对（每个片段约几秒，长文档需几分钟），请勿关闭页面…</div>}
+      {!failed && !done && stageKey === 'qa' && <div className="kbx-pipe-note">后台生成问答对中{stageProg ? '（' + stageProg + '）' : ''} · 可离开页面，完成后会提示</div>}
       {done && <div className="kbx-pipe-note">✓ 已入库：{file.chunkCount} 个原文块 + {file.qaCount} 条问答对，即刻可检索</div>}
     </div>
   );
@@ -175,7 +179,7 @@ function KbDetail({ kb, onBack, toast, user }) {
           if (r.status !== 200 || j.code !== 200) throw new Error(j.message || '上传失败');
         });
       }
-      toast(ok.length > 1 ? `已上传 ${ok.length} 个文件，流水线自动处理中` : `已上传「${ok[0].name}」，流水线自动处理中`);
+      toast(ok.length > 1 ? `已提交 ${ok.length} 个文件到后台处理，可离开页面，完成后会提示` : `已提交「${ok[0].name}」到后台处理，可离开页面，完成后会提示`);
       load();
     } catch (e) {
       toast(e.message || '上传失败');
@@ -230,7 +234,7 @@ function KbDetail({ kb, onBack, toast, user }) {
                 {doneFiles.length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
                 {pagedFiles.map((f) => (
                   <tr key={f.id}>
-                    <td className="kbx-fname" title={f.name} data-full={f.name}><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span> {f.name}</td>
+                    <td className="kbx-fname" data-full={f.name}><span className="kbx-fname-t"><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span>{f.name}</span></td>
                     <td className="kbx-fsize">{fmtSize(f.sizeBytes)}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{f.qaCount ?? '—'}{f.qaCount ? <span className="lnk" style={{ marginLeft: 8 }} onClick={() => setQaView(f)}>预览</span> : ''}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{f.status === 'done' ? <span className="tag green">已解析</span>
@@ -453,6 +457,7 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
   }, [routeId]);
 
   // 直链 #/kb/{id}：列表加载后自动打开；当前 Tab 没有 → 顺次换 Tab 找
+  // user 进依赖：直链到达时登录态常在异步加载中（user=null），加载完成后重试打开，否则详情永远不开
   useEffect(() => {
     if (!routeId || current || !kbs) return;
     const kb = kbs.find((k) => String(k.id) === routeId);
@@ -460,7 +465,7 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
     const order = ['pub', 'dept', 'mine'];
     if (order.indexOf(tab) < order.length - 1) setTab(order[order.indexOf(tab) + 1]);
     else navigate('/kb', { replace: true });
-  }, [routeId, kbs, current, tab]);
+  }, [routeId, kbs, current, tab, user]);
 
   if (current) {
     return <KbDetail kb={current} onBack={() => navigate('/kb')} toast={toast} user={user} />;
