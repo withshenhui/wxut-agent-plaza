@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast, IconBuilding } from './ui.jsx';
+import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast, IconBuilding, Pager } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
 import { getPublicConfig } from '../api/config';
 import { useV2User } from './V2User.jsx';
@@ -11,7 +11,7 @@ import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
-import { EmploymentWorkbench } from './V2Employment.jsx';
+import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards } from './V2Employment.jsx';
 import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
@@ -525,7 +525,7 @@ function ChatPage({ agent, onExit }) {
         if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder('utf-8');
-        let buf = ''; let acc = ''; let cites = null;
+        let buf = ''; let acc = ''; let cites = null; let guideData = null; let jobsData = null;
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -541,6 +541,8 @@ function ChatPage({ agent, onExit }) {
             }
             if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
             else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
+            else if (evtName === 'guide') { try { guideData = JSON.parse(data); } catch {} }
+            else if (evtName === 'jobs') { try { jobsData = JSON.parse(data); } catch {} }
             else if (evtName === 'text') {
               try { acc += JSON.parse(data).data ?? ''; } catch {}
               // 逐片上屏：SSE 分片驱动原生打字机效果
@@ -550,7 +552,7 @@ function ChatPage({ agent, onExit }) {
             else if (evtName === 'error') { let m = '服务异常'; try { m = JSON.parse(data).message || m; } catch {} throw new Error(m); }
           }
         }
-        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, note: cites && cites.length ? '依据：' + cites.length + ' 条知识库出处' : null } : m)) }));
+        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, guide: guideData, jobs: jobsData, note: cites && cites.length ? '依据：' + cites.length + ' 条知识库出处' : null } : m)) }));
       } catch (e) {
         mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
       }
@@ -668,6 +670,20 @@ function ChatPage({ agent, onExit }) {
                     ))}
                   </div>
                 )}
+                {m.sender === 'agent' && !m.streaming && m.guide && (
+                  <EmploymentIntentCard guide={m.guide} onSubmit={async (picked) => {
+                    const tk = localStorage.getItem('user_token');
+                    try {
+                      await fetch(`${API_BASE}/employment/intent`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
+                        body: JSON.stringify(picked),
+                      });
+                    } catch (e) { /* 意向保存失败不阻塞推荐 */ }
+                    send('帮我推荐适合我的岗位');
+                  }} />
+                )}
+                {m.sender === 'agent' && !m.streaming && m.jobs && m.jobs.length > 0 && <EmploymentJobCards jobs={m.jobs} />}
                 {m.sender === 'agent' && !m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
               </div>
             </div>
@@ -777,13 +793,16 @@ function Models({ toast }) {
   const [mv, setMv] = useState(null);
   const [sel, setSel] = useState(null);
   const [copied, setCopied] = useState('');
+  const [fProv, setFProv] = useState({});   // 左侧筛选：供应商
+  const [fType, setFType] = useState({});   // 左侧筛选：模型类型
+  const [page, setPage] = useState(1);
   const doCopy = (txt, key) => {
     navigator.clipboard?.writeText(txt).then(() => { setCopied(key); toast('已复制到剪贴板'); setTimeout(() => setCopied(''), 1800); }).catch(() => toast('复制失败，请手动选择复制'));
   };
   useEffect(() => {
-    fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json())
+    fetch(`${API_BASE}/models?category=general&size=200`).then((r) => r.json())
       .then((j) => setMg(j.data?.records || [])).catch(() => setMg([]));
-    fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json())
+    fetch(`${API_BASE}/models?category=vertical&size=200`).then((r) => r.json())
       .then((j) => setMv(j.data?.records || [])).catch(() => setMv([]));
   }, []);
   // 弹窗打开时锁定背景滚动（模态框惯例，与 ui.jsx 的 Modal 行为一致）
@@ -792,9 +811,25 @@ function Models({ toast }) {
     document.body.classList.add('v2-modal-open');
     return () => document.body.classList.remove('v2-modal-open');
   }, [sel]);
+  // 筛选/搜索/切 tab 时回到第一页
+  useEffect(() => { setPage(1); }, [tab, q, fProv, fType]);
   if (!mg || !mv) return <div className="v2-body"><XixiLoading text="AI加载数据中…" /></div>;
   const all = tab === 'general' ? mg : mv;
-  const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
+  // 左侧筛选统计（按当前 tab 数据）
+  const provs = Array.from(all.reduce((mp, m) => mp.set(m.provider || '—', (mp.get(m.provider || '—') || 0) + 1), new Map()).entries()).sort((a, b) => b[1] - a[1]);
+  const types = Array.from(all.reduce((mp, m) => mp.set(m.type || '—', (mp.get(m.type || '—') || 0) + 1), new Map()).entries()).sort((a, b) => b[1] - a[1]);
+  const provSel = Object.keys(fProv).filter((k) => fProv[k]);
+  const typeSel = Object.keys(fType).filter((k) => fType[k]);
+  const filtered = all.filter((m) =>
+    (!q || [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) &&
+    (provSel.length === 0 || provSel.includes(m.provider || '—')) &&
+    (typeSel.length === 0 || typeSel.includes(m.type || '—')));
+  const PAGE_SIZE = 12;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const curPage = Math.min(page, totalPages);
+  const list = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+  const toggleF = (setter) => (key) => setter((prev) => ({ ...prev, [key]: !prev[key] }));
+  const filterActive = provSel.length > 0 || typeSel.length > 0 || !!q;
   const provLogo = (m) => {
     if (m.iconUrl) return m.iconUrl; // 后台配置的图标优先
     const n = ((m.name || '') + (m.provider || '')).toLowerCase();
@@ -839,10 +874,31 @@ function Models({ toast }) {
           <div className="v2-m-search">
             <Icon name="search" size={15} style={{ color: 'var(--p-t4)', flexShrink: 0 }} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索模型名称 / 供应商 / 类型 / 标签…" />
-            <span className="cnt">{q ? `${list.length} / ${all.length}` : `共 ${all.length} 个`}</span>
+            <span className="cnt">{filterActive ? `${filtered.length} / ${all.length}` : `共 ${all.length} 个`}</span>
           </div>
         </div>
-        <div className="v2-model-grid" style={{ marginTop: 16 }}>
+        <div className="v2-mdl-layout">
+          <aside className="v2-mdl-filter">
+            <div className="fh"><span>筛选</span>{(provSel.length || typeSel.length) ? <span className="rst" onClick={() => { setFProv({}); setFType({}); }}>重置</span> : null}</div>
+            <div className="fgrp">
+              <div className="ft">模型供应商</div>
+              {provs.map(([p, n]) => (
+                <label key={p} className={`fopt${fProv[p] ? ' on' : ''}`} onClick={() => toggleF(setFProv)(p)}>
+                  <i className="cbx" /><span className="lb">{p}</span><em>{n}</em>
+                </label>
+              ))}
+            </div>
+            <div className="fgrp">
+              <div className="ft">模型类型</div>
+              {types.map(([t, n]) => (
+                <label key={t} className={`fopt${fType[t] ? ' on' : ''}`} onClick={() => toggleF(setFType)(t)}>
+                  <i className="cbx" /><span className="lb">{t}</span><em>{n}</em>
+                </label>
+              ))}
+            </div>
+          </aside>
+          <div className="v2-mdl-main">
+        <div className="v2-model-grid" style={{ marginTop: 0 }}>
           {list.length ? list.map((m) => {
             const logo = provLogo(m);
             const bld = (m.tags || []).includes('建设中');
@@ -866,7 +922,15 @@ function Models({ toast }) {
                 </div>
               </div>
             );
-          }) : <div className="v2-empty">没有找到匹配的模型，换个关键词试试</div>}
+          }) : <div className="v2-empty">没有找到匹配的模型，换个关键词或筛选条件试试</div>}
+        </div>
+        {filtered.length > PAGE_SIZE && (
+          <div className="v2-mdl-pager">
+            <span className="tot">共 {filtered.length} 个模型 · 第 {curPage}/{totalPages} 页</span>
+            <Pager page={curPage} total={filtered.length} size={PAGE_SIZE} onPage={setPage} />
+          </div>
+        )}
+          </div>
         </div>
         {sel && (
           <div className="v2-modal-mask" onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
@@ -1212,7 +1276,7 @@ export default function V2App() {
       setPage('insight'); setWorkbench(segs[1]); return;
     }
       if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
-      if (p === 'dev' && user && !hasPerm('dev.entry')) { setPage('plaza'); setPermPrompt('智能体开发平台未对您的账号开放，如需使用请联系管理员开通'); return; }
+      if (p === 'dev' && user && !hasPerm('dev.entry')) { setPage('plaza'); setPermPrompt('智能体开发平台实行申请开通制：请由所在学院/部门向信息化与数据服务中心申请，开通后方可使用'); return; }
       setTeacherWizard(false);
       setWorkbench(null);
       setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
@@ -1254,7 +1318,7 @@ export default function V2App() {
   // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
   const guardNav = useCallback((p, label) => {
     if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
-    if (p === 'dev' && user && !hasPerm('dev.entry')) { setPermPrompt('智能体开发平台未对您的账号开放，如需使用请联系管理员开通'); return; }
+    if (p === 'dev' && user && !hasPerm('dev.entry')) { setPermPrompt('智能体开发平台实行申请开通制：请由所在学院/部门向信息化与数据服务中心申请，开通后方可使用'); return; }
     if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.employment'])) {
       setPermPrompt('AI数据洞察面向学工线老师开放'); return;
     }

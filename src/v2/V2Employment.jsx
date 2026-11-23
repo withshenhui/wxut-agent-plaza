@@ -87,3 +87,84 @@ export function EmploymentWorkbench({ onBack, toast, user, dataScope }) {
     </>
   );
 }
+
+/* ===== 对话内组件（智慧就业助手）：意向引导卡 + 岗位卡片（与原型同款） ===== */
+export function EmploymentIntentCard({ guide, onSubmit }) {
+  const [city, setCity] = useState([]);
+  const [type, setType] = useState('全职');
+  const [pay, setPay] = useState('不限');
+  const tg = (c) => {
+    if (c === '不限') { setCity(['不限']); return; }
+    const n = city.filter((x) => x !== '不限');
+    setCity(n.includes(c) ? n.filter((x) => x !== c) : [...n, c]);
+  };
+  return (
+    <div className="emp-intent">
+      <div className="row"><div className="lbl">意向城市（可多选）</div><div className="emp-chips">
+        {(guide.cities || []).map((c) => <span key={c} className={'emp-chip' + (city.includes(c) ? ' on' : '')} onClick={() => tg(c)}>{c}</span>)}
+      </div></div>
+      <div className="row"><div className="lbl">岗位类型</div><div className="emp-chips">
+        {(guide.types || []).map((t) => <span key={t} className={'emp-chip' + (type === t ? ' on' : '')} onClick={() => setType(t)}>{t}</span>)}
+      </div></div>
+      <div className="row"><div className="lbl">期望月薪</div><div className="emp-chips">
+        {(guide.pays || []).map((x) => <span key={x} className={'emp-chip' + (pay === x ? ' on' : '')} onClick={() => setPay(x)}>{x}</span>)}
+      </div></div>
+      <button className="emp-go" onClick={() => onSubmit({
+        city: city.length ? JSON.stringify(city.filter((c) => c !== '不限')) : '',
+        jobType: type === '实习' ? 'intern' : (type === '都看' ? 'any' : 'fulltime'),
+      })}>为我生成岗位推荐</button>
+    </div>
+  );
+}
+
+export function EmploymentJobCards({ jobs }) {
+  const color = (v) => (v >= 85 ? '#1F9254' : v >= 70 ? '#4A6CF7' : v >= 60 ? '#F59E0B' : '#A9B2C0');
+  const ring = (v) => {
+    const c = color(v || 0); const r = 19; const C = 2 * Math.PI * r; const off = C * (1 - (v || 0) / 100);
+    return (
+      <div className="emp-score" title={'匹配分 ' + v}>
+        <svg width="46" height="46">
+          <circle cx="23" cy="23" r={r} fill="none" stroke="#F1F3F9" strokeWidth="5" />
+          <circle cx="23" cy="23" r={r} fill="none" stroke={c} strokeWidth="5" strokeLinecap="round"
+            strokeDasharray={C.toFixed(1)} strokeDashoffset={off.toFixed(1)} />
+        </svg>
+        <span className="n" style={{ color: c }}>{v}</span>
+      </div>
+    );
+  };
+  return (
+    <div className="emp-jobs">
+      {(jobs || []).map((j, i) => (
+        <div className="emp-job" key={j.id != null ? j.id : i}>
+          <div className="emp-job-top">
+            {ring(j.score)}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="emp-job-t">{j.title}</div>
+              <div className="emp-job-c">{[j.company, j.city].filter(Boolean).join(' · ')}</div>
+            </div>
+            <div className="emp-job-pay">
+              <div className="v">{j.salary_text || '薪资面议'}</div>
+              <div className="k">薪资</div>
+            </div>
+          </div>
+          <div className="emp-job-meta">
+            {j.edu_req ? <span className="v2-tag blue">{j.edu_req}</span> : null}
+            <span className="v2-tag grey">匹配分 {j.score}</span>
+            {j.hire_count ? <span className="v2-tag grey">招 {j.hire_count} 人</span> : null}
+          </div>
+          {(j.reason || j.gaps) ? (
+            <div className="emp-why">
+              <div className="w">{j.reason ? <><b>为什么推荐：</b>{j.reason}</> : null}</div>
+              <div className="g">{j.gaps ? <><b>可以补的短板：</b>{j.gaps}</> : null}</div>
+            </div>
+          ) : null}
+          <div className="emp-src">
+            来源：{j.source === '91job' ? '江苏 91job · 省毕业生就业服务平台' : (j.source || '公开校招渠道')}
+            {j.url ? <a href={j.url} target="_blank" rel="noreferrer">查看原文</a> : null}
+            　信息仅供参考，以招聘单位官方发布为准
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
