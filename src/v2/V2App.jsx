@@ -22,10 +22,38 @@ marked.use({
   gfm: true,
   renderer: { html(token) { return escapeHtml2(token.text); } },
 });
-function renderMd(text) {
+function renderMd(text, maxRef) {
   // 净化旧版历史数据中拼接的 HTML 尾注（改为 note 字段渲染）
   const cleaned = String(text || '').replace(/\n*<div class="v2-note-line">[\s\S]*?<\/div>\s*$/g, '').trim();
-  try { return marked.parse(cleaned); } catch { return escapeHtml2(cleaned); }
+  try {
+    let html = marked.parse(cleaned);
+    // 正文里的引用标记 [n] → 可点击上标徽章（仅当该消息带引用数据时，编号越界保持原样）
+    if (maxRef > 0) {
+      html = html.replace(/\[(\d{1,2})\]/g, (m0, d) => {
+        const no = Number(d);
+        return no >= 1 && no <= maxRef
+          ? `<sup class="v2-cref" data-ref="${no}" title="查看引用出处">[${no}]</sup>`
+          : m0;
+      });
+    }
+    return html;
+  } catch { return escapeHtml2(cleaned); }
+}
+
+/** 点击正文引用标记 [n]：滚动到该条引用卡并高亮（气泡级查找——引用卡是正文容器的兄弟节点） */
+function jumpToCite(e) {
+  const el = e.target.closest ? e.target.closest('.v2-cref') : null;
+  if (!el) return;
+  const no = Number(el.getAttribute('data-ref'));
+  const bubble = e.currentTarget.closest('.v2-bubble') || e.currentTarget;
+  const cite = Array.from(bubble.querySelectorAll('.v2-cite'))
+    .find((x) => Number(x.getAttribute('data-no')) === no);
+  if (!cite) return;
+  cite.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  cite.classList.remove('hl');
+  void cite.offsetWidth; // 重启动画
+  cite.classList.add('hl');
+  setTimeout(() => cite.classList.remove('hl'), 1800);
 }
 
 /** 学工号 gzip+base64 编码为 sys.user_id（与 V1 utils/agentLaunch 完全一致） */
@@ -70,7 +98,7 @@ async function launchAgentV2(navigate, agentId, user, onChat) {
 }
 
 /* ============ 顶栏 ============ */
-export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
+export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge }) {
   const has = (k) => Array.isArray(perms) && perms.includes(k);
   const canInsight = has('insight.funding') || has('insight.safety') || has('insight.academic') || has('insight.mental');
   const canTeacher = has('teacher.form');
@@ -101,7 +129,7 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms }) {
           <a key={n.key} className={`v2-nav-link${page === n.key ? ' active' : ''}`}
             href={`#/${n.key === 'plaza' ? '' : n.key}`}
             onClick={(e) => { e.preventDefault(); onNav(n.key); }}>
-            {n.label}{n.key === 'kb' && <span className="chip-new">NEW</span>}
+            {n.label}{n.key === 'kb' && kbBadge > 0 && <span className="v2-nav-badge" />}
           </a>
         ))}
       </div>
@@ -406,9 +434,12 @@ function ChatPage({ agent, onExit }) {
   };
 
   const isRag = agent.agentType === 'native-rag';
+  const isEmp = agent.agentType === 'native-employment';
   const welcome = () => ([
-    { id: 'w', sender: 'agent', content: (gw || isRag)
-      ? (isRag
+    { id: 'w', sender: 'agent', content: (gw || isRag || isEmp)
+      ? (isEmp
+        ? `你好，我是**${agent.name}**。我会读取你的学籍信息（专业、年级），结合校招岗位库为你匹配适合的工作，并说明**为什么推荐**和**你可以补什么短板**。\n\n直接说「帮我推荐岗位」「我想找无锡的实习」或「我是机械专业，想看装备制造类岗位」即可。`
+        : isRag
         ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n你可以直接和我聊天，也可以问我学校制度与办事流程问题——涉及制度的问题我会查询知识库并附原文出处。`
         : `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`)
       : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
@@ -430,13 +461,14 @@ function ChatPage({ agent, onExit }) {
     }
     const userMsg = { id: Date.now(), sender: 'user', content };
     mutate(convId, (c) => ({ ...c, title: c.title === '新对话' ? content.slice(0, 20) : c.title, messages: [...c.messages, userMsg] }));
-    if (isRag) {
+    if (isRag || isEmp) {
       setLoading(true); setToolStatus('正在思考…');
       const genId = Date.now() + 1;
       mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
       try {
         const _tk = localStorage.getItem('user_token');
-        const resp = await fetch(`${API_BASE}/kb/${agent.id}/chat?q=${encodeURIComponent(content)}`, {
+        const _url = isEmp ? `${API_BASE}/employment/chat` : `${API_BASE}/kb/${agent.id}/chat`;
+        const resp = await fetch(`${_url}?q=${encodeURIComponent(content)}`, {
           headers: _tk ? { Authorization: `Bearer ${_tk}` } : {},
         });
         if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
@@ -559,7 +591,7 @@ function ChatPage({ agent, onExit }) {
             <div className="d">{agent.description || ''}</div>
           </div>
           <div style={{ flex: 1 }} />
-          <span className="v2-model-chip">{isRag ? '知识库 RAG 问答' : (gw ? `MCP：${gw}` : '平台默认模型')}</span>
+          <span className="v2-model-chip">{isEmp ? '就业智能匹配' : isRag ? '知识库 RAG 问答' : (gw ? `MCP：${gw}` : '平台默认模型')}</span>
         </div>
         <div className="v2-chat-scroll" ref={scrollRef}>
           {msgs.map((m) => (
@@ -571,13 +603,13 @@ function ChatPage({ agent, onExit }) {
                 {m.sender === 'user'
                   ? <div dangerouslySetInnerHTML={{ __html: escapeHtml2(m.content).replace(/\n/g, '<br>') }} />
                   : m.content
-                    ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content) }} />
+                    ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content, m.citations ? m.citations.length : 0) }} onClick={jumpToCite} />
                     : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
                 {m.sender === 'agent' && !m.streaming && m.citations && m.citations.length > 0 && (
                   <div className="v2-cites">
                     <div className="v2-cites-t">原文引用（{m.citations.length}）</div>
                     {m.citations.map((c) => (
-                      <div key={c.no} className="v2-cite" title={c.q || c.txt || c.a || '点击查看原文'}>
+                      <div key={c.no} data-no={c.no} className="v2-cite" title={c.q || c.txt || c.a || '点击查看原文'}>
                         <span className="no">[{c.no}]</span>
                         <span className={`tag ${c.type === 'qa' ? 'blue' : 'grey'}`}>{c.type === 'qa' ? '问答' : '原文'}</span>
                         <span className="src">{c.doc}{c.loc ? ` · ${c.loc}` : ''}</span>
@@ -621,11 +653,15 @@ function ChatPage({ agent, onExit }) {
           </div>
           <div style={{ marginTop: 14 }}>
             <div className="v2-kvv"><span className="k">使用模型</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{currentModel || (gw ? '平台默认' : '—')}</span></div>
-            {isRag
+            {isEmp
+              ? <div className="v2-kvv"><span className="k">匹配引擎</span><span className="v">学籍画像 + 岗位库 + 大模型精排</span></div>
+              : isRag
               ? <div className="v2-kvv"><span className="k">知识引擎</span><span className="v">RAG 检索 + 原文引用</span></div>
               : <div className="v2-kvv"><span className="k">MCP 服务</span><span className="v" style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5 }}>{gw || '—'}</span></div>}
             <div className="v2-kvv"><span className="k">累计访问</span><span className="v">{(agent.visitCount || 0).toLocaleString()} 次</span></div>
-            {isRag
+            {isEmp
+              ? <div className="v2-kvv"><span className="k">岗位库更新</span><span className="v">91job 江苏 · 每日自动同步</span></div>
+              : isRag
               ? <div className="v2-kvv"><span className="k">知识库更新</span><span className="v">部门维护 · 即时生效</span></div>
               : <div className="v2-kvv"><span className="k">数据更新</span><span className="v">每日自动同步</span></div>}
           </div>
@@ -633,7 +669,11 @@ function ChatPage({ agent, onExit }) {
         <div className="v2-side-card">
           <div className="t">使用提示</div>
           <div style={{ fontSize: 11.5, color: 'var(--p-t3)', lineHeight: 1.75, marginTop: 8 }}>
-            {isRag
+            {isEmp
+              ? <>① 直接说「帮我推荐岗位」「我想找无锡的实习」，我会读取你的学籍信息（专业/年级）并匹配校招岗位。<br />
+                 ② 每条推荐附匹配分、推荐理由与可补短板；岗位信息来自公开校招渠道，仅供参考。<br />
+                 ③ 完善「就业意向」（城市/岗位类型/薪资）后推荐会更准。</>
+              : isRag
               ? <>① 直接用自然语言提问，如「{phPool[phIdx % phPool.length] || '教师请假流程是什么'}」。<br />
                  ② 回答附「原文引用」，点击编号可查看出处文档与条款，重要事项请以原文为准。<br />
                  ③ 库内没有的问题会如实说明，建议咨询对应主管部门。</>
@@ -1052,6 +1092,48 @@ export default function V2App() {
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
+  const [kbBadge, setKbBadge] = useState(0);   // 知识库：后台处理完成未读提示（红点）
+  const pageRef = useRef(page); pageRef.current = page;
+  const tokenRef = useRef(null); tokenRef.current = typeof localStorage !== 'undefined' ? localStorage.getItem('user_token') : null;
+
+  // 异步处理追踪：跨页面轮询"我可见库中处理中的文件"，完成/失败即弹提示（离开知识库也能收到）
+  useEffect(() => {
+    if (!user) return;
+    let alive = true, timer = null;
+    let tracked = new Map(); // fileId -> {kbId, name}
+    const tick = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/kb/processing`, { headers: tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {} });
+        const j = await r.json().catch(() => null);
+        const items = (j && j.code === 200 && j.data) || [];
+        const nowIds = new Set(items.map((x) => x.fileId));
+        // 完成检测：上一轮在处理、这一轮消失 → 查最终状态弹提示
+        for (const [fid, meta] of tracked) {
+          if (nowIds.has(fid)) continue;
+          try {
+            const rf = await fetch(`${API_BASE}/kb/${meta.kbId}/files`, { headers: tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {} });
+            const jf = await rf.json().catch(() => null);
+            const file = ((jf && jf.data) || []).find((x) => x.id === fid);
+            if (file && file.status === 'done') {
+              toast(`《${meta.name}》处理完成：${file.chunkCount ?? 0} 原文块 + ${file.qaCount ?? 0} 问答对，现在可检索`);
+            } else if (file && file.status === 'failed') {
+              toast(`《${meta.name}》处理失败：${file.errorMsg || '未知原因'}`);
+            }
+            if (pageRef.current !== 'kb') setKbBadge((n) => n + 1);
+          } catch { /* 忽略单次查询失败 */ }
+        }
+        tracked = new Map(items.map((x) => [x.fileId, { kbId: x.kbId, name: x.name }]));
+        if (alive) timer = setTimeout(tick, items.length ? 5000 : 10000);
+      } catch {
+        if (alive) timer = setTimeout(tick, 10000);
+      }
+    };
+    timer = setTimeout(tick, 6000);
+    return () => { alive = false; if (timer) clearTimeout(timer); };
+  }, [user, toast]);
+
+  // 进入知识库频道 → 清掉完成红点
+  useEffect(() => { if (page === 'kb') setKbBadge(0); }, [page]);
 
   // 路由驱动对话页：#/chat/{id}（含直接刷新/分享链接进入）
   useEffect(() => {
@@ -1148,7 +1230,7 @@ export default function V2App() {
 
   return (
     <>
-      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} />
+      <TopNav page={page} onNav={(p) => guardNav(p, p === 'kb' ? '知识库中心' : '智能体开发平台')} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} kbBadge={kbBadge} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && (agents.length === 0 && !loadErr
         ? <div className="v2-body" style={{ paddingTop: 120 }}><XixiLoading text="锡锡正在为您准备广场…" /></div>
