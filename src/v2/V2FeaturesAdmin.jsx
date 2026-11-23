@@ -148,6 +148,20 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
   const visibleNav = nav.filter((n) => !n.hidden);
   const customLinks = nav.filter((n) => !featByKey[n.key]);
 
+  /* 概览统计（含子功能）：功能总数 / 已启用 / 已停用 / 申请开通制（perm 门且各角色默认全关） */
+  const allFeats = [];
+  cfg.features.forEach((f) => { allFeats.push(f); (f.children || []).forEach((ch) => allFeats.push(ch)); });
+  const statTotal = allFeats.length;
+  const statEnabled = allFeats.filter((f) => f.enabled !== false).length;
+  const statDisabled = allFeats.filter((f) => f.enabled === false).length;
+  const statApply = allFeats.filter((f) => f.gate === 'perm' && f.defaults && Object.values(f.defaults).every((v) => v === false)).length;
+  const stats = [
+    { lb: '功能总数', vl: statTotal, cmp: '含子功能', bar: 'var(--el-primary)' },
+    { lb: '已启用', vl: statEnabled, cmp: '当前生效', bar: 'var(--p-success)' },
+    { lb: '已停用', vl: statDisabled, cmp: '前台隐藏', bar: 'var(--p-danger)' },
+    { lb: '申请开通制', vl: statApply, cmp: '需逐人授权', bar: 'var(--p-warning)' },
+  ];
+
   /* 名称编辑：feature.label + （存在顶栏项时）nav.label 同步，保证前台顶栏即时反映 */
   const setLabel = (f, val) => {
     patchFeat(f.key, { label: val });
@@ -200,10 +214,21 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
   const routeText = (f) => f.route || f.href || (f.kind === 'perm' ? '（仅权限项）' : '—');
 
   return (
-    <div className="v2-card" style={{ maxWidth: 1040 }}>
-      <div style={{ marginBottom: 12, fontSize: 12.5, color: 'var(--p-t3)' }}>
-        顶栏预览：<span style={{ color: 'var(--p-t2)' }}>{visibleNav.length ? visibleNav.map((n) => n.label).join('　·　') : '（当前没有可见的顶栏项）'}</span>
+    <>
+      <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', maxWidth: 1040 }}>
+        {stats.map((k) => (
+          <div key={k.lb} className="v2-kpi">
+            <span className="bar" style={{ background: k.bar }} />
+            <div className="lb">{k.lb}</div>
+            <div className="vl">{k.vl}</div>
+            <div className="cmp">{k.cmp}</div>
+          </div>
+        ))}
       </div>
+      <div className="v2-card" style={{ maxWidth: 1040 }}>
+        <div style={{ marginBottom: 12, fontSize: 12.5, color: 'var(--p-t3)' }}>
+          顶栏预览：<span style={{ color: 'var(--p-t2)' }}>{visibleNav.length ? visibleNav.map((n) => n.label).join('　·　') : '（当前没有可见的顶栏项）'}</span>
+        </div>
       <div style={{ overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -316,7 +341,8 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
           ))}
         </div>
       ) : <div style={{ fontSize: 12, color: 'var(--p-t4)', padding: '10px 4px' }}>暂无自定义外链，可点击下方「＋ 添加自定义外链」新增。</div>}
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -9,7 +9,7 @@ test('默认：无配置解析出内置 nav（R1：6 项，无 xixibuddy）', ()
   const r = resolveFeatures(null);
   const nav = renderNavs(r, { user: null, perms: [] });
   const keys = nav.map((n) => n.key);
-  assert.deepEqual(keys, ['plaza', 'insight', 'teacher', 'dev', 'models', 'kb']);
+  assert.deepEqual(keys, ['plaza', 'teacher', 'insight', 'dev', 'models', 'kb']);
   assert.ok(!keys.includes('xixibuddy'));
   // xixibuddy 仍在注册表中，但 navHidden（R1）
   const x = featureByKey(r, 'xixibuddy');
