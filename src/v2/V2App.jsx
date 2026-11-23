@@ -225,20 +225,22 @@ export function Footer({ onNav, toast }) {
               <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
               <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
             </div>
-            <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 学习答疑、制度查询、数据洞察，点开即用。</div>
+            <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 智能体对话、制度问答、数据洞察、教师工作台与桌面客户端，点开即用。</div>
           </div>
           <div className="v2-foot-col">
             <div className="h">平台服务</div>
             <div className="lnk" onClick={() => onNav('plaza')}>智能体广场</div>
-            <div className="lnk" onClick={() => onNav('models')}>模型服务</div>
+            <div className="lnk" onClick={() => onNav('insight')}>AI 数据洞察</div>
             <div className="lnk" onClick={() => onNav('teacher')}>AI教师工作台</div>
             <div className="lnk" onClick={() => onNav('kb')}>知识库中心</div>
-            <div className="lnk" onClick={() => toast('正式版将新窗口打开数据大屏')}>数据大屏</div>
+            <div className="lnk" onClick={() => onNav('models')}>模型服务</div>
+            <div className="lnk" onClick={() => window.open('/v2/harness/', '_blank')}>XixiBuddy 桌面客户端</div>
           </div>
           <div className="v2-foot-col">
             <div className="h">了解平台</div>
             <div className="lnk" onClick={() => onNav('campus')}>数智化校园 · AI科普</div>
             <div className="lnk" onClick={() => onNav('guide')}>操作指南</div>
+            <div className="lnk" onClick={() => window.open('/agent-plaza/feedback.html', '_blank')}>意见反馈</div>
             <div className="lnk" onClick={() => onNav('about')}>关于我们</div>
           </div>
           <div className="v2-foot-col">
