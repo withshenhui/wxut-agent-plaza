@@ -752,7 +752,6 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
             <div className="v2-ph-sub">基于一卡通消费行为的隐性困难识别 ·「吃得勤 + 吃得省」多信号模型 · 面向学工/资助中心</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span className="v2-fresh-pill">数据截至 2026-11-19</span>
             <div className="v2-tabs">
               {[14, 30, 60, 90].map((w) => (
                 <div key={w} className={`v2-tab${win === w ? ' on' : ''}`} onClick={() => setWin(w)}>近{w}天</div>
