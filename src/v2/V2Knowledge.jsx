@@ -136,9 +136,27 @@ function KbDetail({ kb, onBack, toast, user }) {
   const [preview, setPreview] = useState(null);
   const [qaView, setQaView] = useState(null);
   const [fpage, setFpage] = useState(1);
+  const [nameTip, setNameTip] = useState(null); // 文件名悬浮提示 {text,x,y} 视口坐标，跟随光标
   const PAGE_SIZE = 10;
   const fileRef = useRef(null);
   const timerRef = useRef(null);
+  const tipTimer = useRef(null);
+
+  // 悬满 3 秒才显示文件名提示；显示后跟随光标移动；离开即清除
+  const enterName = (f, e) => {
+    clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => {
+      setNameTip({ text: f.name, x: e.clientX, y: e.clientY });
+    }, 3000);
+  };
+  const moveName = (e) => {
+    setNameTip((t) => (t ? { ...t, x: e.clientX, y: e.clientY } : t));
+  };
+  const leaveName = () => {
+    clearTimeout(tipTimer.current);
+    setNameTip(null);
+  };
+  useEffect(() => () => clearTimeout(tipTimer.current), []);
 
   const load = useCallback(() => {
     listFiles(kb.id).then((f) => setFiles(f || [])).catch((e) => {
@@ -234,7 +252,7 @@ function KbDetail({ kb, onBack, toast, user }) {
                 {doneFiles.length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
                 {pagedFiles.map((f) => (
                   <tr key={f.id}>
-                    <td className="kbx-fname" data-full={f.name}><span className="kbx-fname-t"><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span>{f.name}</span></td>
+                    <td className="kbx-fname" onMouseEnter={(e) => enterName(f, e)} onMouseMove={moveName} onMouseLeave={leaveName}><span className="kbx-fname-t"><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span>{f.name}</span></td>
                     <td className="kbx-fsize">{fmtSize(f.sizeBytes)}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{f.qaCount ?? '—'}{f.qaCount ? <span className="lnk" style={{ marginLeft: 8 }} onClick={() => setQaView(f)}>预览</span> : ''}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{f.status === 'done' ? <span className="tag green">已解析</span>
@@ -261,6 +279,12 @@ function KbDetail({ kb, onBack, toast, user }) {
       </div>
       {preview && <FilePreview kbId={kb.id} file={preview} onClose={() => setPreview(null)} />}
       {qaView && <QaPreview kbId={kb.id} file={qaView} onClose={() => setQaView(null)} />}
+      {nameTip && (
+        <div className="kbx-name-tip" style={{
+          left: Math.max(8, Math.min(nameTip.x + 14, window.innerWidth - 470)),
+          top: Math.max(8, Math.min(nameTip.y + 18, window.innerHeight - 56)),
+        }}>{nameTip.text}</div>
+      )}
     </>
   );
 }
