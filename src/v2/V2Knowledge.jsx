@@ -142,12 +142,12 @@ function KbDetail({ kb, onBack, toast, user }) {
   const timerRef = useRef(null);
   const tipTimer = useRef(null);
 
-  // 悬满 3 秒才显示文件名提示；显示后跟随光标移动；离开即清除
+  // 悬满 1.5 秒才显示文件名提示；显示后跟随光标移动；离开即清除
   const enterName = (f, e) => {
     clearTimeout(tipTimer.current);
     tipTimer.current = setTimeout(() => {
       setNameTip({ text: f.name, x: e.clientX, y: e.clientY });
-    }, 3000);
+    }, 1500);
   };
   const moveName = (e) => {
     setNameTip((t) => (t ? { ...t, x: e.clientX, y: e.clientY } : t));
