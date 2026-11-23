@@ -572,9 +572,54 @@ function FundingSkeleton() {
 }
 
 /* 详情弹窗底部：AI数据洞察打字机 + 合规提示（固定高度避免错乱） */
-function DetailAiInsight({ detail }) {
+/* 基于详情数据的真实分析：档案背景 → 消费结构 → 趋势形态（前/后半窗对比）→ 排除项核验 → 分档结论 */
+function buildFundingInsight(detail, D, win) {
+  const L = D || {};
+  const P = L.profile || {};
+  const pct = Math.round(Number(detail.pct) || 0);
+  const price = Number(detail.price) || 0;
+  const spend = Number(detail.spend) || 0;
+  const parts = [];
+  const origin = [];
+  if (P.sy) origin.push(String(P.sy).slice(0, 10).replace(/(省|市)$/, ''));
+  if (P.mz && P.mz !== '汉族') origin.push(P.mz);
+  parts.push(`${detail.name}（${detail.college}${detail.grade}${origin.length ? '，' + origin.join('·') : ''}）`);
+  const cover = L.coverDays != null ? L.coverDays : null;
+  parts.push(`近${win}天食堂就餐${detail.meals}顿${cover != null ? `、覆盖${cover}/${win}天${cover >= win * 0.9 ? '（全勤型）' : '（有间断）'}` : ''}，单顿均价${price.toFixed(2)}元、总支出${spend.toFixed(0)}元，消费分位P${pct}（同${detail.college}${detail.grade}中约${100 - pct}%的同学单顿均价更高）`);
+  const trend = (L.consumption || []).map((c) => Number(c.amt) || 0);
+  let shape = '';
+  if (trend.length >= 3) {
+    const half = Math.ceil(trend.length / 2);
+    const a = trend.slice(0, half).reduce((x, y) => x + y, 0) / half;
+    const b = trend.slice(-half).reduce((x, y) => x + y, 0) / Math.min(half, trend.length - half || 1);
+    const drop = a > 0 ? (a - b) / a : 0;
+    if (drop > 0.3) shape = `趋势：前半段周均约${a.toFixed(0)}元→后半段${b.toFixed(0)}元（降幅${Math.round(drop * 100)}%），消费近期明显下行，存在行为变化`;
+    else if (drop < -0.3) shape = `趋势：前半段周均约${a.toFixed(0)}元→后半段${b.toFixed(0)}元（回升${Math.round(-drop * 100)}%），消费近期回升`;
+    else shape = `趋势：周均${((a + b) / 2).toFixed(0)}元上下波动平稳，属长期稳定模式而非突发变化`;
+  }
+  if (shape) parts.push(shape);
+  const ld = L.leaveDays;
+  const ex = [];
+  if (ld != null) ex.push(`请假${ld}天`);
+  if (L.maxAmt != null) ex.push(`单笔最大${Number(L.maxAmt).toFixed(1)}元`);
+  if (ex.length) parts.push(`核验：${ex.join('、')}${ld === 0 ? '，无干扰项' : (cover != null && cover >= win * 0.9 ? '，请假未中断就餐节奏' : '，请假与消费间断可能相关')}`);
+  let concl;
+  if (detail.level === 'hi') {
+    concl = shape.includes('下行')
+      ? `综合判断：P${pct}且消费近期下行——可能是家庭经济突发变化、健康或情绪原因，建议尽快约谈了解近况，确认困难按学校资助流程帮扶`
+      : `综合判断：P${pct}且消费长期平稳偏低——节俭习惯或家庭经济持续紧张均有可能，建议结合生源地与家庭住址情况谈心核实`;
+  } else if (detail.level === 'mid') {
+    concl = `综合判断：P${pct}（黄档观察区间）${shape.includes('下行') ? '且呈下行趋势，建议本学期内关注变化' : '，建议日常留意，暂不必专门干预'}`;
+  } else {
+    concl = `综合判断：P${pct}属正常偏低区间，无需干预`;
+  }
+  parts.push(concl + '。请结合人工核实后按流程处理，勿向学生提及「被系统识别」');
+  return parts.join('。') + '。';
+}
+
+function DetailAiInsight({ detail, detailData, win }) {
   const lvlText = detail.level === 'hi' ? '红灯（高关注）' : detail.level === 'mid' ? '黄灯（中关注）' : '绿灯（观察）';
-  const msg = `该生判定为${lvlText}，同学院同年级消费分位 P${Math.round(Number(detail.pct) || 0)}，观察窗就餐 ${detail.meals} 顿、单顿均价 ${Number(detail.price).toFixed(2)} 元。请辅导员/资助岗结合谈心谈话人工复核后按流程处理，请勿直接向学生提及「被系统识别」。`;
+  const msg = buildFundingInsight(detail, detailData, win);
   const [shown, setShown] = useState('');
   useEffect(() => {
     setShown('');
@@ -996,7 +1041,7 @@ export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) 
                   </div>
                 </div>
               )}
-              <DetailAiInsight detail={detail} />
+              <DetailAiInsight detail={detail} detailData={detailData} win={win} />
               </div>
               </div>
             </div>
