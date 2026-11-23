@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { friendlyHttpError } from './httpError';
 
 // 生产环境前后端同源部署（域名 aicenter 根路径与 IP:3001/agent-plaza 均可达），
 // 用同源相对路径让"从哪个入口进就调哪个入口"，IP 入口不被带到域名。
@@ -29,7 +30,7 @@ adminRequest.interceptors.response.use(
       localStorage.removeItem('admin_token');
       window.location.hash = '#/admin/login';
     }
-    const msg = err.response?.data?.message || err.message;
+    const msg = friendlyHttpError(err);
     return Promise.reject(new Error(msg));
   },
 );

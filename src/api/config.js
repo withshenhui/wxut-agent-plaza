@@ -2,6 +2,7 @@ import adminRequest from './request';
 import axios from 'axios';
 
 import { apiBase } from './request';
+import { friendlyHttpError } from './httpError';
 
 const publicRequest = axios.create({ baseURL: apiBase, timeout: 10000 });
 publicRequest.interceptors.response.use(
@@ -10,7 +11,7 @@ publicRequest.interceptors.response.use(
     if (code === 200) return data;
     return Promise.reject(new Error(message || '请求失败'));
   },
-  (err) => Promise.reject(err),
+  (err) => Promise.reject(new Error(friendlyHttpError(err))),
 );
 
 export function getPublicConfig(key) {

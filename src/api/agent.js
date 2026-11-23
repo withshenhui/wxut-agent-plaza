@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { apiBase } from './request';
+import { friendlyHttpError } from './httpError';
 
 const request = axios.create({
   baseURL: apiBase,
@@ -14,7 +15,7 @@ request.interceptors.response.use(
     if (code === 200) return data;
     return Promise.reject(new Error(message || '请求失败'));
   },
-  (err) => Promise.reject(err),
+  (err) => Promise.reject(new Error(friendlyHttpError(err))),
 );
 
 // 搜索智能体（支持分类和关键词）

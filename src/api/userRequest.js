@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { friendlyHttpError } from './httpError';
 
 import { apiBase } from './request';
 
@@ -23,7 +24,7 @@ userRequest.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('user_token');
     }
-    const msg = err.response?.data?.message || err.message;
+    const msg = friendlyHttpError(err);
     return Promise.reject(new Error(msg));
   },
 );
