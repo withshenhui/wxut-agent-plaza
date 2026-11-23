@@ -656,9 +656,9 @@ function curlOf(m) {
   const isLocal = (m.provider || '').includes('一体机');
   const base = isLocal ? 'https://aiask.wxut.edu.cn/llm/v1/chat/completions' : 'https://zhenze-huhehaote.cmecloud.cn/v1/chat/completions';
   return `curl --location "${base}" \
---header "Content-Type: application/json" \
---header "Authorization: Bearer api_key" \
---data '{
+  --header "Content-Type: application/json" \
+  --header "Authorization: Bearer api_key" \
+  --data '{
   "model": "${m.name}",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
@@ -669,16 +669,11 @@ function curlOf(m) {
 }
 function respOf(m) {
   return `{
-  "id": "chatd8a3878-f4ed-11ef-8772-5420b763279e",
-  "object": "chat.completion",
-  "created": 1764894852,
+  "id": "chatd8a3878-…", "object": "chat.completion", "created": 1764894852,
   "model": "${m.name}",
   "choices": [
-    {
-      "index": 0,
-      "message": { "role": "assistant", "content": "要比较 3.11 和 3.9 的大小，从高位到低位依次比较。比较十分位：3.11 是 1，3.9 是 9，因为 1 < 9，所以 3.11 < 3.9。因此 3.9 大于 3.11。" },
-      "finish_reason": "stop"
-    }
+    { "index": 0, "finish_reason": "stop",
+      "message": { "role": "assistant", "content": "比较十分位：1 < 9，所以 3.11 < 3.9，3.9 更大。" } }
   ],
   "usage": { "prompt_tokens": 15, "completion_tokens": 120, "total_tokens": 135 }
 }`;
@@ -780,20 +775,18 @@ function Models({ toast }) {
           <div className="v2-modal-mask" onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
             <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 720 }}>
               <div className="v2-md-head">
-                <div className="t">{sel.name} <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--p-t4)' }}>{sel.provider} · {sel.type}</span></div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="t" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--p-t3)', fontWeight: 400, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.provider} · {sel.type}</div>
+                </div>
                 <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
               </div>
               <div className="v2-md-body">
-                {(sel.tags || []).length > 0 && (
-                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
-                    {(sel.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}
-                  </div>
-                )}
                 {sel.description && (
                   <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
                 )}
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--aink)', margin: '2px 0 7px' }}>调用前提</div>
-                <div style={{ fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.9, marginBottom: 16 }}>
+                <div style={{ fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.8, marginBottom: 14 }}>
                   · 本平台模型经<b>统一网关代理</b>调用，各学院智能体默认使用平台当前生效模型（后台可切换），无需自行申请密钥<br />
                   · 教师个人开发场景如需直连 API，请联系<b>信息化与数据服务中心</b>（dcc@wxut.edu.cn）开通 API Key 与调用权限<br />
                   · 下述示例中的 <code style={{ background: 'var(--p-fill)', borderRadius: 4, padding: '1px 6px', fontSize: 11.5 }}>model</code> 参数需与本页模型名完全一致
@@ -1080,6 +1073,7 @@ export default function V2App() {
       setPage('insight'); setWorkbench(segs[1]); return;
     }
       if (p === 'teacher') { setPage('teacher'); setTeacherWizard(segs[1] === 'form'); return; }
+      if (p === 'dev' && user && !hasPerm('dev.entry')) { setPage('plaza'); setPermPrompt('智能体开发平台未对您的账号开放，如需使用请联系管理员开通'); return; }
       setTeacherWizard(false);
       setWorkbench(null);
       setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
@@ -1121,6 +1115,7 @@ export default function V2App() {
   // 敏感页面守卫：知识库/开发平台（游客可看介绍，进入操作需登录）；RBAC 权限门
   const guardNav = useCallback((p, label) => {
     if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
+    if (p === 'dev' && user && !hasPerm('dev.entry')) { setPermPrompt('智能体开发平台未对您的账号开放，如需使用请联系管理员开通'); return; }
     if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental'])) {
       setPermPrompt('AI数据洞察面向学工线老师开放'); return;
     }
