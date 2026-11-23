@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon, useToast, XixiLoading } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
 import { exportCsv, exportExcel } from './exportUtil.js';
+import { listKbs } from '../api/kb';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 
@@ -73,12 +74,25 @@ const WORKBENCHES = [
     fresh: '消费+考勤每日更新',
     status: 'ready',
   },
+  {
+    key: 'employment',
+    title: '就业工作台',
+    ic: 'grad',
+    desc: '岗位库与人岗匹配 · 学生就业意向分布 · 供需对照与重点帮扶线索 —— 岗位来自公开校招渠道（江苏 91job 等），意向由学生自愿填报。',
+    tags: ['就业办/辅导员', '岗位匹配', '供需对照'],
+    role: '就业工作岗',
+    fresh: '岗位库每日同步',
+    status: 'ready',
+  },
 ];
 
 /* ---------------- 公开洞察：平台生态统计（/agents + /models 实时聚合） ---------------- */
+/* 知识库中心公开层统计的游客基线（未登录时后端 /kb/list 需鉴权，回退此值，截至 2026-11 真实值） */
+const KB_FALLBACK = { libs: 10, files: 203, qa: 8338 };
 function OverviewTab() {
   const [agents, setAgents] = useState(null);
   const [models, setModels] = useState(null);
+  const [kbSt, setKbSt] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
@@ -88,6 +102,15 @@ function OverviewTab() {
       fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json()).catch(() => ({})),
     ]).then(([g, v]) => setModels([...(g.data?.records || []), ...(v.data?.records || [])]))
       .catch(() => setModels([]));
+    // 知识库中心公开层真实统计（公开制度库 / 制度文件 / 问答对），登录后动态拉取，失败时回退基线
+    listKbs('pub').then((list) => {
+      const arr = Array.isArray(list) ? list : [];
+      setKbSt({
+        libs: arr.length,
+        files: arr.reduce((s, k) => s + (k.fileCount || 0), 0),
+        qa: arr.reduce((s, k) => s + (k.qaCount || 0), 0),
+      });
+    }).catch(() => setKbSt(KB_FALLBACK));
   }, []);
 
   const st = useMemo(() => {
@@ -229,14 +252,13 @@ function OverviewTab() {
               <span>5×NVIDIA L20（240G 显存）本地算力，数据不出校园、免费调用。</span>
             </div>
           </div>
-          <div className="v2-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 }}>
-            <div className="ct">知识库中心</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--p-t4)' }}>建设中</div>
-            <div style={{ fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.8 }}>
-              建成后各部门公开制度库统一汇聚、由部门自维护，支持对话式检索与原文引用；当前制度问答已通过 8 个域智能体先行服务。
+          <div className="v2-card">
+            <div className="ct">知识库中心 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--p-success)' }}>· 已上线</span></div>
+            <div style={{ fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.8, marginTop: 4 }}>
+              各部门公开制度库统一汇聚、由部门自维护，支持对话式检索与原文出处；面向全校提供制度问答与文件溯源。
             </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {[['制度知识域', fmt(st.kb.length)], ['问答智能体', fmt(st.kb.length)]].map(([n, l]) => (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+              {[['公开制度库', fmt((kbSt || KB_FALLBACK).libs)], ['制度文件', fmt((kbSt || KB_FALLBACK).files)], ['问答对', fmt((kbSt || KB_FALLBACK).qa)]].map(([n, l]) => (
                 <div key={n} className="v2-ov-stat" style={{ flex: 1 }}><div className="n">{l}</div><div className="l">{n}</div></div>
               ))}
             </div>

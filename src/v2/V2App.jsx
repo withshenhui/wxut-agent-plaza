@@ -5,11 +5,13 @@ const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast, IconBuilding } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
+import { getPublicConfig } from '../api/config';
 import { useV2User } from './V2User.jsx';
 import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
+import { EmploymentWorkbench } from './V2Employment.jsx';
 import { XixiLoading } from './ui.jsx';
 import { marked } from 'marked';
 
@@ -98,6 +100,55 @@ async function launchAgentV2(navigate, agentId, user, onChat) {
 }
 
 /* ============ 顶栏 ============ */
+/** 顶栏导航默认项（权限过滤后的"基础形状"）；后台「导航菜单」页编辑 sys_config `v2.nav`
+ *  覆盖顺序/名称/显隐/自定义外链。导出给管理后台做编辑器的默认种子，避免两处漂移。 */
+export const NAV_DEFAULTS = [
+  { key: 'plaza', label: '首页' },
+  { key: 'insight', label: 'AI 数据洞察', permGate: true },
+  { key: 'teacher', label: 'AI教师工作台', permGate: true },
+  { key: 'dev', label: '智能体开发平台' },
+  { key: 'models', label: '模型服务' },
+  { key: 'kb', label: '知识库中心' },
+  { key: 'xixibuddy', label: 'XixiBuddy', href: '/v2/harness/', external: true, isNew: true },
+];
+
+/** 读取 v2.nav 配置（公开可读）；空数组/加载失败/null → null（走代码默认） */
+export function loadNavConfig() {
+  return getPublicConfig('v2.nav')
+    .then((d) => {
+      try {
+        const a = JSON.parse(d?.configValue || '[]');
+        return Array.isArray(a) && a.length ? a : null;
+      } catch { return null; }
+    })
+    .catch(() => null);
+}
+
+/** 配置 + 权限 → 实际渲染的导航列表：
+ *  配置顺序即展示顺序；hidden 隐藏；label/new 可覆盖；permGate 项无权限时强制隐藏；
+ *  自定义项（href）原样输出；首页（plaza）未在配置中出现时固定保留在首位。 */
+export function resolveNavs(cfg, { showInsight, showTeacher }) {
+  const permOk = { insight: showInsight, teacher: showTeacher };
+  const base = NAV_DEFAULTS.filter((d) => !d.permGate || permOk[d.key]);
+  if (!cfg || !cfg.length) return base;
+  const byKey = new Map(base.map((d) => [d.key, d]));
+  const out = [];
+  for (const it of cfg) {
+    if (!it || it.hidden) continue;
+    const key = String(it.key || '').trim();
+    if (byKey.has(key)) {
+      const d = byKey.get(key);
+      out.push({ ...d, label: (it.label || '').trim() || d.label, isNew: !!it.isNew });
+      byKey.delete(key);
+    } else if (it.href && String(it.href).trim()) {
+      out.push({ key: key || 'c' + out.length, label: (it.label || '').trim() || '链接',
+        href: String(it.href).trim(), external: true, isNew: !!it.isNew });
+    }
+  }
+  if (!out.some((n) => n.key === 'plaza')) out.unshift({ key: 'plaza', label: '首页' });
+  return out;
+}
+
 export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge }) {
   const has = (k) => Array.isArray(perms) && perms.includes(k);
   const canInsight = has('insight.funding') || has('insight.safety') || has('insight.academic') || has('insight.mental');
@@ -105,15 +156,14 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbB
   // 游客全显（展示性导航，点进去由守卫引导登录/提示无权限）
   const showInsight = !user || canInsight;
   const showTeacher = !user || canTeacher;
-  const NAVS = [
-    { key: 'plaza', label: '首页' },
-    ...(showInsight ? [{ key: 'insight', label: 'AI 数据洞察' }] : []),
-    ...(showTeacher ? [{ key: 'teacher', label: 'AI教师工作台' }] : []),
-    { key: 'dev', label: '智能体开发平台' },
-    { key: 'models', label: '模型服务' },
-    { key: 'kb', label: '知识库中心' },
-    { key: 'xixibuddy', label: 'XixiBuddy', href: '/v2/harness/', external: true },
-  ];
+  // 后台可配置导航：加载期间不渲染链接（避免闪现待隐藏项），失败走默认
+  const [navCfg, setNavCfg] = useState(undefined);
+  useEffect(() => {
+    let alive = true;
+    loadNavConfig().then((v) => { if (alive) setNavCfg(v); });
+    return () => { alive = false; };
+  }, []);
+  const NAVS = resolveNavs(navCfg, { showInsight, showTeacher });
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
@@ -121,15 +171,16 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbB
         <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
       </a>
       <div className="v2-nav-links">
-        {NAVS.map((n) => n.external ? (
+        {navCfg === undefined ? null : NAVS.map((n) => n.external ? (
           <a key={n.key} className="v2-nav-link" href={n.href} target="_blank" rel="noreferrer">
-            {n.label}<span className="chip-new">NEW</span>
+            {n.label}{n.isNew && <span className="chip-new">NEW</span>}
           </a>
         ) : (
           <a key={n.key} className={`v2-nav-link${page === n.key ? ' active' : ''}`}
             href={`#/${n.key === 'plaza' ? '' : n.key}`}
             onClick={(e) => { e.preventDefault(); onNav(n.key); }}>
-            {n.label}{n.key === 'kb' && kbBadge > 0 && <span className="v2-nav-badge" />}
+            {n.label}{n.isNew && <span className="chip-new">NEW</span>}
+            {n.key === 'kb' && kbBadge > 0 && <span className="v2-nav-badge" />}
           </a>
         ))}
       </div>
@@ -1154,7 +1205,7 @@ export default function V2App() {
       setChatAgent(null);
       const segs = location.pathname.replace(/^\/+/, '').split('/');
       const p = segs[0] || 'plaza';
-      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental'].includes(segs[1])) {
+      if (p === 'insight' && ['funding', 'safety', 'academic', 'mental', 'employment'].includes(segs[1])) {
       if (!user) { setPage('insight'); return; } // 游客直入工作台 → 停在频道首页
       const need = 'insight.' + segs[1];
       if (!hasPerm(need)) { setPage('insight'); setPermPrompt('该分析工作台未对您的账号开放'); return; }
@@ -1204,7 +1255,7 @@ export default function V2App() {
   const guardNav = useCallback((p, label) => {
     if ((p === 'kb' || p === 'dev') && !requireLogin()) { setLoginPrompt(`${label}需要登录后使用`); return; }
     if (p === 'dev' && user && !hasPerm('dev.entry')) { setPermPrompt('智能体开发平台未对您的账号开放，如需使用请联系管理员开通'); return; }
-    if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental'])) {
+    if (p === 'insight' && user && !hasAnyPerm(['insight.funding', 'insight.safety', 'insight.academic', 'insight.mental', 'insight.employment'])) {
       setPermPrompt('AI数据洞察面向学工线老师开放'); return;
     }
     if (p === 'teacher' && user && !hasPerm('teacher.form')) {
@@ -1247,6 +1298,9 @@ export default function V2App() {
       )}
       {page === 'insight' && workbench === 'funding' && (
         <FundingWorkbench toast={toast} user={user} canExport={hasPerm('insight.export')} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
+      )}
+      {page === 'insight' && workbench === 'employment' && (
+        <EmploymentWorkbench toast={toast} user={user} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
       )}
       {page === 'insight' && ['safety', 'academic', 'mental'].includes(workbench) && (
         <SceneWorkbench sceneKey={workbench} toast={toast} user={user} canExport={hasPerm('insight.export')} dataScope={dataScope} onBack={() => { setWorkbench(null); navigate('/insight'); }} />
