@@ -19,3 +19,11 @@ export function updateUserStatus(id, status) {
 export function resetPassword(id, password) {
   return adminRequest.put(`/users/${id}/password`, null, { params: { password } });
 }
+
+export function getUserPerms(id) {
+  return adminRequest.get(`/users/${id}/perms`);
+}
+
+export function setUserPerm(id, permKey, granted) {
+  return adminRequest.put(`/users/${id}/perm`, null, { params: { permKey, granted } });
+}

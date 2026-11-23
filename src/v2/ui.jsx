@@ -195,6 +195,47 @@ export function Modal({ title, onClose, children, footer, width = 680 }) {
   );
 }
 
+/* ================= 全局二次确认（统一弹窗，禁用 window.confirm） ================= */
+/* 用法：if (!(await confirmDialog({ title:'删除', text:'…', okText:'删除', danger:true }))) return;
+   需在应用根挂一个 <ConfirmHost/>（V2 在 main.jsx）；未挂载时自动回退 window.confirm。 */
+let __confirmImpl = null;
+export function _setConfirmImpl(fn) { __confirmImpl = fn; }
+export function confirmDialog(opts) {
+  const o = opts || {};
+  if (__confirmImpl) return __confirmImpl(o);
+  const msg = o.title ? `${o.title}\n${o.text || ''}` : (o.text || '确认操作');
+  return Promise.resolve(window.confirm(msg));
+}
+export function ConfirmHost() {
+  const [req, setReq] = useState(null);
+  useEffect(() => {
+    _setConfirmImpl((opts) => new Promise((resolve) => setReq({ opts: opts || {}, resolve })));
+    return () => { _setConfirmImpl(null); };
+  }, []);
+  if (!req) return null;
+  const { opts, resolve } = req;
+  const done = (v) => { resolve(v); setReq(null); };
+  return (
+    <Modal
+      title={opts.title || '确认操作'}
+      width={opts.width || 440}
+      onClose={() => done(false)}
+      footer={
+        <>
+          <button className="v2-btn ghost" onClick={() => done(false)}>{opts.cancelText || '取消'}</button>
+          <button
+            className="v2-btn"
+            style={opts.danger ? { background: '#E5484D', borderColor: '#E5484D' } : undefined}
+            onClick={() => done(true)}
+          >{opts.okText || '确认'}</button>
+        </>
+      }
+    >
+      <p style={{ fontSize: 13, color: 'var(--p-t2)', lineHeight: 1.9, margin: 0, whiteSpace: 'pre-line' }}>{opts.text}</p>
+    </Modal>
+  );
+}
+
 /* 开关 */
 export function Switch({ on, onChange, title }) {
   return <button type="button" className={`v2-sw${on ? ' on' : ''}`} title={title} onClick={() => onChange(!on)} />;

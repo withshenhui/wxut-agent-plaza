@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { listKbs, createKb, listFiles, deleteFile, rebuildFile, searchInKb } from '../api/kb';
 import { apiBase } from '../api/request';
-import { Icon, XixiLoading, Pager } from './ui.jsx';
+import { Icon, XixiLoading, Pager, confirmDialog } from './ui.jsx';
 
 /* ============ 知识库中心频道 ============
    交互定稿依据 docs/知识库中心_原型.html（2026-11-22 用户逐轮打磨版）：
@@ -205,7 +205,7 @@ function KbDetail({ kb, onBack, toast, user }) {
   };
 
   const del = async (fid) => {
-    if (!window.confirm('删除后该文件的向量同步移除，确定？')) return;
+    if (!(await confirmDialog({ title: '删除文件', text: '删除后该文件的向量同步移除，确定？', okText: '删除', danger: true }))) return;
     try { await deleteFile(kb.id, fid); toast('已删除'); load(); } catch (e) { toast(e.message || '删除失败'); }
   };
 

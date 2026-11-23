@@ -468,8 +468,8 @@ select.v2-fm-i{height:40px;padding:0 11px;cursor:pointer;appearance:none;-webkit
 /* ============ 模型服务页背景 logo 墙 ============ */
 .v2-models-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
 .v2-models-bg img{position:absolute;opacity:.05;filter:grayscale(30%);user-select:none}
-.v2-sec-head.v2-models-head{position:relative;z-index:1;
-  background:linear-gradient(180deg,rgba(236,240,255,.85) 0%,rgba(245,246,250,0) 100%);padding-top:56px;padding-bottom:26px;margin-top:-16px}
+.v2-sec-head.v2-models-head{position:relative;z-index:1;text-align:left;max-width:1240px;margin:-16px auto 0;
+  background:linear-gradient(180deg,rgba(236,240,255,.85) 0%,rgba(245,246,250,0) 100%);padding-top:56px;padding-bottom:26px}
 .v2-models-head ~ .v2-body{position:relative;z-index:1}
 
 /* ============ 锡锡 Loading ============ */
@@ -1047,3 +1047,17 @@ select.v2t-inp{cursor:pointer}
 .emp-score svg{transform:rotate(-90deg)}
 .emp-score .n{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800}
 @media (max-width:900px){.emp-why{grid-template-columns:1fr}.emp-jobs,.emp-intent{max-width:100%}}
+
+/* 填表页 · 上传文件自动回填面板 */
+.v2t-parse{border:1.5px dashed var(--p-line2,#CBD5E1);border-radius:12px;padding:16px 14px;text-align:center;cursor:pointer;transition:all .15s;background:#FAFBFD}
+.v2t-parse:hover{border-color:var(--v2-primary,#4A6CF7);background:#F5F8FF}
+.v2t-parse.busy{opacity:.7;cursor:default}
+.v2t-parse .t{font-size:13px;font-weight:600;color:var(--aink);margin-top:7px}
+.v2t-parse .d{font-size:11.5px;color:var(--p-t4);margin-top:5px;line-height:1.6}
+.v2t-parse-res{margin-top:10px;background:#F0F7F3;border:1px solid #CBE6D6;border-radius:10px;padding:9px 11px}
+.v2t-parse-res .r1{font-size:12px;color:#1F9254;font-weight:600;display:flex;align-items:center;gap:5px}
+.v2t-parse-res .r2{font-size:11.5px;color:var(--p-t2);margin-top:5px;display:flex;gap:6px;justify-content:space-between}
+.v2t-parse-res .r2 b{color:var(--aink);font-weight:600;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 记忆（User Memory）预填标记 */
+.v2-mem-tag{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10.5px;font-weight:600;color:var(--el-primary);background:var(--el-primary-l9);border:1px solid var(--el-primary-l8);border-radius:999px;padding:1px 7px;cursor:pointer;user-select:none;line-height:1.5}
+.v2-mem-tag:hover{background:var(--el-primary-l8)}

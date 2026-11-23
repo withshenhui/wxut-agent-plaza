@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import adminRequest from '../api/request';
+import { confirmDialog } from './ui.jsx';
 
 /* AI中台管理后台 · 客户端管理：XixiBuddy 多平台安装包上传/上下架/编辑/删除 */
 const PLATFORMS = [
@@ -89,7 +90,7 @@ export default function ClientAdmin({ toast }) {
     catch (e) { toast(e.message || '操作失败'); }
   };
   const del = async (b) => {
-    if (!window.confirm(`删除「${b.displayName || b.fileName}」？服务器文件将一并删除`)) return;
+    if (!(await confirmDialog({ title: '删除安装包', text: `删除「${b.displayName || b.fileName}」？服务器文件将一并删除。`, okText: '删除', danger: true }))) return;
     try { await adminRequest.delete(`/client-builds/${b.id}`); toast('已删除'); load(); }
     catch (e) { toast(e.message || '删除失败'); }
   };

@@ -5,7 +5,7 @@ import './v2.css';
 import V2App from './V2App.jsx';
 import V2Admin from './V2Admin.jsx';
 import V2Login from './V2Login.jsx';
-import { ToastProvider } from './ui.jsx';
+import { ToastProvider, ConfirmHost } from './ui.jsx';
 import { getUserInfo as getAdminInfo } from '../api/auth';
 import { getUserInfo as getUserInfoForUser } from '../api/userAuth';
 import { V2UserProvider, useV2User } from './V2User.jsx';
@@ -83,6 +83,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <V2UserProvider>
         <ToastProvider>
           <V2Entry />
+          <ConfirmHost />
         </ToastProvider>
       </V2UserProvider>
     </HashRouter>

@@ -45,8 +45,17 @@ export function updateRecord(id, body) {
   return userRequest.put(`/form/records/${id}`, body, { timeout: 30000 });
 }
 
-export function aiMaterial(fieldKey, fieldLabel, current) {
-  return userRequest.post('/form/ai-material', { fieldKey, fieldLabel, current }, { timeout: 60000 });
+export function aiMaterial(fieldKey, fieldLabel, current, templateId) {
+  return userRequest.post('/form/ai-material', { fieldKey, fieldLabel, current, templateId }, { timeout: 60000 });
+}
+
+/** 填报记忆（User Memory）：本人已填内容，供智能预填与 AI 起草参考 */
+export function getFormMemory(templateId) {
+  return userRequest.get('/form/memory', { params: templateId ? { templateId } : {} });
+}
+
+export function clearFormMemory() {
+  return userRequest.delete('/form/memory');
 }
 
 export function deleteRecord(id) {

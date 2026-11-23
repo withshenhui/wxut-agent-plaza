@@ -12,7 +12,7 @@ import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
 import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards } from './V2Employment.jsx';
-import { XixiLoading } from './ui.jsx';
+import { XixiLoading, confirmDialog } from './ui.jsx';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -474,10 +474,10 @@ function ChatPage({ agent, onExit }) {
     setLoading(false);
     setToolStatus('');
   };
-  const delConv = (e, convId) => {
+  const delConv = async (e, convId) => {
     e.stopPropagation();
     const conv = convs.find((c) => c.id === convId);
-    if (conv && conv.messages.length > 0 && !window.confirm('确定删除这段对话历史吗？')) return;
+    if (conv && conv.messages.length > 0 && !(await confirmDialog({ title: '删除对话', text: '确定删除这段对话历史吗？删除后不可恢复。', okText: '删除', danger: true }))) return;
     setConvs((prev) => {
       const next = prev.filter((c) => c.id !== convId);
       if (activeId === convId) setActiveId(next[0]?.id ?? null);
