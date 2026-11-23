@@ -249,7 +249,7 @@ function OverviewTab() {
             ))}
             <div style={{ marginTop: 12, padding: '9px 11px', background: 'var(--el-primary-l9)', borderRadius: 10, fontSize: 11.5, color: 'var(--p-t2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <Icon name="chip" size={14} style={{ color: 'var(--el-primary)', flexShrink: 0, marginTop: 1 }} />
-              <span>5×NVIDIA L20（240G 显存）本地算力，数据不出校园。</span>
+              <span style={{ textWrap: 'balance' }}>5×NVIDIA L20（240G 显存）本地算力，数据不出校园。</span>
             </div>
           </div>
           <div className="v2-card">
