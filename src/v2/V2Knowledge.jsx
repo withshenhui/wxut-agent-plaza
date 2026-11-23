@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { listKbs, createKb, listFiles, deleteFile, rebuildFile, searchInKb } from '../api/kb';
 import { apiBase } from '../api/request';
 import { Icon, XixiLoading, Pager } from './ui.jsx';
@@ -53,6 +54,7 @@ function Pipeline({ file }) {
         })}
       </div>
       {failed && file.errorMsg && <div className="kbx-pipe-err">失败原因：{file.errorMsg}</div>}
+      {!failed && !done && file.stage === 'qa' && <div className="kbx-pipe-note">正在逐段生成问答对（每个片段约几秒，长文档需几分钟），请勿关闭页面…</div>}
       {done && <div className="kbx-pipe-note">✓ 已入库：{file.chunkCount} 个原文块 + {file.qaCount} 条问答对，即刻可检索</div>}
     </div>
   );
@@ -128,6 +130,7 @@ function KbDetail({ kb, onBack, toast, user }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [qaView, setQaView] = useState(null);
   const [fpage, setFpage] = useState(1);
   const PAGE_SIZE = 10;
   const fileRef = useRef(null);
@@ -227,9 +230,9 @@ function KbDetail({ kb, onBack, toast, user }) {
                 {doneFiles.length === 0 && <tr><td colSpan={5} className="v2-empty-cell">暂无文件，上传第一个文档开始建库</td></tr>}
                 {pagedFiles.map((f) => (
                   <tr key={f.id}>
-                    <td><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span> {f.name}</td>
-                    <td>{fmtSize(f.sizeBytes)}</td>
-                    <td>{f.qaCount ?? '—'}</td>
+                    <td className="kbx-fname" title={f.name} data-full={f.name}><span className={`kbx-fic ${f.ext}`}>{(f.ext || '').toUpperCase()}</span> {f.name}</td>
+                    <td className="kbx-fsize">{fmtSize(f.sizeBytes)}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{f.qaCount ?? '—'}{f.qaCount ? <span className="lnk" style={{ marginLeft: 8 }} onClick={() => setQaView(f)}>预览</span> : ''}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{f.status === 'done' ? <span className="tag green">已解析</span>
                       : f.status === 'failed' ? <span className="tag red" title={f.errorMsg}>失败</span>
                       : <span className="tag amber">{f.stage || '处理中'}</span>}</td>
@@ -253,7 +256,55 @@ function KbDetail({ kb, onBack, toast, user }) {
         <TestPanel kbId={kb.id} toast={toast} />
       </div>
       {preview && <FilePreview kbId={kb.id} file={preview} onClose={() => setPreview(null)} />}
+      {qaView && <QaPreview kbId={kb.id} file={qaView} onClose={() => setQaView(null)} />}
     </>
+  );
+}
+
+/* 问答对预览弹层：展示该文件流水线自动生成的 QA 对 */
+function QaPreview({ kbId, file, onClose }) {
+  const [list, setList] = useState(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${apiBase}/kb/${kbId}/files/${file.id}/qa`, { headers: authHeader() });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j || j.code !== 200) throw new Error((j && j.message) || `HTTP ${r.status}`);
+        if (alive) setList(j.data || []);
+      } catch (e) {
+        if (alive) setErr(e.message || '加载失败');
+      }
+    })();
+    return () => { alive = false; };
+  }, [file.id]);
+  return (
+    <div className="kbx-mask" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="kbx-prev">
+        <div className="kbx-prev-h">
+          <span className="kbx-fic qa">QA</span>
+          <span className="t">{file.name} · 问答对</span>
+          <span className="lnk" onClick={onClose}>✕ 关闭</span>
+        </div>
+        <div className="kbx-prev-b">
+          {err && <div className="v2-empty-cell">{err}</div>}
+          {!err && list == null && <XixiLoading text="锡锡正在加载问答对…" />}
+          {list != null && list.length === 0 && <div className="v2-empty-cell">该文件暂无问答对</div>}
+          {list != null && list.length > 0 && (
+            <div className="kbx-qa-list">
+              <div className="kbx-qa-sum">共 {list.length} 条 · 由本文件自动生成，答案均取自原文</div>
+              {list.map((p, i) => (
+                <div className="kbx-qa-item" key={i}>
+                  <div className="kbx-qa-q"><span className="n">Q{i + 1}</span>{p.q}{p.clause ? <span className="tag grey" style={{ marginLeft: 8 }}>{p.clause}</span> : ''}</div>
+                  <div className="kbx-qa-a">{p.a}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -375,6 +426,9 @@ function NewKbDialog({ onClose, onCreated, toast }) {
 
 /* ---------- 频道主页 ---------- */
 export default function V2Knowledge({ user, requireLogin, toast }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routeId = (location.pathname.match(/^\/kb\/(\d+)/) || [])[1];
   const [tab, setTab] = useState('pub');
   const [kbs, setKbs] = useState(null);
   const [err, setErr] = useState('');
@@ -390,10 +444,26 @@ export default function V2Knowledge({ user, requireLogin, toast }) {
   const openKb = (kb) => {
     if (!requireLogin()) { toast('知识库需要登录后使用'); return; }
     setCurrent(kb);
+    navigate('/kb/' + kb.id);
   };
 
+  // 浏览器返回（routeId 消失）自动回列表
+  useEffect(() => {
+    if (!routeId && current) { setCurrent(null); load(); }
+  }, [routeId]);
+
+  // 直链 #/kb/{id}：列表加载后自动打开；当前 Tab 没有 → 顺次换 Tab 找
+  useEffect(() => {
+    if (!routeId || current || !kbs) return;
+    const kb = kbs.find((k) => String(k.id) === routeId);
+    if (kb) { if (requireLogin()) setCurrent(kb); return; }
+    const order = ['pub', 'dept', 'mine'];
+    if (order.indexOf(tab) < order.length - 1) setTab(order[order.indexOf(tab) + 1]);
+    else navigate('/kb', { replace: true });
+  }, [routeId, kbs, current, tab]);
+
   if (current) {
-    return <KbDetail kb={current} onBack={() => { setCurrent(null); load(); }} toast={toast} user={user} />;
+    return <KbDetail kb={current} onBack={() => navigate('/kb')} toast={toast} user={user} />;
   }
 
   const TABS = [

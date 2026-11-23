@@ -695,6 +695,12 @@ function Models({ toast }) {
     fetch(`${API_BASE}/models?category=vertical&size=50`).then((r) => r.json())
       .then((j) => setMv(j.data?.records || [])).catch(() => setMv([]));
   }, []);
+  // 弹窗打开时锁定背景滚动（模态框惯例，与 ui.jsx 的 Modal 行为一致）
+  useEffect(() => {
+    if (!sel) return;
+    document.body.classList.add('v2-modal-open');
+    return () => document.body.classList.remove('v2-modal-open');
+  }, [sel]);
   if (!mg || !mv) return <div className="v2-body"><XixiLoading text="AI加载数据中…" /></div>;
   const all = tab === 'general' ? mg : mv;
   const list = q ? all.filter((m) => [m.name, m.provider, m.type, m.description, ...(m.tags || [])].join(' ').toLowerCase().includes(q.toLowerCase())) : all;
@@ -773,7 +779,7 @@ function Models({ toast }) {
         </div>
         {sel && (
           <div className="v2-modal-mask" onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
-            <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 720 }}>
+            <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
                   <div className="t" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.name}</div>
