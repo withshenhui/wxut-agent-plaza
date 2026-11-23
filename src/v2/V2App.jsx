@@ -905,8 +905,10 @@ function Models({ toast }) {
           </div>
         </div>
         {sel && selBox && (
-          <div className="v2-modal-mask" style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', background: 'transparent' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}>
-            <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)' }}>
+          <>
+            <div className="v2-modal-mask" style={{ background: 'rgba(15,23,42,.16)' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }} />
+            <div style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
+              <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, maxHeight: 'calc(100vh - 200px)', pointerEvents: 'auto' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
                   <div className="t" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.name}</div>
@@ -914,7 +916,7 @@ function Models({ toast }) {
                 </div>
                 <button className="v2-md-close" onClick={() => setSel(null)}>✕</button>
               </div>
-              <div className="v2-md-body" style={{ paddingTop: 24, paddingBottom: 24 }}>
+              <div className="v2-md-body" style={{ paddingTop: 32, paddingBottom: 32 }}>
                 {sel.description && (
                   <div style={{ background: 'var(--p-fill)', borderRadius: 11, padding: '11px 14px', fontSize: 12.5, color: 'var(--p-t2)', lineHeight: 1.7, marginBottom: 16 }}>{sel.description}</div>
                 )}
@@ -936,7 +938,8 @@ function Models({ toast }) {
                 <div className="v2-api-code"><pre>{respOf(sel)}</pre></div>
               </div>
             </div>
-          </div>
+            </div>
+          </>
         )}
         <div className="v2-banner" style={{ marginTop: 22 }}>
           <div className="ic"><Icon name="doclog" size={26} /></div>
@@ -1052,7 +1055,7 @@ function Dev({ toast }) {
     ['03', '开发与调试', '登录平台创建应用，编排工作流、配置提示词与知识库，实时预览调试效果。'],
     ['04', '审核上架', '调试完成后提交审核；审核通过即可上架智能体广场，供全校师生使用。'],
   ];
-  if (showGuide) return <DevGuide onClose={() => setShowGuide(false)} toast={toast} />;
+  if (showGuide) return <DevGuide onClose={() => { navigate('/dev'); window.scrollTo(0, 0); }} toast={toast} />;
   return (
     <>
       <div className="v2-hero" style={{ background: 'linear-gradient(135deg,#f6f9ff,#fff 55%,#f0f5ff)', textAlign: 'left' }}>
@@ -1065,7 +1068,7 @@ function Dev({ toast }) {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
               <button className="v2-btn lg" onClick={() => window.open('https://aiagent.wxut.edu.cn/apps', '_blank')}>进入开发平台 →</button>
-              <button className="v2-btn ghost lg" onClick={() => { setShowGuide(true); window.scrollTo(0, 0); }}>使用指南</button>
+              <button className="v2-btn ghost lg" onClick={() => { navigate('/dev/guide'); window.scrollTo(0, 0); }}>使用指南</button>
               <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>已开通账号 · 学校统一身份认证登录</span>
             </div>
           </div>
@@ -1212,7 +1215,8 @@ export default function V2App() {
   const [workbench, setWorkbench] = useState(null);   // 数据洞察：当前工作台
   const [teacherWizard, setTeacherWizard] = useState(false); // 教师工作台：智能填报向导
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
-  const [teacherTpl, setTeacherTpl] = useState(null);  // 智能填报：地址栏 #/teacher/form/{模板id} 中的模板
+  const [teacherTpl, setTeacherTpl] = useState(null);  // 智能填报：地址栏 #/teacher/form/{模板id}/{步骤} 中的模板
+  const [teacherStep, setTeacherStep] = useState(null); // 智能填报：地址栏中的当前步骤
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
   const [kbBadge, setKbBadge] = useState(0);   // 知识库：后台处理完成未读提示（红点）
   const [resolved, setResolved] = useState(undefined); // 前台功能注册表（undefined=加载中）：导航/守卫唯一来源
@@ -1292,6 +1296,9 @@ export default function V2App() {
     setChatAgent(null);
     const segs = location.pathname.replace(/^\/+/, '').split('/');
     const p = segs[0] || 'plaza';
+    // 开发平台·操作指南路由化（#/dev/guide）：可分享/前进后退；离开则关闭
+    const wantDevGuide = p === 'dev' && segs[1] === 'guide';
+    if (!wantDevGuide) setShowGuide(false);
     if (resolved === undefined) return; // 注册表未就绪 → 加载后再路由（避免误判回退首页）
     const ctx = { user, perms: (user && user.perms) || [], requireLogin, setLoginPrompt, setPermPrompt };
     // 数据洞察子工作台直链：游客停在频道首页；已登录按注册表 gate 校验
@@ -1305,7 +1312,9 @@ export default function V2App() {
     if (f && !gateCheck(f, ctx)) { setPage('plaza'); setWorkbench(null); setTeacherWizard(false); return; }
     setTeacherWizard(p === 'teacher' && segs[1] === 'form');
     setTeacherTpl(p === 'teacher' && segs[1] === 'form' && segs[2] ? Number(segs[2]) : null);
+    setTeacherStep(p === 'teacher' && segs[1] === 'form' && segs[3] ? Number(segs[3]) : null);
     setWorkbench(null);
+    if (wantDevGuide) { setPage('dev'); setShowGuide(true); return; }
     setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
   }, [location.pathname, agents, navigate, resolved]);
 
@@ -1400,6 +1409,7 @@ export default function V2App() {
           wizard={teacherWizard}
           openRecordId={teacherRec}
           initialTplId={teacherTpl}
+          initialStep={teacherStep}
           openWizard={openWizard}
           onExitWizard={() => { setTeacherWizard(false); setTeacherRec(null); navigate('/teacher'); }}
           onNav={nav} />
