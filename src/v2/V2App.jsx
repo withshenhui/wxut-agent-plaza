@@ -762,7 +762,10 @@ function Models({ toast }) {
   const openSel = (m) => {
     setSel(m);
     const r = mainRef.current && mainRef.current.getBoundingClientRect();
-    setSelBox(r ? { left: r.left, width: r.width } : null);
+    // 垂直居中区域排除顶栏：取 v2-topnav 实际高度
+    const nav = document.querySelector('.v2-topnav');
+    const navH = nav ? Math.round(nav.getBoundingClientRect().height) : 60;
+    setSelBox(r ? { left: r.left, width: r.width, navH } : null);
   };
   const [copied, setCopied] = useState('');
   const [fProv, setFProv] = useState({});   // 左侧筛选：供应商
@@ -907,7 +910,7 @@ function Models({ toast }) {
         {sel && selBox && (
           <>
             <div className="v2-modal-mask" style={{ background: 'rgba(15,23,42,.16)' }} onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }} />
-            <div style={{ position: 'fixed', left: selBox.left, top: 0, width: selBox.width, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
+            <div style={{ position: 'fixed', left: selBox.left, top: selBox.navH, width: selBox.width, height: `calc(100vh - ${selBox.navH}px)`, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, pointerEvents: 'none' }}>
               <div className="v2-modal" onClick={(e) => e.stopPropagation()} style={{ width: 860, height: 'calc(100vh - 180px)', pointerEvents: 'auto' }}>
               <div className="v2-md-head">
                 <div style={{ minWidth: 0 }}>
