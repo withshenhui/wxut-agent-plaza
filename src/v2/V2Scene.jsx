@@ -351,8 +351,8 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--p-t3)', marginBottom: 9, letterSpacing: 1 }}>学生档案 · 人工判断参考</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 10px', fontSize: 12 }}>
                     {[['姓名', detail.name], ['学号', detail.id], ['学院', String(detail.college || '').slice(0, 5)], ['年级', detail.grade],
-                      ['籍贯', P.jg], ['生源地', P.sy ? String(P.sy).slice(0, 12) : ''], ['民族', P.mz], ['政治面貌', P.zz],
-                      ['出生日期', P.cs ? String(P.cs).slice(0, 10) : '']].map(([l, x]) => (
+                      ['性别', P.xb], ['籍贯', P.jg], ['生源地', P.sy ? String(P.sy).slice(0, 12) : ''], ['民族', P.mz],
+                      ['政治面貌', P.zz], ['出生日期', P.cs ? String(P.cs).slice(0, 10) : '']].map(([l, x]) => (
                       <div key={l} style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 10, color: 'var(--p-t4)', marginBottom: 1 }}>{l}</div>
                         <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v(x)}</div>
