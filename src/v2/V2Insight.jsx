@@ -615,8 +615,9 @@ function DetailAiInsight({ detail, detailData, win }) {
     if (!detailData) { setAiText(null); return; }
     let alive = true;
     setAiText(null);
+    const tk = localStorage.getItem('user_token');
     const p = new URLSearchParams({ studentId: detail.id, view: 'funding', windowDays: win, pct: Math.round(Number(detail.pct) || 0), level: detail.level });
-    fetch(`${API_BASE}/insight/scene/detail/ai?` + p, { headers: authHeaders })
+    fetch(`${API_BASE}/insight/scene/detail/ai?` + p, { headers: tk ? { Authorization: 'Bearer ' + tk } : {} })
       .then((r) => r.json()).then((j) => { if (alive) setAiText((j.data || '').trim()); })
       .catch(() => { if (alive) setAiText(''); });
     return () => { alive = false; };
