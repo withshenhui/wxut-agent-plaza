@@ -518,6 +518,8 @@ function ChatPage({ agent, onExit }) {
           }
         }
         mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, guide: guideData, jobs: jobsData, note: cites && cites.length ? '依据：' + cites.length + ' 条知识库出处' : null } : m)) }));
+        // 对话用量上报（真实统计，供洞察页近7天对话）
+        fetch(`${API_BASE}/insight/track-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: agent.id }) }).catch(() => {});
       } catch (e) {
         mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
       }
@@ -573,6 +575,8 @@ function ChatPage({ agent, onExit }) {
         }
       }
       mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc, streaming: false, note: '数据来源：学校数据中台 · 实时查询' } : m)) }));
+      // 对话用量上报（真实统计，供洞察页近7天对话）
+      fetch(`${API_BASE}/insight/track-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: agent.id }) }).catch(() => {});
     } catch (e) {
       mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
     }
@@ -888,7 +892,7 @@ function Models({ toast }) {
                 <div className="ds">{m.description || ''}</div>
                 <div style={{ marginTop: 13, paddingTop: 12, borderTop: '1px solid #F3F6FA' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>{(m.tags || []).map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>{(m.tags || []).filter((t) => t !== '校园免费').map((t, i) => <span key={i} className={`v2-tag ${t === '接入中' ? 'mid' : t === '建设中' ? 'off' : 'blue'}`}>{t}</span>)}</span>
                     {bld
                       ? <span className="v2-dot-off"><i />建设中</span>
                       : <span className="v2-dot-on"><i />{(m.tags || []).includes('接入中') ? '接入中' : '服务中'}</span>}
@@ -1307,9 +1311,14 @@ export default function V2App() {
     const ctx = { user, perms: (user && user.perms) || [], requireLogin, setLoginPrompt, setPermPrompt };
     // 数据洞察子工作台直链：游客停在频道首页；已登录按注册表 gate 校验
     if (p === 'insight' && ['funding', 'safety', 'academic', 'mental', 'employment'].includes(segs[1])) {
-      if (!user) { setPage('insight'); return; }
-      if (!gateCheck(resolved.byKey['insight.' + segs[1]], ctx)) { setPage('insight'); return; }
+      if (!user) { setPage('insight'); setInsightTab('overview'); return; }
+      if (!gateCheck(resolved.byKey['insight.' + segs[1]], ctx)) { setPage('insight'); setInsightTab('overview'); return; }
       setPage('insight'); setWorkbench(segs[1]); return;
+    }
+    // 洞察频道内Tab路由化：#/insight = 公开洞察，#/insight/scenes = AI场景分析（工作台列表）
+    if (p === 'insight') {
+      setInsightTab(segs[1] === 'scenes' ? 'workbench' : 'overview');
+      if (segs[1] === 'scenes') return; // 已完成路由（后续不覆盖）
     }
     // 页面/频道直链：统一走注册表 gate（游客放行浏览，登录后缺权限/未开放拦截）
     const f = featureByKey(resolved, p);
@@ -1390,7 +1399,7 @@ export default function V2App() {
         : <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={guardNav} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />)}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
-        <InsightHome tab={insightTab} setTab={setInsightTab} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
+        <InsightHome tab={insightTab} setTab={(t) => { setInsightTab(t); navigate(t === 'workbench' ? '/insight/scenes' : '/insight', { replace: true }); }} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
           if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
           if (!hasPerm('insight.' + w.key)) { setPermPrompt('该分析工作台未对您的账号开放'); return; }
           if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
