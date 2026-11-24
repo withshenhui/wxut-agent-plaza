@@ -609,7 +609,19 @@ function buildFundingInsight(detail, D, win) {
 
 function DetailAiInsight({ detail, detailData, win }) {
   // 数据未到不打字：先出一次残缺文案、数据到达再重打一遍的根因
-  const msg = detailData ? buildFundingInsight(detail, detailData, win) : '';
+  // LLM深度分析优先（服务端组装全量上下文调大模型），失败回落规则文案
+  const [aiText, setAiText] = useState(null); // null=请求中 ''=失败(用兜底) 文本=LLM结果
+  useEffect(() => {
+    if (!detailData) { setAiText(null); return; }
+    let alive = true;
+    setAiText(null);
+    const p = new URLSearchParams({ studentId: detail.id, view: 'funding', windowDays: win, pct: Math.round(Number(detail.pct) || 0), level: detail.level });
+    fetch(`${API_BASE}/insight/scene/detail/ai?` + p, { headers: authHeaders })
+      .then((r) => r.json()).then((j) => { if (alive) setAiText((j.data || '').trim()); })
+      .catch(() => { if (alive) setAiText(''); });
+    return () => { alive = false; };
+  }, [detailData, detail.id, detail.level, win]);
+  const msg = !detailData ? '' : (aiText == null ? '' : (aiText || buildFundingInsight(detail, detailData, win)));
   const [shown, setShown] = useState('');
   useEffect(() => {
     if (!msg) { setShown(''); return; }
