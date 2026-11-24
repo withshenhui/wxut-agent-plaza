@@ -502,12 +502,6 @@ select.v2-fm-i{height:40px;padding:0 11px;cursor:pointer;appearance:none;-webkit
   vertical-align:-2px;animation:xixi-caret .8s steps(1) infinite}
 @keyframes xixi-caret{50%{opacity:0}}
 
-/* 数据新鲜度胶囊（对齐原型：绿点呼吸光晕） */
-.v2-fresh-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--p-t3);background:var(--p-surface);
-  border:1px solid var(--p-line);border-radius:999px;padding:5px 12px;flex-shrink:0}
-.v2-fresh-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--p-success);
-  box-shadow:0 0 0 3px #10B98122;animation:fresh-pulse 2s ease-in-out infinite}
-@keyframes fresh-pulse{0%,100%{box-shadow:0 0 0 3px #10B98122}50%{box-shadow:0 0 0 5px #10B98110}}
 
 /* 红黄绿灯档位 */
 .v2-light{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;isolation:isolate;z-index:0;position:relative}
@@ -611,10 +605,13 @@ body.v2-modal-open{overflow:hidden}
 .v2t-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
 .v2t-sec-t{font-size:15px;font-weight:600;color:var(--aink);display:flex;align-items:center;gap:8px}
 .v2t-cnt{font-size:11.5px;color:var(--p-t4);font-weight:400}
-/* 卡片标题行（pc-t）+ AI 起草状态提示（此前 pc-t/v2t-cur 无样式 → 标签与文案挤在一起、竖线是裸字符） */
-.pc-t{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--aink);line-height:1.5}
+/* 卡片标题行（pc-t）+ AI 起草状态提示（此前 pc-t/v2t-cur 无样式 → 标签与文案挤在一起、竖线是裸字符）
+   与全站分区标题 .v2t-sec-t 保持同一观感（15px/600/gap8），避免右侧卡头看起来"没加载样式" */
+.pc-t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--aink);line-height:1.5}
 .pc-hint{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:400;color:var(--p-t3)}
 .pc-hint .caret{display:inline-block;width:2px;height:13px;background:var(--el-primary);vertical-align:-2px;animation:xixi-caret .8s steps(1) infinite}
+/* 后缀文案兜底：脱离 flex 容器时也有间距（旧版 pc-t 无 flex 时"导出预览A4 · 原版式"会粘在一起） */
+.pc-head .v2t-cnt{margin-left:2px}
 .v2t-warn{display:flex;gap:10px;align-items:flex-start;background:#FFFBEB;border:1px solid #FDE68A;
   border-radius:12px;padding:10px 14px;font-size:12.5px;color:#92600A;line-height:1.75;margin-top:14px}
 .v2t-wb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
@@ -789,6 +786,13 @@ select.v2t-inp{cursor:pointer}
 .doc-sum-tbl .sum-lb{width:64px;text-align:center;background:#FAFAF7;font-size:12.5px;font-weight:700;
   letter-spacing:0;line-height:1.9;color:#333;padding:12px 4px}
 .doc-sum-tbl .sum-bd{padding:10px 12px}
+
+/* 动态模板预览：分组标题行 / 值列 / 叙述整行 */
+.doc-tbl td.grp{background:#F3F6FB;text-align:center;font-weight:700;letter-spacing:2px;color:#2b3a55}
+.doc-tbl td.vl{color:#111}
+.doc-tbl td.full{color:#111;line-height:2;vertical-align:top}
+.doc-tbl .doc-full{min-height:64px;white-space:pre-wrap;word-break:break-all;text-align:justify}
+.doc-tbl td.full .doc-empty{color:#9AA7BB}
 
 /* ================= RBAC 学院范围锁 ================= */
 .v2-scope-lock {
@@ -1067,3 +1071,7 @@ select.v2t-inp{cursor:pointer}
 /* 记忆（User Memory）预填标记 */
 .v2-mem-tag{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:10.5px;font-weight:600;color:var(--el-primary);background:var(--el-primary-l9);border:1px solid var(--el-primary-l8);border-radius:999px;padding:1px 7px;cursor:pointer;user-select:none;line-height:1.5}
 .v2-mem-tag:hover{background:var(--el-primary-l8)}
+/* 智能填报 步骤1：自定义格式（网格内第5张卡，紧挨模板卡右侧） */
+.v2t-tpl-card.custom{border-style:dashed;border-color:#CBD5E1;background:#FAFBFD}
+.v2t-tpl-card.custom:hover{border-color:var(--el-primary);background:var(--el-primary-l9)}
+.v2t-tpl-card.custom .t-ic{color:var(--el-primary);background:var(--el-primary-l9)}

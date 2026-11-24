@@ -185,7 +185,6 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
         </div>
         {hasWindow && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span className="v2-fresh-pill">数据截至 {k && k.dataDate ? k.dataDate : '…'}</span>
             <div className="v2-tabs">
               {[14, 30, 60, 90].map((w) => (
                 <div key={w} className={`v2-tab${win === w ? ' on' : ''}`} onClick={() => setWin(w)}>近{w}天</div>
