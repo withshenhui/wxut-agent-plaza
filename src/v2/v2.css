@@ -1075,3 +1075,5 @@ select.v2t-inp{cursor:pointer}
 .v2t-tpl-card.custom{border-style:dashed;border-color:#CBD5E1;background:#FAFBFD}
 .v2t-tpl-card.custom:hover{border-color:var(--el-primary);background:var(--el-primary-l9)}
 .v2t-tpl-card.custom .t-ic{color:var(--el-primary);background:var(--el-primary-l9)}
+.dw-ai-think{font-size:11.5px;color:var(--p-t4);font-style:italic;line-height:1.6}
+.dw-ai-think b{color:var(--p-t3);font-style:normal;font-weight:600}
