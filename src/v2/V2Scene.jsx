@@ -377,8 +377,8 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)' }}>{detailData.companions.stable}<small style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}> 人</small></div>
                         </div>
                         <div style={{ flex: 1, background: '#fff', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '7px 9px' }}>
-                          <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>有陪伴天数</div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)' }}>{detailData.companions.companyDays}<small style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}> / {win || 30} 天</small></div>
+                          <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>独餐率</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: detailData.companions.soloRate != null && detailData.companions.soloRate >= 80 ? 'var(--abad)' : 'var(--aink)' }}>{detailData.companions.soloRate != null ? detailData.companions.soloRate + '%' : '—'}<small style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}> {detailData.companions.companyDays}/{win || 30}天有陪伴</small></div>
                         </div>
                       </div>
                       {(detailData.companions.top || []).length > 0 && (
@@ -388,7 +388,7 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                           ))}
                         </div>
                       )}
-                      <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 7, lineHeight: 1.5 }}>口径：同餐厅±2分钟共现≥3天为稳定饭友；仅作关怀线索参考，不贴标签。</div>
+                      <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 7, lineHeight: 1.5 }}>严格口径：同窗口机±60秒共现≥3天为稳定饭友（已验真85%为同班同学）；独餐率按同餐厅±2分钟陪伴判定；零饭友属更强孤独信号；仅作关怀线索，不贴标签。</div>
                     </div>
                   )}
                 </div>
