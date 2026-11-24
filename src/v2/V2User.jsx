@@ -47,7 +47,18 @@ export function V2UserProvider({ children }) {
 
     if (token) {
       getUserInfo()
-        .then((info) => setUser(info))
+        .then((info) => {
+          setUser(info);
+          // 登录人切换时清除前一位用户的对话历史（localStorage按浏览器存，不跟人走）
+          const lastUid = localStorage.getItem('v2-last-user');
+          const curUid = String(info.id || info.userId || '');
+          if (lastUid && curUid && lastUid !== curUid) {
+            Object.keys(localStorage).forEach((k) => {
+              if (k.startsWith('v2-chat-')) localStorage.removeItem(k);
+            });
+          }
+          if (curUid) localStorage.setItem('v2-last-user', curUid);
+        })
         .catch(() => {
           localStorage.removeItem('user_token');
           // token 失效：回到游客态（V2 默认游客预览，敏感操作时再引导登录）
