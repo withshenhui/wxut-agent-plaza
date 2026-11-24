@@ -368,6 +368,29 @@ export function SceneWorkbench({ sceneKey, onBack, toast, user, canExport, dataS
                     ))}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 10, lineHeight: 1.6, borderTop: '1px solid #E7EDF5', paddingTop: 8 }}>档案来自学籍库（部分学生字段缺失显示 —），供谈心谈话与家庭情况复核参考。</div>
+                  {sceneKey === 'mental' && detailData && detailData.companions && (
+                    <div style={{ marginTop: 10, borderTop: '1px solid #E7EDF5', paddingTop: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--p-t3)', marginBottom: 7, letterSpacing: 1 }}>共餐伙伴 · 孤独就餐信号</div>
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <div style={{ flex: 1, background: '#fff', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '7px 9px' }}>
+                          <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>稳定饭友</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)' }}>{detailData.companions.stable}<small style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}> 人</small></div>
+                        </div>
+                        <div style={{ flex: 1, background: '#fff', border: '1px solid var(--p-line2)', borderRadius: 9, padding: '7px 9px' }}>
+                          <div style={{ fontSize: 10, color: 'var(--p-t4)' }}>有陪伴天数</div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)' }}>{detailData.companions.companyDays}<small style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}> / {win || 30} 天</small></div>
+                        </div>
+                      </div>
+                      {(detailData.companions.top || []).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                          {detailData.companions.top.map((t, i) => (
+                            <span key={i} style={{ fontSize: 11, background: 'var(--el-primary-l9)', color: 'var(--p-t2)', borderRadius: 6, padding: '3px 8px' }}>{t.name} · {t.days}天</span>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 10, color: 'var(--p-t4)', marginTop: 7, lineHeight: 1.5 }}>口径：同餐厅±2分钟共现≥3天为稳定饭友；仅作关怀线索参考，不贴标签。</div>
+                    </div>
+                  )}
                 </div>
                 );
               })()}
