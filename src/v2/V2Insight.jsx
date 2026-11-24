@@ -621,17 +621,20 @@ function DetailAiInsight({ detail, detailData, win }) {
       .then((reader) => {
         const dec = new TextDecoder();
         let acc = '';
+        // SSE解析：event行切换事件名；data行仅在默认(增量)事件下累计；注释行忽略
+        const parseSse = (raw) => {
+          let cur = 'message'; let text = '';
+          for (const line of raw.split('\n')) {
+            if (line.startsWith('event:')) cur = line.slice(6).trim();
+            else if (line.startsWith('data:') && cur === 'message') text += line.slice(5);
+          }
+          return text;
+        };
         const pump = () => reader.read().then(({ done, value }) => {
           if (!alive) return;
-          if (done) { setAiText(acc.trim() || ''); return; }
+          if (done) { setAiText(parseSse(acc).trim() || ''); return; }
           acc += dec.decode(value, { stream: true });
-          // SSE解析：event行切换事件名，data行仅在默认(增量)事件下累计
-          let cur = 'message'; let text = '';
-          for (const line of acc.split('\n')) {
-            if (line.startsWith('event:')) cur = line.slice(6).trim();
-            else if (line.startsWith('data:') && (cur === 'message' || cur === 'd')) text += line.slice(5);
-          }
-          setStream(text);
+          setStream(parseSse(acc));
           pump();
         });
         pump();
