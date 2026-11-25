@@ -58,7 +58,10 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
           <h2>AI 数据工场</h2>
           <p>接入 → 清洗 → 标注 → 数据集版本 → 导出，为校本 / 垂域模型微调提供数据闭环</p>
         </div>
-        <button className="btn-primary" onClick={() => setCreateOpen(true)}><Icon name="plus" size={13} /> 新建数据集</button>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <button className="v2-btn ghost" onClick={() => navigate('/dataset/manual')}><Icon name="book" size={13} /> 标注操作手册</button>
+          <button className="btn-primary" onClick={() => setCreateOpen(true)}><Icon name="plus" size={13} /> 新建数据集</button>
+        </div>
       </div>
       <div className="v2-body">
       <div className="v2-ai-banner" style={{ marginBottom: 16 }}>
