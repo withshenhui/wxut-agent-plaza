@@ -1121,3 +1121,24 @@ select.v2t-inp{cursor:pointer}
 .wx-placeholder{min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:24px;text-align:center;font-size:14px;color:var(--p-t3,#64748B);
   background:var(--p-bg,#F8FAFC)}
+
+/* 移动广场（T6）：搜索 + 分类横滑 + 卡片单列 */
+.wx-page{max-width:560px;margin:0 auto;padding:12px 12px 24px;background:#F4F7FB;min-height:100vh}
+.wx-head{display:flex;align-items:center;gap:10px;padding:6px 2px 12px}
+.wx-head .wx-logo{width:38px;height:38px;object-fit:contain}
+.wx-head .t1{font-size:16px;font-weight:700;color:var(--p-t1,#182234)}
+.wx-head .t2{font-size:11px;color:var(--p-t4,#7A8A9E)}
+.wx-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--p-line,#E6ECF3);border-radius:12px;height:44px;padding:0 12px}
+.wx-search input{flex:1;border:none;outline:none;font-size:14px;background:transparent}
+.wx-chips{display:flex;gap:8px;overflow-x:auto;padding:12px 2px;-webkit-overflow-scrolling:touch}
+.wx-chip{flex:0 0 auto;font-size:13px;padding:6px 14px;border-radius:18px;background:#fff;border:1px solid var(--p-line,#E6ECF3);color:var(--p-t3,#4A5A6E)}
+.wx-chip.on{background:var(--v2-blue,#4A6CF7);border-color:var(--v2-blue,#4A6CF7);color:#fff}
+.wx-list{display:flex;flex-direction:column;gap:10px}
+.wx-card{display:flex;gap:12px;background:#fff;border:1px solid var(--p-line,#E6ECF3);border-radius:14px;padding:14px}
+.wx-card.bld{opacity:.7}
+.wx-card .nm{font-size:15px;font-weight:600;color:var(--p-t1,#182234);display:flex;align-items:center;gap:6px}
+.wx-card .nm .rec{font-size:10px;color:#fff;background:#F5A623;border-radius:6px;padding:1px 6px}
+.wx-card .ds{font-size:12.5px;color:var(--p-t3,#4A5A6E);margin:4px 0 6px;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wx-card .meta{font-size:11px;color:var(--p-t4,#7A8A9E);display:flex;gap:12px}
+.wx-empty{text-align:center;color:var(--p-t4,#7A8A9E);font-size:13px;padding:40px 0}
