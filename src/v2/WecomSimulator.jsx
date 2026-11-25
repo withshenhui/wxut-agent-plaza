@@ -9,6 +9,20 @@ const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 const ROLE_LABELS = { admin: '平台管理员', leader: '校领导', college_admin: '学院管理员', user: '普通用户' };
 const SCOPE_LABELS = { all: '全校数据', college: '本院数据', none: '无数据范围' };
 
+// 设备型号预设（name + 逻辑尺寸 w×h，即屏幕可视区，不含手机壳 12px 边距）
+const DEVICES = [
+  { id: 'se', name: 'iPhone SE', w: 375, h: 667 },
+  { id: 'iphone12', name: 'iPhone 12/13', w: 390, h: 844 },
+  { id: 'iphone14pm', name: 'iPhone 14 Pro Max', w: 430, h: 932 },
+  { id: 'pixel7', name: 'Pixel 7', w: 412, h: 915 },
+  { id: 's20u', name: 'Galaxy S20 Ultra', w: 412, h: 915 },
+  { id: 'ipadmini', name: 'iPad mini', w: 768, h: 1024 },
+  { id: 'custom', name: '自定义', w: 390, h: 844 },
+];
+const W_MIN = 280, W_MAX = 1200, H_MIN = 400, H_MAX = 1400; // 自定义尺寸上下限(px)
+const SHELL = 12; // 手机壳单边边距(px)
+const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : lo));
+
 // V2 鉴权铁律：命中鉴权接口的 fetch 必须带 Authorization: Bearer <admin_token||user_token>
 function authHeaders() {
   let t = '';
@@ -30,6 +44,18 @@ export default function WecomSimulator({ toast }) {
   const [resolved, setResolved] = useState(undefined);
   const [cat, setCat] = useState('全部');
   const [gate, setGate] = useState(null);
+  // —— 设备型号 + 自定义尺寸（Chrome DevTools device toolbar 风格）——
+  const [devId, setDevId] = useState('iphone12');
+  const [cw, setCw] = useState(390);
+  const [ch, setCh] = useState(844);
+  const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 900));
+
+  // 监听窗口尺寸变化，实时重算缩放
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // 用户列表（管理员接口，带 token）
   useEffect(() => {
@@ -83,6 +109,19 @@ export default function WecomSimulator({ toast }) {
   );
   const rows = agents.filter((a) => cat === '全部' || a.categoryName === cat);
 
+  // 设备尺寸 → 手机壳外框（屏幕 w×h + 单边 12px 壳边距）
+  const dev = DEVICES.find((d) => d.id === devId) || DEVICES[1];
+  const isCustom = devId === 'custom';
+  const w = isCustom ? clampN(cw, W_MIN, W_MAX) : dev.w;
+  const h = isCustom ? clampN(ch, H_MIN, H_MAX) : dev.h;
+  const frameW = w + SHELL * 2;
+  const frameH = h + SHELL * 2;
+  // 高度自适应：可用高 ≈ 视口高 - 顶栏/工具条/内边距；k 只缩小不放大，保证整屏放得下且尽量大
+  const availH = Math.max(240, vh - 170);
+  const k = Math.min(1, availH / frameH);
+  const onW = (e) => { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) setCw(n); };
+  const onH = (e) => { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) setCh(n); };
+
   const clickAgent = (a) => {
     const r = simulateGate(a, { user: preview.user, perms: preview.perms, scope: preview.scope, resolved });
     setGate({ name: a.name, ...r });
@@ -120,11 +159,32 @@ export default function WecomSimulator({ toast }) {
         )}
       </div>
 
-      {/* 右：手机框预览 */}
+      {/* 右：设备工具条 + 手机框预览（按所选型号渲染并按视口高度自适应缩放） */}
       <div className="v2sim-right">
-        <div className="v2sim-phone">
-          <div className="v2sim-notch" />
-          <div className="v2sim-screen">
+        <div className="v2sim-toolbar">
+          <select className="v2sim-devsel" value={devId} onChange={(e) => setDevId(e.target.value)} title="设备型号">
+            {DEVICES.map((d) => (
+              <option key={d.id} value={d.id}>{d.id === 'custom' ? d.name : `${d.name} · ${d.w}×${d.h}`}</option>
+            ))}
+          </select>
+          {isCustom && (
+            <span className="v2sim-dims">
+              <input type="number" min={W_MIN} max={W_MAX} step="1" value={cw} onChange={onW}
+                onBlur={() => setCw((v) => clampN(v, W_MIN, W_MAX))} title={`宽 ${W_MIN}–${W_MAX}px`} />
+              <span>×</span>
+              <input type="number" min={H_MIN} max={H_MAX} step="1" value={ch} onChange={onH}
+                onBlur={() => setCh((v) => clampN(v, H_MIN, H_MAX))} title={`高 ${H_MIN}–${H_MAX}px`} />
+              <span>px</span>
+            </span>
+          )}
+          <span className="v2sim-size">{w} × {h}</span>
+          <span className="v2sim-zoom-badge">缩放 {Math.round(k * 100)}%</span>
+        </div>
+        <div className="v2sim-stage">
+          <div className="v2sim-zoom" style={{ transform: `scale(${k})`, transformOrigin: 'top center', height: frameH * k }}>
+            <div className="v2sim-phone" style={{ width: frameW, height: frameH }}>
+              <div className="v2sim-notch" />
+              <div className="v2sim-screen">
             {!preview ? (
               <div className="v2sim-empty">
                 <Icon name="phone" size={40} />
@@ -174,6 +234,8 @@ export default function WecomSimulator({ toast }) {
                 <button className="v2sim-toast-close" onClick={() => setGate(null)}>✕</button>
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

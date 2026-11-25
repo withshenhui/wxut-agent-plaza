@@ -1175,8 +1175,18 @@ select.v2t-inp{cursor:pointer}
 .v2sim-kv b{color:var(--aink);font-weight:600}
 .v2sim-kv-nav{align-items:flex-start}
 .v2sim-navs{display:flex;flex-wrap:wrap;gap:5px}
-.v2sim-right{display:flex;justify-content:center}
-.v2sim-phone{position:relative;width:390px;height:780px;background:#0d1220;border-radius:38px;padding:12px;box-shadow:0 24px 60px rgba(20,40,80,.22);flex-shrink:0}
+.v2sim-right{display:flex;flex-direction:column;align-items:center;gap:12px}
+/* 设备型号工具条（Chrome DevTools device toolbar 风格） */
+.v2sim-toolbar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;width:100%;max-width:620px;background:var(--p-surface);border:1px solid var(--p-line);border-radius:11px;padding:8px 12px}
+.v2sim-devsel{height:32px;font-size:12.5px;border:1px solid var(--p-line2);border-radius:8px;padding:0 8px;background:var(--p-surface);color:var(--p-text);outline:none;cursor:pointer}
+.v2sim-dims{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--p-t3)}
+.v2sim-dims input{width:66px;height:32px;border:1px solid var(--p-line2);border-radius:8px;padding:0 8px;font-size:12.5px;outline:none;background:var(--p-surface);color:var(--p-text);text-align:center}
+.v2sim-size{font-size:12.5px;color:var(--p-t3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.v2sim-zoom-badge{margin-left:auto;font-size:11.5px;color:var(--el-primary);background:var(--el-primary-l9);border:1px solid var(--el-primary-l8);border-radius:999px;padding:2px 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 自适应缩放舞台：手机框按所选尺寸渲染，外套 transform:scale 适配视口高度 */
+.v2sim-stage{display:flex;justify-content:center;align-items:flex-start;width:100%}
+.v2sim-zoom{transform-origin:top center;will-change:transform}
+.v2sim-phone{position:relative;background:#0d1220;border-radius:38px;padding:12px;box-shadow:0 24px 60px rgba(20,40,80,.22);flex-shrink:0}
 .v2sim-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:20px;background:#0d1220;border-radius:0 0 12px 12px;z-index:2}
 .v2sim-screen{position:relative;width:100%;height:100%;background:#F4F7FB;border-radius:28px;overflow:hidden;display:flex;flex-direction:column}
 .v2sim-screen .wx-page{min-height:100%;max-width:none;flex:1;overflow-y:auto}
@@ -1191,4 +1201,4 @@ select.v2t-inp{cursor:pointer}
 .v2sim-toast .tx b{color:var(--aink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .v2sim-toast .tx span{color:var(--p-t2)}
 .v2sim-toast-close{border:none;background:none;color:var(--p-t4);cursor:pointer;font-size:13px;padding:2px 4px}
-@media (max-width:900px){.v2sim-wrap{grid-template-columns:1fr}.v2sim-left{position:static}.v2sim-phone{transform:scale(.92);transform-origin:top center}}
+@media (max-width:900px){.v2sim-wrap{grid-template-columns:1fr}.v2sim-left{position:static}}
