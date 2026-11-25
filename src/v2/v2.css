@@ -1164,3 +1164,31 @@ select.v2t-inp{cursor:pointer}
 /* 窄屏（移动气泡 88% 宽）引用块不换行：序号/问答标签不许被压成两行（PC 本就不换行，nowrap 为等价加固） */
 .v2-cite .tag{white-space:nowrap;flex-shrink:0}
 .v2-cite .no{flex-shrink:0}
+/* ===== 企微仿真（档1：纯预览 + 门禁模拟，不真发数据/对话请求） ===== */
+.v2sim-wrap{display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
+.v2sim-left{position:sticky;top:12px}
+.v2sim-search{width:100%;margin:12px 0 10px;height:34px;border:1px solid var(--p-line2);border-radius:9px;padding:0 10px;font-size:13px;outline:none;background:var(--p-surface);color:var(--p-text)}
+.v2sim-select{width:100%}
+.v2sim-summary{margin-top:14px}
+.v2sim-kv{display:flex;gap:10px;padding:3px 0;font-size:12.5px}
+.v2sim-kv>span:first-child{width:64px;flex:0 0 auto;color:var(--p-t3)}
+.v2sim-kv b{color:var(--aink);font-weight:600}
+.v2sim-kv-nav{align-items:flex-start}
+.v2sim-navs{display:flex;flex-wrap:wrap;gap:5px}
+.v2sim-right{display:flex;justify-content:center}
+.v2sim-phone{position:relative;width:390px;height:780px;background:#0d1220;border-radius:38px;padding:12px;box-shadow:0 24px 60px rgba(20,40,80,.22);flex-shrink:0}
+.v2sim-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:20px;background:#0d1220;border-radius:0 0 12px 12px;z-index:2}
+.v2sim-screen{position:relative;width:100%;height:100%;background:#F4F7FB;border-radius:28px;overflow:hidden;display:flex;flex-direction:column}
+.v2sim-screen .wx-page{min-height:100%;max-width:none;flex:1;overflow-y:auto}
+.v2sim-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--p-t4);font-size:13px}
+.v2sim-toast{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-size:12.5px;box-shadow:0 10px 26px rgba(20,40,80,.2);z-index:3;background:#fff}
+.v2sim-toast.ok{border:1px solid #BFE6D2;background:#F0FBF5}
+.v2sim-toast.no{border:1px solid #F3C9C9;background:#FDF2F2}
+.v2sim-toast .ic{flex-shrink:0;display:flex}
+.v2sim-toast.ok .ic{color:var(--p-success)}
+.v2sim-toast.no .ic{color:var(--abad)}
+.v2sim-toast .tx{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.v2sim-toast .tx b{color:var(--aink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v2sim-toast .tx span{color:var(--p-t2)}
+.v2sim-toast-close{border:none;background:none;color:var(--p-t4);cursor:pointer;font-size:13px;padding:2px 4px}
+@media (max-width:900px){.v2sim-wrap{grid-template-columns:1fr}.v2sim-left{position:static}.v2sim-phone{transform:scale(.92);transform-origin:top center}}
