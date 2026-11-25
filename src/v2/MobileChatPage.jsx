@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAgentChat } from './useAgentChat.js';
+import { useTypewriter } from './useTypewriter.js';
 import { AgentAvatar, Icon } from './ui.jsx';
 import { renderMd, jumpToCite, escapeHtml2 } from './V2App.jsx';
 import { EmploymentIntentCard, EmploymentJobCards, StudentProfileCard } from './V2Employment.jsx';
@@ -17,6 +18,18 @@ export default function MobileChatPage({ agent, user, onBack, onNeedLogin }) {
     convs, activeId, setActiveId, msgs, input, setInput, send, newChat, delConv,
     loading, toolStatus, suggestions, phPool, phIdx, isEmp, empProfile, bottomRef,
   } = useAgentChat(agent, { user, onNeedLogin });
+  const bodyRef = useRef(null);
+
+  // 流式期间跟随滚动到底：仅在用户贴近底部时跟随，避免打断手动上滑查看历史；
+  // 长度取自"流式中最后一条"的目标内容（分片增长即触发），滴字本身不再额外滚动。
+  const last = msgs[msgs.length - 1];
+  const lastStreamLen = last && last.streaming ? (last.content || '').length : 0;
+  useEffect(() => {
+    if (!lastStreamLen) return;
+    const el = bodyRef.current;
+    if (!el || el.scrollHeight - el.scrollTop - el.clientHeight > 120) return;
+    el.scrollTop = el.scrollHeight;
+  }, [lastStreamLen]);
 
   return (
     <div style={S.root}>
@@ -33,46 +46,17 @@ export default function MobileChatPage({ agent, user, onBack, onNeedLogin }) {
       </header>
 
       {/* 消息区 */}
-      <div style={S.body}>
+      <div style={S.body} ref={bodyRef}>
         {isEmp && empProfile && <StudentProfileCard profile={empProfile} />}
         {msgs.map((m) => (
           <div key={m.id} className={`wx-msg ${m.sender === 'user' ? 'user' : 'ai'}`}>
-            <div className="wx-bubble v2-md">
-              {m.sender === 'user'
-                ? <div dangerouslySetInnerHTML={{ __html: escapeHtml2(m.content).replace(/\n/g, '<br>') }} />
-                : m.content
-                  ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content, m.citations ? m.citations.length : 0) }} onClick={jumpToCite} />
-                  : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
-              {/* 引用卡置于气泡内：jumpToCite 依赖 closest('.v2-bubble, .wx-bubble') 内查找 .v2-cite（移动气泡用 .wx-bubble） */}
-              {m.sender === 'agent' && !m.streaming && m.citations && m.citations.length > 0 && (
-                <div className="v2-cites">
-                  <div className="v2-cites-t">原文引用（{m.citations.length}）</div>
-                  {m.citations.map((c) => (
-                    <div key={c.no} data-no={c.no} className="v2-cite" title={c.q || c.txt || c.a || '点击查看原文'}>
-                      <span className="no">[{c.no}]</span>
-                      <span className={`tag ${c.type === 'qa' ? 'blue' : 'grey'}`}>{c.type === 'qa' ? '问答' : '原文'}</span>
-                      <span className="src">{c.doc}{c.loc ? ` · ${c.loc}` : ''}</span>
-                    </div>
-                  ))}
+            {m.sender === 'user'
+              ? (
+                <div className="wx-bubble v2-md">
+                  <div dangerouslySetInnerHTML={{ __html: escapeHtml2(m.content).replace(/\n/g, '<br>') }} />
                 </div>
-              )}
-              {m.sender === 'agent' && !m.streaming && m.guide && (
-                <EmploymentIntentCard guide={m.guide} onSubmit={async (picked, summary) => {
-                  const tk = localStorage.getItem('user_token');
-                  try {
-                    await fetch(`${API_BASE}/employment/intent`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
-                      body: JSON.stringify(picked),
-                    });
-                  } catch (e) { /* 意向保存失败不阻塞推荐 */ }
-                  send(summary || '帮我推荐适合我的岗位');
-                }} />
-              )}
-              {/* 岗位卡等"思考"结束（正文开始/回复完成）后再出现，避免与思考提示同时在场 */}
-              {m.sender === 'agent' && m.jobs && m.jobs.length > 0 && (m.content || !m.streaming) && <EmploymentJobCards jobs={m.jobs} onAsk={(q) => send(q)} />}
-              {m.sender === 'agent' && !m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
-            </div>
+              )
+              : <AiBubble m={m} send={send} toolStatus={toolStatus} />}
           </div>
         ))}
         <div ref={bottomRef} />
@@ -120,6 +104,53 @@ export default function MobileChatPage({ agent, user, onBack, onNeedLogin }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * 正在流式的 AI 气泡（抽出子组件以便逐条使用 useTypewriter —— msgs.map 内不能调 hook）。
+ * - 流式中：用打字机把目标内容逐字"滴"出来（renderMd(shown)），避免 SSE 整片替换的跳变；
+ * - 非流式（历史/已完成）：直接渲染 m.content，不做二次动画；
+ * - 引用块/就业意向卡/画像卡/岗位卡/note 均沿用原条件（多为 !m.streaming 才显示）。
+ */
+function AiBubble({ m, send, toolStatus }) {
+  const shown = useTypewriter(m.content, m.streaming);
+  const text = m.streaming ? shown : m.content;
+  return (
+    <div className="wx-bubble v2-md">
+      {text
+        ? <div dangerouslySetInnerHTML={{ __html: renderMd(text, m.citations ? m.citations.length : 0) }} onClick={jumpToCite} />
+        : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
+      {/* 引用卡置于气泡内：jumpToCite 依赖 closest('.v2-bubble, .wx-bubble') 内查找 .v2-cite（移动气泡用 .wx-bubble） */}
+      {!m.streaming && m.citations && m.citations.length > 0 && (
+        <div className="v2-cites">
+          <div className="v2-cites-t">原文引用（{m.citations.length}）</div>
+          {m.citations.map((c) => (
+            <div key={c.no} data-no={c.no} className="v2-cite" title={c.q || c.txt || c.a || '点击查看原文'}>
+              <span className="no">[{c.no}]</span>
+              <span className={`tag ${c.type === 'qa' ? 'blue' : 'grey'}`}>{c.type === 'qa' ? '问答' : '原文'}</span>
+              <span className="src">{c.doc}{c.loc ? ` · ${c.loc}` : ''}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {!m.streaming && m.guide && (
+        <EmploymentIntentCard guide={m.guide} onSubmit={async (picked, summary) => {
+          const tk = localStorage.getItem('user_token');
+          try {
+            await fetch(`${API_BASE}/employment/intent`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
+              body: JSON.stringify(picked),
+            });
+          } catch (e) { /* 意向保存失败不阻塞推荐 */ }
+          send(summary || '帮我推荐适合我的岗位');
+        }} />
+      )}
+      {/* 岗位卡等"思考"结束（正文开始/回复完成）后再出现，避免与思考提示同时在场 */}
+      {m.jobs && m.jobs.length > 0 && (m.content || !m.streaming) && <EmploymentJobCards jobs={m.jobs} onAsk={(q) => send(q)} />}
+      {!m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
     </div>
   );
 }

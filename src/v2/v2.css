@@ -1160,3 +1160,7 @@ select.v2t-inp{cursor:pointer}
 .wx-bubble{max-width:88%;border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.6}
 .wx-msg.user .wx-bubble{background:var(--v2-blue,#4A6CF7);color:#fff}
 .wx-msg.ai .wx-bubble{background:#F2F5FA;color:var(--p-t1,#182234)}
+
+/* 窄屏（移动气泡 88% 宽）引用块不换行：序号/问答标签不许被压成两行（PC 本就不换行，nowrap 为等价加固） */
+.v2-cite .tag{white-space:nowrap;flex-shrink:0}
+.v2-cite .no{flex-shrink:0}
