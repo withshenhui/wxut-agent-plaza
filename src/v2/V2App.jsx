@@ -52,7 +52,7 @@ export function jumpToCite(e) {
   const el = e.target.closest ? e.target.closest('.v2-cref') : null;
   if (!el) return;
   const no = Number(el.getAttribute('data-ref'));
-  const bubble = e.currentTarget.closest('.v2-bubble') || e.currentTarget;
+  const bubble = e.currentTarget.closest('.v2-bubble, .wx-bubble') || e.currentTarget;
   const cite = Array.from(bubble.querySelectorAll('.v2-cite'))
     .find((x) => Number(x.getAttribute('data-no')) === no);
   if (!cite) return;
@@ -1666,7 +1666,7 @@ export default function V2App() {
   if (wecomMode) return (
     <>
       {chatAgent
-        ? <MobileChatSheet agent={chatAgent} user={user} onClose={() => setChatAgent(null)} />
+        ? <MobileChatSheet agent={chatAgent} user={user} onClose={() => { setChatAgent(null); navigate('/', { replace: true }); window.scrollTo(0, 0); }} />
         : <MobilePlaza agents={agents} cats={cats} onChat={launch} onNeedLogin={setLoginPrompt} />}
     </>
   );

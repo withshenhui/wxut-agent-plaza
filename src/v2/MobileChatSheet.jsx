@@ -136,7 +136,7 @@ export default function MobileChatSheet({ agent, user, onClose }) {
                   : m.content
                     ? <div dangerouslySetInnerHTML={{ __html: renderMd(m.content, m.citations ? m.citations.length : 0) }} onClick={jumpToCite} />
                     : <div className="v2-loading-inline"><span className="v2-typing"><i></i><i></i><i></i></span>{toolStatus || '正在思考…'}</div>}
-                {/* 引用卡置于气泡内：jumpToCite 依赖 closest('.v2-bubble') 内查找 .v2-cite（与桌面同构） */}
+                {/* 引用卡置于气泡内：jumpToCite 依赖 closest('.v2-bubble, .wx-bubble') 内查找 .v2-cite（移动气泡用 .wx-bubble） */}
                 {m.sender === 'agent' && !m.streaming && m.citations && m.citations.length > 0 && (
                   <div className="v2-cites">
                     <div className="v2-cites-t">原文引用（{m.citations.length}）</div>
