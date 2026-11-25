@@ -11,7 +11,7 @@ import { InsightHome, FundingWorkbench } from './V2Insight.jsx';
 import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
-import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards } from './V2Employment.jsx';
+import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards, StudentProfileCard } from './V2Employment.jsx';
 import { XixiLoading, confirmDialog } from './ui.jsx';
 import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
 import { marked } from 'marked';
@@ -392,10 +392,19 @@ function mdLite(t) {
   return out.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
 }
 
-function ChatPage({ agent, onExit }) {
+/* 就业助手：意向卡选项（与后端 guide 事件一致）——首屏即展示，对齐原型 */
+const EMP_GUIDE = {
+  cities: ['无锡', '苏州', '南京', '上海', '不限'],
+  types: ['全职', '实习', '都看'],
+  pays: ['5K 以下', '5-8K', '8-12K', '12K 以上', '不限'],
+};
+
+function ChatPage({ agent, onExit, onNeedLogin, user }) {
   const navigate = useNavigate();
   const [convs, setConvs] = useState(() => loadConvs(agent.id));
-  const [activeId, setActiveId] = useState(() => (loadConvs(agent.id)[0]?.id ?? null));
+  // 就业助手：进入即呈现"欢迎词 + 意向卡"，不自动恢复上次会话（历史仍保留在左栏，可点开）
+  const [activeId, setActiveId] = useState(() => (
+    agent.agentType === 'native-employment' ? null : (loadConvs(agent.id)[0]?.id ?? null)));
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [toolStatus, setToolStatus] = useState('');
@@ -424,8 +433,87 @@ function ChatPage({ agent, onExit }) {
       .then((j) => setCurrentModel(j.data || '')).catch(() => {});
   }, []);
 
-  // 持久化（最多 30 个会话）
-  useEffect(() => { try { localStorage.setItem(storageKey, JSON.stringify(convs.slice(0, 30))); } catch {} }, [convs, storageKey]);
+  // 服务端对话历史：加载时拉API（跟登录人走），保存时双写API+localStorage
+  const serverSessionIds = useRef({}); // convId -> server sessionId 映射
+  const historyLoaded = useRef(false);
+  const remoteReady = useRef(false);   // 服务端历史已就绪（或无需拉取）前不写服务端，避免把本地缓存当新会话重复创建
+  const savedSig = useRef({});         // convId -> 已保存的最后一轮签名（防同一轮重复写、消息重复堆积）
+  useEffect(() => {
+    if (historyLoaded.current) return;
+    historyLoaded.current = true;
+    const tk = localStorage.getItem('user_token');
+    if (!tk) { remoteReady.current = true; return; }
+    fetch(`${API_BASE}/chat/history?agentId=${agent.id}`, { headers: { Authorization: `Bearer ${tk}` } })
+      .then((r) => r.json()).then((j) => {
+        const sessions = (j.data || []);
+        if (!sessions.length) { remoteReady.current = true; return; }
+        // 服务端有历史 → 覆盖本地（服务端是权威源）
+        const remote = sessions.map((s) => ({
+          id: Number(String(s.id).replace(/-/g, '').slice(0, 13)) || Date.now(),
+          title: s.title || '对话',
+          messages: (s.messages || []).map((m, i) => ({
+            id: i, sender: m.sender, content: m.content,
+            citations: null, guide: null, jobs: null, note: null,
+          })),
+          createdAt: s.createdAt || '',
+        }));
+        serverSessionIds.current = {};
+        sessions.forEach((s, i) => {
+          serverSessionIds.current[remote[i].id] = s.id;
+        });
+        setConvs(remote.slice(0, 30));
+        // 就业助手：历史只进左栏列表，不自动打开（进入即欢迎词+意向卡，对齐原型）
+        if (remote.length && agent.agentType !== 'native-employment') setActiveId(remote[0].id);
+        remoteReady.current = true;
+      }).catch(() => { remoteReady.current = true; });
+  }, [agent.id]);
+
+  // 对话完成后存服务端
+  const saveToServer = async (convId, title, messages) => {
+    const tk = localStorage.getItem('user_token');
+    if (!tk || !messages || !messages.length) return;
+    const sessionId = serverSessionIds.current[convId] || null;
+    // 只存最近一轮（user + agent两条），sessionId为null时后端自动建
+    const lastUser = [...messages].reverse().find((m) => m.sender === 'user');
+    const lastAgent = [...messages].reverse().find((m) => m.sender === 'agent' && !m.streaming);
+    if (!lastUser || !lastAgent) return;
+    try {
+      const r = await fetch(`${API_BASE}/chat/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tk}` },
+        body: JSON.stringify({
+          agentId: agent.id,
+          sessionId,
+          title: title || convTitle(messages),
+          messages: [
+            { sender: 'user', content: lastUser.content },
+            { sender: 'agent', content: lastAgent.content },
+          ],
+        }),
+      });
+      const j = await r.json();
+      if (j.data && j.data.sessionId) serverSessionIds.current[convId] = j.data.sessionId;
+      return true;
+    } catch { return false; }
+  };
+
+  // 持久化（localStorage 作为缓存层 + 服务端调用）
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(convs.slice(0, 30))); } catch {}
+    // 只在"本页新产生一轮对话"时写服务端：
+    //  - remoteReady：等服务端历史加载完，避免把本地缓存当新会话又建一条
+    //  - 消息 id 为时间戳（Date.now 量级）= 本页新生成；历史恢复的消息 id 是小序号 → 跳过
+    //  - savedSig：同一轮只写一次，避免重复写导致消息重复堆积
+    if (!remoteReady.current) return;
+    const conv = convs[0];
+    const lastMsg = conv?.messages?.[conv?.messages?.length - 1];
+    if (!conv || !lastMsg || lastMsg.sender !== 'agent' || lastMsg.streaming) return;
+    if (!(Number(lastMsg.id) > 1e12)) return;
+    const sig = `${lastMsg.id}|${(lastMsg.content || '').length}`;
+    if (savedSig.current[conv.id] === sig) return;
+    savedSig.current[conv.id] = sig;
+    saveToServer(conv.id, conv.title, conv.messages).then((ok) => { if (!ok) delete savedSig.current[conv.id]; });
+  }, [convs, storageKey]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [active?.messages?.length, toolStatus]);
 
@@ -451,10 +539,19 @@ function ChatPage({ agent, onExit }) {
 
   const isRag = agent.agentType === 'native-rag';
   const isEmp = agent.agentType === 'native-employment';
+  // 就业智能体：登录后取学生画像，展示个性化欢迎
+  const [empProfile, setEmpProfile] = useState(null);
+  useEffect(() => {
+    if (!isEmp || !user) return;
+    const tk = localStorage.getItem('user_token');
+    fetch(`${API_BASE}/employment/profile`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
+      .then((r) => r.json()).then((j) => { if (j.data) setEmpProfile(j.data); }).catch(() => {});
+  }, [isEmp, user]);
+  const empProfileCard = empProfile ? `\n\n**你的学籍信息：** ${empProfile.name || ''} · ${empProfile.college || ''} · ${empProfile.major || ''} · ${empProfile.grade || ''}级` : '';
   const welcome = () => ([
-    { id: 'w', sender: 'agent', content: (gw || isRag || isEmp)
+    { id: 'w', sender: 'agent', guide: isEmp ? EMP_GUIDE : null, content: (gw || isRag || isEmp)
       ? (isEmp
-        ? `你好，我是**${agent.name}**。我会读取你的学籍信息（专业、年级），结合校招岗位库为你匹配适合的工作，并说明**为什么推荐**和**你可以补什么短板**。\n\n直接说「帮我推荐岗位」「我想找无锡的实习」或「我是机械专业，想看装备制造类岗位」即可。`
+        ? `你好，我是**${agent.name}**～我已读取你的学籍与成绩信息（见上方档案卡），结合在库校招岗位为你匹配适合的工作。\n\n先告诉我你的**求职意向**，我来为你匹配在库校招岗位：`
         : isRag
         ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n你可以直接和我聊天，也可以问我学校制度与办事流程问题——涉及制度的问题我会查询知识库并附原文出处。`
         : `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`)
@@ -466,6 +563,11 @@ function ChatPage({ agent, onExit }) {
   const send = async (text) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
+    // 智慧就业助手依赖登录身份（登录账号=学号）读取学籍画像；游客直接引导登录，避免发出后落到 403
+    if (isEmp && !localStorage.getItem('user_token')) {
+      if (onNeedLogin) onNeedLogin('智慧就业助手需要登录后使用');
+      return;
+    }
     setInput('');
     // 无活动会话时自动开一段（首条消息即建会话）
     let convId = activeId;
@@ -507,7 +609,10 @@ function ChatPage({ agent, onExit }) {
             if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
             else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
             else if (evtName === 'guide') { try { guideData = JSON.parse(data); } catch {} }
-            else if (evtName === 'jobs') { try { jobsData = JSON.parse(data); } catch {} }
+            else if (evtName === 'jobs') {
+              // 一到就上屏（后端会先发"规则排序"版再发"LLM 精排"版）→ 学生不用等正文流完才看到岗位卡
+              try { jobsData = JSON.parse(data); mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, jobs: jobsData } : m)) })); } catch {}
+            }
             else if (evtName === 'text') {
               try { acc += JSON.parse(data).data ?? ''; } catch {}
               // 逐片上屏：SSE 分片驱动原生打字机效果
@@ -613,9 +718,10 @@ function ChatPage({ agent, onExit }) {
             <div className="d">{agent.description || ''}</div>
           </div>
           <div style={{ flex: 1 }} />
-          <span className="v2-model-chip">{isEmp ? '就业智能匹配' : isRag ? '知识库 RAG 问答' : (gw ? `MCP：${gw}` : '平台默认模型')}</span>
+          <span className="v2-model-chip">{isEmp ? '校园就业 · 智能匹配' : isRag ? '知识库 RAG 问答' : (gw ? `MCP：${gw}` : '平台默认模型')}</span>
         </div>
         <div className="v2-chat-scroll" ref={scrollRef}>
+          {isEmp && empProfile && <StudentProfileCard profile={empProfile} />}
           {msgs.map((m) => (
             <div key={m.id} className={`v2-msg ${m.sender === 'user' ? 'user' : 'ai'}`}>
               {m.sender === 'user'
@@ -640,7 +746,7 @@ function ChatPage({ agent, onExit }) {
                   </div>
                 )}
                 {m.sender === 'agent' && !m.streaming && m.guide && (
-                  <EmploymentIntentCard guide={m.guide} onSubmit={async (picked) => {
+                  <EmploymentIntentCard guide={m.guide} onSubmit={async (picked, summary) => {
                     const tk = localStorage.getItem('user_token');
                     try {
                       await fetch(`${API_BASE}/employment/intent`, {
@@ -649,10 +755,11 @@ function ChatPage({ agent, onExit }) {
                         body: JSON.stringify(picked),
                       });
                     } catch (e) { /* 意向保存失败不阻塞推荐 */ }
-                    send('帮我推荐适合我的岗位');
+                    send(summary || '帮我推荐适合我的岗位');
                   }} />
                 )}
-                {m.sender === 'agent' && !m.streaming && m.jobs && m.jobs.length > 0 && <EmploymentJobCards jobs={m.jobs} />}
+                {/* 岗位卡等"思考"结束（正文开始/回复完成）后再出现，避免与思考提示同时在场 */}
+                {m.sender === 'agent' && m.jobs && m.jobs.length > 0 && (m.content || !m.streaming) && <EmploymentJobCards jobs={m.jobs} onAsk={(q) => send(q)} />}
                 {m.sender === 'agent' && !m.streaming && m.note && <div className="v2-note-line">{m.note}</div>}
               </div>
             </div>
@@ -1326,6 +1433,8 @@ export default function V2App() {
     setTeacherWizard(p === 'teacher' && segs[1] === 'form');
     setTeacherTpl(p === 'teacher' && segs[1] === 'form' && segs[2] ? Number(segs[2]) : null);
     setTeacherStep(p === 'teacher' && segs[1] === 'form' && segs[3] ? Number(segs[3]) : null);
+    // 第四段=记录 id：#/teacher/form/{模板}/{步骤}/{记录}——刷新/分享直达恢复
+    setTeacherRec(p === 'teacher' && segs[1] === 'form' && segs[4] ? Number(segs[4]) : null);
     setWorkbench(null);
     if (wantDevGuide) { setPage('dev'); setShowGuide(true); return; }
     setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
@@ -1378,7 +1487,9 @@ export default function V2App() {
   // 打开智能填报向导（可带记录 id 继续填报）
   const openWizard = useCallback((recId) => {
     setTeacherRec(recId || null);
-    navigate('/teacher/form');
+    // 带 rec 段：路由解析还原 teacherRec（不带会被置 null 而落到选模板页）；
+    // 真实模板/步骤由 FormWizard 记录恢复 effect 写入完整 URL
+    navigate(recId ? '/teacher/form/0/4/' + recId : '/teacher/form');
     window.scrollTo(0, 0);
   }, [navigate]);
 
@@ -1386,7 +1497,7 @@ export default function V2App() {
   if (chatAgent) return (
     <>
       <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} resolved={resolved} />
-      <ChatPage agent={chatAgent} onExit={() => nav('plaza')} />
+      <ChatPage agent={chatAgent} onExit={() => nav('plaza')} onNeedLogin={setLoginPrompt} user={user} />
     </>
   );
 
@@ -1444,6 +1555,14 @@ export default function V2App() {
               <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{prompt.msg}</p>
               {prompt.kind === 'login' && (
                 <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>使用学校统一身份认证登录后即可继续<br />（游客可以浏览广场与模型服务）</p>
+              )}
+              {prompt.kind === 'login' && (
+                <p style={{ textAlign: 'center', fontSize: 12, margin: '10px 0 0' }}>
+                  <a style={{ color: 'var(--el-primary)', cursor: 'pointer' }}
+                    onClick={() => window.open((location.pathname.indexOf('/agent-plaza/') === 0 ? '/agent-plaza/v2/' : '/v2/') + 'mock-login.html', '_blank')}>
+                    没有统一身份认证账号？用账号密码登录
+                  </a>
+                </p>
               )}
               {prompt.kind === 'perm' && (
                 <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--p-t3)', margin: 0 }}>如需开通权限，请联系信息化与数据服务中心（dcc@wxit.edu.cn）</p>

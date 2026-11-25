@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { listTemplates, searchTeachers, pageRecords, getRecord, createRecord, updateRecord, deleteRecord, streamUrl, regenUrl, aiMaterial, getFormMemory } from '../api/form';
+import { useNavigate } from 'react-router-dom';
+import { listTemplates, searchTeachers, pageRecords, getRecord, createRecord, updateRecord, deleteRecord, streamUrl, regenUrl, aiMaterial, getFormMemory, uploadTemplate } from '../api/form';
 import { apiBase } from '../api/request';
 import { Icon, XixiLoading, Modal, confirmDialog } from './ui.jsx';
 
@@ -116,9 +117,78 @@ export function TeacherHome({ user, requireLogin, toast, openWizard, onNav }) {
 /* ---------- 四步向导 ---------- */
 const MATERIAL_IDS = ['matJi', 'matDe', 'matNeng', 'matQin', 'matLian', 'matQt'];
 const SUMMARY_KEY = 'summary1';
+/** 「需手动确认」中的下拉型字段与其选项（默认取首项，必须与界面显示一致地落库） */
+const NEED_SELECT = { '政治面貌': ['党员', '群众', '民主党派'], '岗位类别': ['专业技术', '管理', '工勤'] };
+/** 官方原版式文档标题（无映射则直接用模板名） */
+const DOC_TITLES = { '年度考核登记表': '江苏省事业单位工作人员年度考核登记表' };
+/** 字段分组标题（g1 作为表头块不单列标题） */
+const GROUP_TITLES = { g2: '学历与学位', g3: '科研业绩', g4: '教学情况', g5: '年度考核', g6: '述职与规划' };
 
-export function FormWizard({ user, toast, onExit, openRecordId }) {
-  const [step, setStep] = useState(1);
+/* ---------- 纸面预览：按所选模板的字段分组动态渲染（step3 起草中 / step4 导出预览 共用） ---------- */
+function PreviewDoc({ tpl, fields, summary, khnf, streaming, withOpinions }) {
+  if (!tpl) return null;
+  const src = (fields && fields.length) ? fields : (tpl.fields || []);
+  // 起草流式阶段 fields 按索引写入可能稀疏（含空洞）→ 必须过滤掉空项，否则读 f.g 抛错
+  const vis = src.filter((f) => f && f.g !== 'gm' && f.g !== 'g0' && f.label !== '考核年度');
+  const groups = [];
+  vis.forEach((f) => {
+    const g = f.g || 'g1';
+    let grp = groups.find((x) => x.g === g);
+    if (!grp) { grp = { g, items: [] }; groups.push(grp); }
+    grp.items.push(f);
+  });
+  const valOf = (f) => (f.key === SUMMARY_KEY && summary) || f.val || '';
+  const rows = [];
+  groups.forEach((grp) => {
+    const isSummaryGrp = grp.items.some((f) => /总\s*结/.test(f.label || ''));
+    const title = isSummaryGrp ? '本人总结' : (GROUP_TITLES[grp.g] || '');
+    if (title) rows.push({ t: 'head', title });
+    let buf = [];
+    const flush = () => { if (buf.length) { rows.push({ t: 'pair', items: buf }); buf = []; } };
+    grp.items.forEach((f) => {
+      if (f.src === 'ai') { flush(); rows.push({ t: 'full', f }); }
+      else { buf.push(f); if (buf.length >= 3) flush(); }
+    });
+    flush();
+  });
+  return (
+    <div className="v2t-doc">
+      <div className="d-title">{DOC_TITLES[tpl.name] || tpl.name}</div>
+      {tpl.name === '年度考核登记表' && <div className="d-sub">（{khnf ? `${khnf}年度` : '年度分析中'}）</div>}
+      <div className="d-unit">单　位：无锡职业技术大学</div>
+      <table className="doc-tbl"><tbody>
+        {rows.map((r, i) => {
+          if (r.t === 'head') return <tr key={i}><td className="grp" colSpan={6}>{r.title}</td></tr>;
+          if (r.t === 'full') {
+            const f = r.f; const v = valOf(f);
+            return <tr key={i}><td className="lb">{f.label}</td><td className="full" colSpan={5}>
+              <div className="doc-full">{v || <span className="doc-empty">{streaming ? '锡锡正在起草…' : '（待生成）'}</span>}</div>
+            </td></tr>;
+          }
+          const cells = [];
+          r.items.forEach((f) => {
+            cells.push(<td className="lb" key={`${f.label}-l`}>{f.label}</td>);
+            cells.push(<td className="vl" key={`${f.label}-v`}>{valOf(f)}</td>);
+          });
+          while (cells.length < 6) { const k = `pad${cells.length}`; cells.push(<td className="lb" key={`${k}l`} />, <td className="vl" key={`${k}v`} />); }
+          return <tr key={i}>{cells}</tr>;
+        })}
+      </tbody></table>
+      <div className="doc-sign">本人签名：</div>
+      {withOpinions && (
+        <table className="doc-op"><tbody>
+          {['主管领导评鉴意见', '考核委员会（小组）审核意见', '单位负责人意见', '本人意见', '未确定等次或其他情况说明'].map((o) => (
+            <tr key={o}><td className="op-lb">{o}</td><td className="op-bd">（线下签署）</td></tr>
+          ))}
+        </tbody></table>
+      )}
+    </div>
+  );
+}
+
+export function FormWizard({ user, toast, onExit, openRecordId, initialTplId, initialStep }) {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(initialStep >= 1 && initialStep <= 4 ? initialStep : 1);
   const [templates, setTemplates] = useState(null);
   const [tplId, setTplId] = useState(null);
   const [need, setNeed] = useState({});
@@ -136,10 +206,20 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
   const esRef = useRef(null);
   const logRef = useRef(null);
   const fieldsRef = useRef(null);
+  const initTplRef = useRef(initialTplId);   // 地址栏带入的模板（仅用于首选定）
   const pfRef = useRef(null);
   const matsRef = useRef({});
   const [parsing, setParsing] = useState(false);
   const [parseRes, setParseRes] = useState(null);
+  const [tplUploading, setTplUploading] = useState(false);
+  const tplUpRef = useRef(null);
+
+  /** 切换步骤并同步地址栏 #/teacher/form/{模板id}/{步骤}[/记录id]（记录段让刷新/分享可恢复数据） */
+  const goStep = (n, tplOverride) => {
+    setStep(n);
+    const t = tplOverride != null ? tplOverride : tplId;
+    try { navigate('/teacher/form/' + (t || 0) + '/' + n + (record && record.id ? '/' + record.id : ''), { replace: true }); } catch (e) { /* noop */ }
+  };
   const parseUpload = async (fileList) => {
     const f = fileList && fileList[0];
     if (!f) return;
@@ -165,7 +245,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
     } finally { setParsing(false); }
   };
 
-  /* 打开已有记录：跳过 1/2/3 步直接进预览 */
+  /* 打开已有记录：恢复数据并直达对应步骤；地址栏带上模板与记录段（刷新可直接恢复） */
   useEffect(() => {
     if (!openRecordId) return;
     getRecord(openRecordId).then((r) => {
@@ -174,18 +254,31 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
       setTplId(r.templateId);
       setFields(r.fields || []);
       setSummary((r.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || '');
-      setStep(4);
+      const target = initialStep && initialStep >= 2 && initialStep <= 4 ? initialStep : 4;
+      // URL 直接写完整三段（tplId state 此时未更新，闭包里是旧值——曾致 /0/4 错误地址）
+      try { navigate('/teacher/form/' + (r.templateId || 0) + '/' + target + '/' + openRecordId, { replace: true }); } catch (e) { /* noop */ }
+      setStep(target);
     }).catch((e) => { toast(e.message || '加载记录失败'); onExit(); });
     return () => { if (esRef.current) esRef.current.close(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRecordId]);
 
+  /* 记录 id 就绪后补地址栏记录段（step2 落库即生效，之后任何一步刷新都可恢复） */
   useEffect(() => {
-    listTemplates().then((list) => {
-      setTemplates(list);
-      const kh = list.find((t) => t.name && t.name.includes('年度考核登记表'));
-      if (kh) setTplId(kh.id);
-    }).catch((e) => toast('模板加载失败：' + e.message));
+    if (!record || !record.id) return;
+    try {
+      const seg = location.hash.split('/');
+      const cur = seg[seg.length - 1];
+      if (String(cur) !== String(record.id)) {
+        navigate('/teacher/form/' + (tplId || 0) + '/' + step + '/' + record.id, { replace: true });
+      }
+    } catch (e) { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [record && record.id]);
+
+  useEffect(() => {
+    // 默认不预选任何模板（由用户自行选择，或选「自定义格式」）
+    listTemplates().then(setTemplates).catch((e) => toast('模板加载失败：' + e.message));
   }, [toast]);
 
   useEffect(() => { matsRef.current = mats; });
@@ -205,7 +298,6 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
       if (Object.keys(hit).length) {
         setMats(next);
         setMemPrefill((p) => ({ ...p, ...hit }));
-        toast('已按上次填写带入 ' + Object.keys(hit).length + ' 个栏目，可核对后保留或点「记忆」清除');
       }
       setNeed((nd) => {
         const n = { ...nd };
@@ -250,17 +342,44 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
   };
   const requireLoginAi = () => !!user;
 
+  /** 选择模板：同步地址栏 #/teacher/form/{模板id}/{步骤} */
+  const selectTpl = (id) => {
+    setTplId(id);
+    navigate('/teacher/form/' + id + '/' + step, { replace: true });
+  };
+
+  /** 自定义格式：上传文件 → 解析成自定义模板并选中 */
+  const uploadCustomTpl = async (fileList) => {
+    const f = fileList && fileList[0];
+    if (!f) return;
+    if (!requireLoginAi()) return;
+    setTplId(null);   // 选「自定义格式」即取消其它模板的选中态
+    setTplUploading(true);
+    try {
+      const t = await uploadTemplate(f);
+      const list = await listTemplates();
+      setTemplates(list);
+      if (t && t.id) { initTplRef.current = t.id; selectTpl(t.id); }
+      toast('已按你的格式创建模板，可直接填报');
+    } catch (e) {
+      toast(e.message || '上传失败，请确认文件为含表格/栏目的 docx、xlsx 或 pdf');
+    } finally { setTplUploading(false); }
+  };
+
   const startFill = async () => {
     const ji = matFields.find((f) => (f.hint || '').includes('必填'));
     if (ji && !(mats[ji.key] || '').trim()) { toast(`「${ji.label}」为必填素材，请至少提供一条`); return; }
     try {
       const allFields = (tpl.fields || []).map((f) => ({
-        ...f, val: f.src === 'material' ? (mats[f.key] || '') : f.src === 'need' ? (need[f.label] || '') : '',
+        ...f,
+        val: f.src === 'material' ? (mats[f.key] || '')
+          : f.src === 'need' ? (need[f.label] || (NEED_SELECT[f.label] ? NEED_SELECT[f.label][0] : ''))
+            : '',
       }));
       const rid = await createRecord({ templateId: tplId, fields: allFields });
       const rj = await getRecord(rid);
       setRecord(rj);
-      setStep(3);
+      goStep(3);
       runStream(rid);
     } catch (e) { toast(e.message || '创建记录失败'); }
   };
@@ -291,7 +410,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
       if (d.type === 'nend' && d.index !== undefined) { const f = cur.fields[d.index]; if (f) { f.val = d.val; setFields([...cur.fields]); } }
       if (d.type === 'done') {
         finished = true; es.close(); setStreaming(false);
-        getRecord(rid).then((rec) => { setRecord(rec); setFields(rec.fields || []); setSummary((rec.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || ''); setStep(4); }).catch(() => setStep(4));
+        getRecord(rid).then((rec) => { setRecord(rec); setFields(rec.fields || []); setSummary((rec.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || ''); goStep(4); }).catch(() => goStep(4));
       }
       if (d.type === 'error') { finished = true; es.close(); setStreaming(false); toast(d.message || '流水线异常'); }
       if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -309,7 +428,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
           const sum = (rec.fields || []).find((f) => f.key === SUMMARY_KEY)?.val || '';
           if (sum) {
             clearInterval(poll);
-            setRecord(rec); setFields(rec.fields || []); setSummary(sum); setStep(4);
+            setRecord(rec); setFields(rec.fields || []); setSummary(sum); goStep(4);
             toast('AI 填报已完成，请核对');
           } else if (n >= 20) {
             clearInterval(poll);
@@ -326,21 +445,29 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
     setLogLines((L) => [...L, { k, v, amb, ts }]);
   };
 
-  /** 统一落库：字段核对（基本信息/手动项）+ 本人总结一并保存 */
-  const saveAll = async (silent) => {
+  /** 统一落库：字段核对（基本信息/手动项）+ 本人总结一并保存；status 显式传入（完成语义） */
+  const saveAll = async (silent, status) => {
     if (!record) return false;
     const fs = fields.map((f) => (f.key === SUMMARY_KEY ? { ...f, val: summary, edited: true } : f));
     try {
-      await updateRecord(record.id, { fields: fs });
+      await updateRecord(record.id, status ? { fields: fs, status } : { fields: fs });
       if (!silent) toast('已保存');
       return true;
     } catch (e) { toast(e.message || '保存失败'); return false; }
   };
   const saveSummary = () => saveAll(false);
-  /** 离开 / 完成 / 导出前静默落库，避免未点「保存」导致内容丢失 */
-  const finish = async () => { await saveAll(true); onExit(); };
-  const leaveStep4 = async () => { await saveAll(true); setStep(2); };
+  /** 离开 / 导出前静默落库；点「完成」= 显式置 done（列表即时显示已完成，再次进入可完整恢复） */
+  const finish = async () => { await saveAll(true, 'done'); onExit(); };
+  const leaveStep4 = async () => { await saveAll(true); goStep(2); };
   const exportWord = async () => { if (await saveAll(true)) doExport(); };
+  /** 导出 PDF：走浏览器打印（打印对话框选「存储为 PDF」）——所见即预览版式，无需服务端转换 */
+  const exportPdf = async () => {
+    if (!(await saveAll(true))) return;
+    toast('已打开打印面板：目标选择「存储为 PDF」即可保存');
+    setTimeout(() => { try { window.print(); } catch (e) { /* noop */ } }, 400);
+  };
+  const [expMenu, setExpMenu] = useState(false);
+  const pickExport = (fn) => { setExpMenu(false); fn(); };
   const polish = () => {
     if (!record || streaming) return;
     // 保存当前内容后单字段重新起草（AI润色语义：按现有内容+素材重写）
@@ -412,7 +539,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
             <div className="v2t-tpl-grid">
               {templates.map((t) => (
                 <div key={t.id} className={`v2t-tpl-card${tplId === t.id ? ' sel' : ''}`}
-                  onClick={() => setTplId(t.id)} role="button" tabIndex={0}>
+                  onClick={() => selectTpl(t.id)} role="button" tabIndex={0}>
                   <div className="t-check">{tplId === t.id && <Icon name="check" size={11} />}</div>
                   <div className="t-ic"><Icon name="doclog" size={19} /></div>
                   <div className="t-name">{t.name}</div>
@@ -424,11 +551,23 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
                   </div>
                 </div>
               ))}
+              <div className={`v2t-tpl-card custom${tplUploading ? ' sel' : ''}`}
+                onClick={() => { if (!tplUploading) { setTplId(null); tplUpRef.current && tplUpRef.current.click(); } }}
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={(e) => { e.preventDefault(); if (!tplUploading) { setTplId(null); uploadCustomTpl(e.dataTransfer.files); } }}
+                role="button" tabIndex={0} title="上传你自己的格式文件，自动识别字段生成模板">
+                <input type="file" ref={tplUpRef} accept=".pdf,.xlsx,.docx" hidden
+                  onChange={(e) => { uploadCustomTpl(e.target.files); e.target.value = ''; }} />
+                <div className="t-ic"><Icon name="upload" size={19} /></div>
+                <div className="t-name">{tplUploading ? '锡锡正在识别格式…' : '自定义格式'}</div>
+                <div className="t-desc">除以上模板外，也可用自己的格式：上传 docx / xlsx / pdf，系统自动识别字段并生成可填报模板</div>
+                <div className="t-meta"><span className="v2t-tag blue">PDF / Word / Excel</span></div>
+              </div>
             </div>
           )}
           <div className="v2t-actions">
             <div className="v2t-hint"><Icon name="info" size={13} />带「可导出 Word」标记的模板已内置原版式文件，导出保持官方表格样式</div>
-            <button className="v2-btn primary" onClick={() => setStep(2)}>下一步：确认信息 · 填素材<Icon name="chevR" size={13} /></button>
+            <button className="v2-btn primary" onClick={() => goStep(2)}>下一步：确认信息 · 填素材<Icon name="chevR" size={13} /></button>
           </div>
         </div>
       )}
@@ -462,13 +601,9 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
                 {needFields.map((f) => (
                   <div key={f.label}>
                     <div style={{ fontSize: 11, color: 'var(--p-t4)', marginBottom: 4 }}>{f.label}</div>
-                    {f.label === '政治面貌' ? (
-                      <select className="v2t-inp" value={need[f.label] || '党员'} onChange={(e) => setNeed({ ...need, [f.label]: e.target.value })}>
-                        {['党员', '群众', '民主党派'].map((o) => <option key={o}>{o}</option>)}
-                      </select>
-                    ) : f.label === '岗位类别' ? (
-                      <select className="v2t-inp" value={need[f.label] || '专业技术'} onChange={(e) => setNeed({ ...need, [f.label]: e.target.value })}>
-                        {['专业技术', '管理', '工勤'].map((o) => <option key={o}>{o}</option>)}
+                    {NEED_SELECT[f.label] ? (
+                      <select className="v2t-inp" value={need[f.label] || NEED_SELECT[f.label][0]} onChange={(e) => setNeed({ ...need, [f.label]: e.target.value })}>
+                        {NEED_SELECT[f.label].map((o) => <option key={o}>{o}</option>)}
                       </select>
                     ) : (
                       <input className="v2t-inp" value={need[f.label] || ''} placeholder={f.hint || '请填写'} onChange={(e) => setNeed({ ...need, [f.label]: e.target.value })} />
@@ -520,7 +655,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
             </div>
             <WarnBar>AI 起草的总结仅基于以上素材与数仓事实，未提供的部分将以通用表述带过；生成后请逐句核对再导出。个人信息仅用于本次填报，不做留存共享。</WarnBar>
             <div className="v2t-actions" style={{ marginTop: 14 }}>
-              <button className="v2-btn ghost" onClick={() => setStep(1)}><Icon name="back" size={13} />上一步</button>
+              <button className="v2-btn ghost" onClick={() => goStep(1)}><Icon name="back" size={13} />上一步</button>
               <button className="v2-btn primary" onClick={startFill}>开始 AI 填报<Icon name="spark" size={13} /></button>
             </div>
           </div>
@@ -550,21 +685,14 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
             </div>
           </div>
           <div className="v2t-card">
-            <div className="pc-t" style={{ marginBottom: 12 }}><span className="v2t-tag ai">AI数据填报生成</span>本人总结正在起草{streaming && <span className="v2t-cur" style={{ marginLeft: 4 }}>|</span>}</div>
-            <div className="v2t-doc">
-              <div className="d-title">江苏省事业单位工作人员年度考核登记表</div>
-              <div className="d-sub">（{khnf ? `${khnf}年度` : "年度分析中"}）</div>
-              <div className="d-unit">单　位：无锡职业技术大学</div>
-              <table className="doc-sum-tbl"><tbody>
-                <tr>
-                  <td className="op-lb sum-lb">本<br />人<br />总<br />结</td>
-                  <td className="sum-bd">
-                    <div className="doc-sum" style={{ minHeight: 260 }}>{summary || '（等待 AI 起草…）'}</div>
-                    <div className="doc-sign">本人签名：</div>
-                  </td>
-                </tr>
-              </tbody></table>
+            <div className="pc-t" style={{ marginBottom: 12 }}>
+              <span className="v2t-tag ai">AI数据填报生成</span>
+              <span className="pc-hint">
+                {streaming ? '本人总结正在起草' : (summary ? '本人总结已生成 · 可核对修改' : '等待 AI 起草')}
+                {streaming && <span className="caret" />}
+              </span>
             </div>
+            <PreviewDoc tpl={tpl} fields={fields} summary={summary} khnf={khnf} streaming={streaming} />
             <div className="v2t-doc-note">纸面预览即导出效果 · 意见与签章区保持空白，线下手写签署</div>
           </div>
         </div>
@@ -608,72 +736,35 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
             <WarnBar>导出文件为官方原版式 Word：内容仅写入基本信息与本人总结，主管领导评鉴等意见区保持空白，需线下手写签署。AI 生成内容请核对后使用。</WarnBar>
           </div>
           <div className="v2t-pv-sticky">
-            <div className="v2t-card" style={{ marginBottom: 14 }}>
-              <div className="pc-head">
-                <div className="pc-t">上传文件自动回填<span className="v2t-cnt">PDF / Word / Excel</span></div>
-              </div>
-              <div className={`v2t-parse${parsing ? ' busy' : ''}`}
-                onClick={() => { if (!parsing) pfRef.current && pfRef.current.click(); }}
-                onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={(e) => { e.preventDefault(); if (!parsing) parseUpload(e.dataTransfer.files); }}>
-                <input type="file" ref={pfRef} accept=".pdf,.xlsx,.docx" hidden
-                  onChange={(e) => { parseUpload(e.target.files); e.target.value = ''; }} />
-                <Icon name="upload" size={18} />
-                <div className="t">{parsing ? '锡锡正在解析文件…' : '点击或拖拽文件到此处'}</div>
-                <div className="d">已有旧表 / 论文清单 / 证明材料？直接上传，自动解析并回填本表空白字段，不覆盖已核对内容</div>
-              </div>
-              {parseRes && (
-                <div className="v2t-parse-res">
-                  <div className="r1"><Icon name="check" size={13} /> 已回填 {parseRes.count} 项 · 解析 {parseRes.textChars} 字{(parseRes.skipped && parseRes.skipped.length) ? ` · ${parseRes.skipped.length} 项已有内容未覆盖` : ''}</div>
-                  {(parseRes.filled || []).slice(0, 6).map((it) => (
-                    <div className="r2" key={it.label}><span>{it.label}</span><b>{String(it.val).slice(0, 30)}</b></div>
-                  ))}
-                </div>
-              )}
-            </div>
             <div className="v2t-card">
               <div className="pc-head">
                 <div className="pc-t">导出预览<span className="v2t-cnt">A4 · 原版式</span></div>
               </div>
-              <div className="v2t-doc">
-                <div className="d-title">江苏省事业单位工作人员年度考核登记表</div>
-                <div className="d-sub">（{khnf ? `${khnf}年度` : "年度分析中"}）</div>
-                <div className="d-unit">单　位：无锡职业技术大学</div>
-                <table className="doc-tbl">
-                  <tbody>
-                    {[['姓名', '性别', '出生年月'], ['民族', '政治面貌', '文化程度'], ['岗位类别', '岗位等级', '岗位名称']].map((row) => (
-                      <tr key={row[0]}>
-                        {row.map((label) => {
-                          const f = fields.find((x) => x.label === label);
-                          return <React.Fragment key={label}><td className="lb">{label}</td><td className="vl">{f?.val || ''}</td></React.Fragment>;
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table className="doc-sum-tbl"><tbody>
-                  <tr>
-                    <td className="op-lb sum-lb">本<br />人<br />总<br />结</td>
-                    <td className="sum-bd">
-                      <div className="doc-sum" style={{ minHeight: 120, whiteSpace: 'pre-wrap' }}>{summary}</div>
-                      <div className="doc-sign">本人签名：</div>
-                    </td>
-                  </tr>
-                </tbody></table>
-                <table className="doc-op"><tbody>
-                  {['主管领导评鉴意见', '考核委员会（小组）审核意见', '单位负责人意见', '本人意见', '未确定等次或其他情况说明'].map((o) => (
-                    <tr key={o}><td className="op-lb">{o}</td><td className="op-bd">（线下签署）</td></tr>
-                  ))}
-                </tbody></table>
-              </div>
+              <PreviewDoc tpl={tpl} fields={fields} summary={summary} khnf={khnf}
+                withOpinions={tpl?.name === '年度考核登记表'} />
               <div className="v2t-doc-note">意见与签章区不参与 AI 填报，导出后线下完成</div>
             </div>
             <div className="v2t-actions" style={{ marginTop: 14 }}>
               <button className="v2-btn ghost" onClick={leaveStep4}><Icon name="back" size={13} />返回修改素材</button>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button className="v2-btn ghost" onClick={exportWord} disabled={exporting}>
-                  <Icon name="download" size={14} />{exporting ? '生成中…' : '导出 Word 文档'}
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button className="v2-btn ghost" onClick={() => setExpMenu(!expMenu)} disabled={exporting}>
+                    <Icon name="download" size={14} />{exporting ? '生成中…' : '导出'}<span style={{ fontSize: 10, marginLeft: 4 }}>▾</span>
+                  </button>
+                  {expMenu && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setExpMenu(false)} />
+                      <div className="v2t-exp-menu">
+                        <button className="v2t-exp-item" onClick={() => pickExport(exportWord)}>
+                          <Icon name="download" size={14} /><span><b>Word 文档</b><small>.docx · 官方原版式 · 意见区留白线下签署</small></span>
+                        </button>
+                        <button className="v2t-exp-item" onClick={() => pickExport(exportPdf)}>
+                          <Icon name="doclog" size={14} /><span><b>PDF</b><small>打印面板「存储为 PDF」· 版式与预览一致</small></span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <button className="v2-btn primary" onClick={finish}>完成</button>
               </div>
             </div>
@@ -702,7 +793,7 @@ export function FormWizard({ user, toast, onExit, openRecordId }) {
 }
 
 /* ---------- 频道容器（按子路由分发） ---------- */
-export default function V2Teacher({ user, requireLogin, toast, wizard, onExitWizard, openRecordId, openWizard, onNav }) {
+export default function V2Teacher({ user, requireLogin, toast, wizard, onExitWizard, openRecordId, openWizard, onNav, initialTplId, initialStep }) {
   if (wizard && !user) {
     return (
       <div className="v2-body v2t-body">
@@ -713,6 +804,6 @@ export default function V2Teacher({ user, requireLogin, toast, wizard, onExitWiz
       </div>
     );
   }
-  if (wizard) return <FormWizard user={user} toast={toast} onExit={onExitWizard} openRecordId={openRecordId} />;
+  if (wizard) return <FormWizard user={user} toast={toast} onExit={onExitWizard} openRecordId={openRecordId} initialTplId={initialTplId} initialStep={initialStep} />;
   return <TeacherHome user={user} requireLogin={requireLogin} toast={toast} openWizard={openWizard} onNav={onNav} />;
 }
