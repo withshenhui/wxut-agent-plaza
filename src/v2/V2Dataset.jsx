@@ -27,6 +27,7 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
   const [step, setStep] = useState('ingest');
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: '', description: '' });
+  const [dq, setDq] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
   const resRef = useRef(null);
@@ -38,6 +39,9 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
 
   if (location.pathname === '/dataset/manual') return <LSUsageManual onBack={() => navigate('/dataset')} />;
   if (!user && onNeedLogin) onNeedLogin && onNeedLogin('AI 数据工场需要登录后使用');
+
+  const dkw = dq.trim().toLowerCase();
+  const filteredList = (list || []).filter((d) => !dkw || (String(d.name || '') + String(d.description || '')).toLowerCase().includes(dkw));
 
   const doCreate = async () => {
     if (!form.name.trim()) { toast('请填写数据集名称'); return; }
@@ -72,13 +76,21 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
       {list === null && <XixiLoading text="加载数据集…" />}
       {list && list.length === 0 && <div className="v2-empty">还没有数据集，点击右上角「新建数据集」开始</div>}
       {list && list.length > 0 && (
+        <div className="v2-filter-bar" style={{ marginBottom: 12 }}>
+          <input className="v2-search" value={dq} onChange={(e) => setDq(e.target.value)} placeholder="搜索数据集名称 / 描述" style={{ width: 240 }} />
+          {dq && <button className="v2-link" onClick={() => setDq('')}>清除</button>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>共 {filteredList.length} 个</span>
+        </div>
+      )}
+      {list && list.length > 0 && filteredList.length === 0 && <div className="v2-empty">没有匹配的数据集，试试调整搜索条件</div>}
+      {filteredList.length > 0 && (
         <div className="v2-card" style={{ padding: 0 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
               {['名称', '条目', '已清洗', '已标注', '创建时间', '操作'].map((h) => <th key={h} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--p-t3)', borderBottom: '1.5px solid var(--p-line)' }}>{h}</th>)}
             </tr></thead>
             <tbody>
-              {list.map((d) => (
+              {filteredList.map((d) => (
                 <tr key={d.id}>
                   <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--p-line2)' }}>
                     <a className="v2-link" onClick={() => { navigate('/dataset/' + d.id); setStep('ingest'); }}>{d.name}</a>
@@ -112,6 +124,9 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
   const dd = ds || {};
   const verCount = ((detail && detail.versions) || []).length;
   const prog = [(dd.item_count || 0) > 0, (dd.cleaned_count || 0) > 0, (dd.annotated_count || 0) > 0, verCount > 0, verCount > 0];
+  // 步骤条按「顺序」染色：只有该步及其之前都完成才标绿；后面的步骤即便已有数据也不提前变绿
+  const frontier = prog.findIndex((x) => !x);
+  const doneAt = (i) => frontier === -1 || i < frontier;
   const stageIdx = [prog[0], prog[1], prog[2], prog[3]].findIndex((x) => !x);
   const stageLabel = stageIdx === -1 ? '已完成，可导出' : STEPS[stageIdx][1];
   const stepIdx = STEPS.findIndex((s) => s[0] === step) + 1;
@@ -119,8 +134,8 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
     <div className="v2t-stepper">
       {[['数据接入', '上传 / 数仓入库'], ['清洗', '去重 · 脱敏 · 标准化'], ['标注', 'AI数据工场标注'], ['数据集版本', '快照 · 血缘'], ['导出', 'Alpaca / ShareGPT / JSONL']].map((s, i) => (
         <React.Fragment key={s[0]}>
-          {i > 0 && <div className={'v2t-st-line' + (prog[i - 1] ? ' done' : '')} />}
-          <div className={'v2t-st' + (stepIdx === i + 1 ? ' live' : prog[i] ? ' done' : '')} onClick={() => setStep(STEPS[i][0])} style={{ cursor: 'pointer' }}>
+          {i > 0 && <div className={'v2t-st-line' + (doneAt(i - 1) ? ' done' : '')} />}
+          <div className={'v2t-st' + (stepIdx === i + 1 ? ' live' : doneAt(i) ? ' done' : '')} onClick={() => setStep(STEPS[i][0])} style={{ cursor: 'pointer' }}>
             <div className="dot">{i + 1}</div>
             <div><div className="s-lb">{s[0]}</div><div className="s-sub">{s[1]}</div></div>
           </div>
@@ -368,8 +383,16 @@ function StepAnnot({ id, step, detail, reload, toast, resRef, onOpenManual }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', instruction: '', template: 'text_classification' });
   const [busy, setBusy] = useState(false);
+  const [aq, setAq] = useState('');
+  const [ast, setAst] = useState('');
   if (step !== 'annot') return null;
   const tasks = (detail && detail.annotTasks) || [];
+  const akw = aq.trim().toLowerCase();
+  const filteredTasks = tasks.filter((t) => {
+    if (ast && t.status !== ast) return false;
+    if (akw && !((t.name || '') + ('任务#' + t.id)).toLowerCase().includes(akw)) return false;
+    return true;
+  });
   const doCreate = async () => {
     setBusy(true);
     try { await api.createAnnotTask(id, form); toast('标注任务已创建'); setOpen(false); setForm({ name: '', instruction: '', template: 'text_classification' }); reload(); }
@@ -392,10 +415,20 @@ function StepAnnot({ id, step, detail, reload, toast, resRef, onOpenManual }) {
           <button className="v2-btn" onClick={() => setOpen(true)}><Icon name="plus" size={14} /> 新建标注任务</button>
         </div>
       </div>
-      {tasks.length === 0 ? <div className="v2-empty">暂无标注任务</div> : (
+      {tasks.length > 0 && (
+        <div className="v2-filter-bar" style={{ marginBottom: 10 }}>
+          <input className="v2-search" value={aq} onChange={(e) => setAq(e.target.value)} placeholder="搜索任务名" style={{ width: 200 }} />
+          <select className="v2-select" value={ast} onChange={(e) => setAst(e.target.value)}>
+            <option value="">全部状态</option><option value="pending">待导出</option><option value="exported">已导出</option><option value="imported">已回传</option>
+          </select>
+          {(aq || ast) && <button className="v2-link" onClick={() => { setAq(''); setAst(''); }}>清除筛选</button>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>共 {filteredTasks.length} 个</span>
+        </div>
+      )}
+      {filteredTasks.length === 0 ? <div className="v2-empty">{tasks.length ? '没有匹配的标注任务，试试调整筛选条件' : '暂无标注任务'}</div> : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['任务', '模板', '总数', '已标注', '状态', '操作'].map((h) => <th key={h} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--p-t3)', borderBottom: '1.5px solid var(--p-line)' }}>{h}</th>)}</tr></thead>
-          <tbody>{tasks.map((t) => (
+          <tbody>{filteredTasks.map((t) => (
             <tr key={t.id}>
               <td style={TD}>{t.name || ('任务#' + t.id)}</td>
               <td style={TD}>{t.template === 'text_classification' ? '文本分类' : t.template}</td>
@@ -433,8 +466,11 @@ function StepVersion({ id, step, detail, reload, toast }) {
   const [form, setForm] = useState({ name: '', trainRatio: 80 });
   const [busy, setBusy] = useState(false);
   const [lin, setLin] = useState(null);
+  const [vq, setVq] = useState('');
   if (step !== 'version') return null;
   const vers = (detail && detail.versions) || [];
+  const vkw = vq.trim().toLowerCase();
+  const filteredVers = vers.filter((v) => !vkw || (('v' + v.version) + ' ' + (v.name || '')).toLowerCase().includes(vkw));
   const doCreate = async () => {
     setBusy(true);
     try { const lineage = JSON.stringify({ cleanRules: ((detail && detail.rules) || []).map((r) => ({ rule: r.rule_type, params: r.params })), trainRatio: form.trainRatio, at: new Date().toISOString() }); const r = await api.createVersion(id, { ...form, lineage }); toast(`已创建版本 v${r.version}（${r.item_count} 条）`); setForm({ name: '', trainRatio: 80 }); reload(); }
@@ -460,10 +496,17 @@ function StepVersion({ id, step, detail, reload, toast }) {
           </pre>
         </Modal>
       )}
-      {vers.length === 0 ? <div className="v2-empty">暂无版本</div> : (
+      {vers.length > 0 && (
+        <div className="v2-filter-bar" style={{ marginBottom: 10 }}>
+          <input className="v2-search" value={vq} onChange={(e) => setVq(e.target.value)} placeholder="搜索版本号 / 名称" style={{ width: 200 }} />
+          {vq && <button className="v2-link" onClick={() => setVq('')}>清除</button>}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--p-t4)' }}>共 {filteredVers.length} 个</span>
+        </div>
+      )}
+      {filteredVers.length === 0 ? <div className="v2-empty">{vers.length ? '没有匹配的版本' : '暂无版本'}</div> : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['版本', '名称', '条目', '训练/验证', '创建时间', '血缘'].map((h) => <th key={h} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--p-t3)', borderBottom: '1.5px solid var(--p-line)' }}>{h}</th>)}</tr></thead>
-          <tbody>{vers.map((v) => (
+          <tbody>{filteredVers.map((v) => (
             <tr key={v.id}><td style={TD}>v{v.version}</td><td style={TD}>{v.name}</td><td style={TD}>{v.item_count}</td><td style={TD}>{v.train_ratio} / {100 - v.train_ratio}</td><td style={{ ...TD, color: 'var(--p-t4)', fontSize: 12 }}>{String(v.created_at || '').slice(0, 16).replace('T', ' ')}</td><td style={TD}><a className="v2-link" onClick={() => setLin(v)}>查看</a></td></tr>
           ))}</tbody>
         </table>
