@@ -41,7 +41,6 @@ const WORKBENCHES = [
     ic: 'heart',
     desc: '基于一卡通消费行为的隐性困难识别 —— 「吃得勤 + 吃得省」多信号模型，输出红/黄/绿三档资助工作线索，支持名单筛选与导出。',
     tags: ['学工/资助中心', '消费行为分析', '名单导出'],
-    role: '资助工作岗',
     fresh: '消费数据每日更新',
     status: 'ready',
   },
@@ -51,7 +50,6 @@ const WORKBENCHES = [
     ic: 'warn',
     desc: '晚归未归、请假异常、行为突变等多源信号融合的安全预警看板，面向学工与保卫条线的日常排查与专项研判。',
     tags: ['学工/保卫处', '多源信号', '预警看板'],
-    role: '学生安全岗',
     fresh: '考勤数据每日更新',
     status: 'ready',
   },
@@ -61,7 +59,6 @@ const WORKBENCHES = [
     ic: 'grad',
     desc: '基于成绩数据的挂科门数与平均分识别，红黄绿三档预警，辅助学业帮扶与教务干预决策。',
     tags: ['学工/教务处', '成绩分析', '预警帮扶'],
-    role: '学业预警岗',
     fresh: '取最新完整学期',
     status: 'ready',
   },
@@ -71,7 +68,6 @@ const WORKBENCHES = [
     ic: 'spark',
     desc: '消费骤降与归寝异常的多信号组合识别，仅作关怀线索参考，辅助辅导员以温和方式主动关怀。',
     tags: ['学工/心理中心', '多信号组合', '关怀参考'],
-    role: '心理关怀岗',
     fresh: '消费+考勤每日更新',
     status: 'ready',
   },
@@ -81,7 +77,6 @@ const WORKBENCHES = [
     ic: 'chart',
     desc: '汇聚招聘岗位与学生就业意向，按专业/成绩做匹配分析，输出帮扶名单与就业态势，辅助就业办精准施策。',
     tags: ['学工/就业办', '岗位匹配', '帮扶名单'],
-    role: '就业工作岗',
     fresh: '岗位数据每日采集',
     status: 'ready',
   },
@@ -364,7 +359,6 @@ export function InsightHome({ onOpenWorkbench, tab, setTab, perms, resolved }) {
                 {perms && perms.length > 0 && !perms.includes('insight.' + w.key) && w.status !== 'planning' && (
                   <span className="v2-tag" style={{ background: '#F4F4F5', color: '#909399' }}>未开通</span>
                 )}
-                <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>需要角色：{w.role}</span>
                 <button className="v2-btn" disabled={w.status === 'planning'} onClick={() => onOpenWorkbench(w)}>
                   {w.status === 'planning' ? '敬请期待' : '进入分析'} →
                 </button>
