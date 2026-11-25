@@ -74,6 +74,29 @@ export function TeacherHome({ user, requireLogin, toast, openWizard, onNav }) {
         </div>
 
         <div className="v2t-sec-head" style={{ marginTop: 4 }}>
+          <div className="v2t-sec-t">通用智能体<span className="v2t-cnt">8 个规划中</span></div>
+        </div>
+        <div className="v2t-wb-grid">
+          {[
+            { t: '教案与课件大纲', d: '按课程标准与章节一键生成单元教案、课件大纲，可直接编辑。', ic: 'book' },
+            { t: '出题组卷', d: '选择/填空/简答/实操批量出题，自动匹配答案、难度分级并组卷。', ic: 'clipboard' },
+            { t: 'PPT 一键制作', d: '把大纲要点转成演示文稿，自动套用校模板，导出可编辑文件。', ic: 'chart' },
+            { t: '会议纪要', d: '录音转写并提取要点与待办，一键生成规范会议纪要。', ic: 'headset' },
+            { t: '表格智能清洗合并', d: '各部门乱格式 Excel 自动统一列名、合并多表并透视汇总。', ic: 'wrench' },
+            { t: '批量文档处理', d: 'PDF 拆分/合并/格式转换与关键信息提取，批量处理省时。', ic: 'doclog' },
+            { t: '中英文献翻译润色', d: '学术翻译 + 语法润色 + 参考文献格式化，保持术语一致。', ic: 'globe' },
+            { t: '科研申报辅助', d: '申报书/论文结构建议与文献综述提纲，附写作要点。', ic: 'flask' },
+          ].map((c) => (
+            <div className="v2t-wb-card dim" key={c.t}>
+              <div className="v2t-wb-ic"><Icon name={c.ic} size={21} /></div>
+              <div className="v2t-wb-t">{c.t}</div>
+              <div className="v2t-wb-d">{c.d}</div>
+              <div className="v2t-wb-meta"><span className="v2t-tag grey">规划中</span></div>
+            </div>
+          ))}
+        </div>
+
+        <div className="v2t-sec-head" style={{ marginTop: 4 }}>
           <div className="v2t-sec-t">我的填报记录<span className="v2t-cnt">仅本人可见</span></div>
         </div>
         {!user ? (
