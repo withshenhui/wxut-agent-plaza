@@ -15,6 +15,7 @@ import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards, StudentP
 import { XixiLoading, confirmDialog } from './ui.jsx';
 import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
 import { parseSseEvents } from './sse.js';
+import { isWecomEnv, wecomNavFilter } from './wecomConfig.js';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -124,8 +125,10 @@ function gateCheck(feature, { user, perms, requireLogin, setLoginPrompt, setPerm
 
 /** 顶栏导航：完全由功能注册表驱动（V2App 统一加载 resolved 后经 prop 传入）。
  *  加载期间（resolved===undefined）不渲染链接，避免闪现待隐藏项。 */
-export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge, resolved }) {
-  const NAVS = resolved === undefined ? [] : renderNavs(resolved, { user, perms });
+export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge, resolved, wecomMode }) {
+  const NAVS = resolved === undefined ? [] : (wecomMode
+    ? wecomNavFilter(renderNavs(resolved, { user, perms }))   // 企微模式：导航收敛，一期仅保留「智能体广场」
+    : renderNavs(resolved, { user, perms }));
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
@@ -1416,6 +1419,18 @@ function SimplePage({ kind }) {
   return <CampusPage />;
 }
 
+/* ============ 企微 H5 移动视图（占位） ============
+ * 一期分派骨架：企微模式下 App 只渲染移动视图，桌面顶栏/页脚不外露。
+ * 下列两个组件本任务仅占位，Task 6 / Task 7 会以真实实现替换（替换时删除本段占位）。*/
+// TODO(T6): 用真实 MobilePlaza 替换（企微移动端智能体广场）
+function MobilePlaza(_props) {
+  return <div className="wx-placeholder">企微移动版 · 智能体广场（Task 6 实现）</div>;
+}
+// TODO(T7): 用真实 MobileChatSheet 替换（企微移动端半屏对话层）
+function MobileChatSheet(_props) {
+  return <div className="wx-placeholder">企微移动版 · 对话（Task 7 实现）</div>;
+}
+
 /* ============ 主应用 ============ */
 export default function V2App() {
   const [page, setPage] = useState('plaza');
@@ -1443,6 +1458,60 @@ export default function V2App() {
   const [resolved, setResolved] = useState(undefined); // 前台功能注册表（undefined=加载中）：导航/守卫唯一来源
   const pageRef = useRef(page); pageRef.current = page;
   const tokenRef = useRef(null); tokenRef.current = typeof localStorage !== 'undefined' ? localStorage.getItem('user_token') : null;
+
+  /* ============ 企微 H5 模式：环境判定 / 总开关 / 免密登录 ============ */
+  // 企微环境判定：UA 含 wxwork || URL ?wecom=1 || sessionStorage 记忆（Task 1 纯逻辑）
+  const [wecomEnv, setWecomEnv] = useState(() => isWecomEnv({
+    ua: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    search: typeof window !== 'undefined' ? window.location.search : '',
+    stored: typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('v2-wecom') : '',
+  }));
+  // 企微模式总开关：sys_config `wecom.enabled`（缺失/读取失败一律视为开，保底可用）
+  const [wecomEnabled, setWecomEnabled] = useState(true);
+  // 首次以 ?wecom=1 进入 → 记忆到会话，后续同标签页内跳转持续判定为企微环境
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('wecom') === '1') {
+      sessionStorage.setItem('v2-wecom', '1');
+      setWecomEnv(true);
+    }
+  }, []);
+  // 读取总开关：复用 getPublicConfig（解包后为 config 数据对象，取 configValue）；
+  // 非 200 会被 publicRequest 拦截器 reject → 走 catch 视为开。关闭时企微内回退桌面视图。
+  useEffect(() => {
+    let alive = true;
+    getPublicConfig('wecom.enabled')
+      .then((d) => {
+        const v = d && d.configValue;
+        if (v === '0' || v === 'false') { if (alive) setWecomEnabled(false); }
+      })
+      .catch(() => { /* 读取失败视为开 */ });
+    return () => { alive = false; };
+  }, []);
+  const wecomMode = wecomEnv && wecomEnabled;
+
+  // 企微免密登录：URL 带 code（真）或 mockUser（调试）→ 调端点换 token 并 reload；
+  // 失败（HTTP 非 200 或 body.code!==200，含 wecom_unmapped / wecom_no_code 等）一律静默降游客。
+  useEffect(() => {
+    if (!wecomMode) return;
+    if (localStorage.getItem('user_token')) return;
+    const sp = new URLSearchParams(window.location.search);
+    const code = sp.get('code');
+    const mockUser = sp.get('mockUser');
+    const body = code ? { code } : (mockUser ? { mockUser } : null);
+    if (!body) return;
+    fetch(`${API_BASE}/auth/wecom-login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    })
+      .then((r) => (r.ok ? r.json() : null))   // HTTP 400（wecom_unmapped）→ 直接当失败
+      .then((j) => {
+        if (j && j.code === 200 && j.data && j.data.token) {
+          localStorage.setItem('user_token', j.data.token);
+          window.location.reload();
+        }
+        // body.code=500（wecom_debug_denied / wecom_auth_failed 等）→ 不写 token，静默降游客
+      })
+      .catch(() => { /* 网络异常静默降游客 */ });
+  }, [wecomMode]);
 
   // 异步处理追踪：跨页面轮询"我可见库中处理中的文件"，完成/失败即弹提示（离开知识库也能收到）
   useEffect(() => {
@@ -1599,17 +1668,28 @@ export default function V2App() {
     window.scrollTo(0, 0);
   }, [navigate]);
 
+  // 企微模式分派：只渲染移动视图（不渲染桌面顶栏/页脚）。须先于 chatAgent 分支，
+  // 否则 chatAgent 会命中桌面对话页，MobileChatSheet 永不生效。
+  // 占位组件 Task 6 / Task 7 替换为真实 <MobilePlaza> / <MobileChatSheet>。
+  if (wecomMode) return (
+    <>
+      {chatAgent
+        ? <MobileChatSheet agent={chatAgent} user={user} onClose={() => setChatAgent(null)} />
+        : <MobilePlaza agents={agents} cats={cats} onChat={launch} onNeedLogin={setLoginPrompt} />}
+    </>
+  );
+
   // 路由进入对话页：chatAgent 由路由驱动
   if (chatAgent) return (
     <>
-      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} resolved={resolved} />
+      <TopNav page="plaza" onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} resolved={resolved} wecomMode={wecomMode} />
       <ChatPage agent={chatAgent} onExit={() => nav('plaza')} onNeedLogin={setLoginPrompt} user={user} />
     </>
   );
 
   return (
     <>
-      <TopNav page={page} onNav={guardNav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} kbBadge={kbBadge} resolved={resolved} />
+      <TopNav page={page} onNav={guardNav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={user?.perms} kbBadge={kbBadge} resolved={resolved} wecomMode={wecomMode} />
       {loadErr && <div className="v2-body"><div className="v2-empty">实时数据加载失败：{loadErr}</div></div>}
       {page === 'plaza' && (agents.length === 0 && !loadErr
         ? <div className="v2-body" style={{ paddingTop: 120 }}><XixiLoading text="锡锡正在为您准备广场…" /></div>
@@ -1648,7 +1728,7 @@ export default function V2App() {
       )}
       {['campus', 'guide', 'about'].includes(page) && <SimplePage kind={page} />}
       {page === 'kb' && <V2Knowledge user={user} requireLogin={requireLogin} toast={toast} />}
-      <Footer onNav={guardNav} toast={toast} resolved={resolved} />
+      {!wecomMode && <Footer onNav={guardNav} toast={toast} resolved={resolved} />}
 
       {prompt && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setPrompt(null); }}>

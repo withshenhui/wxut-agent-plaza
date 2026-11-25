@@ -1115,3 +1115,9 @@ select.v2t-inp{cursor:pointer}
 .v2t-exp-item svg,.v2t-exp-item .v2-ic{color:var(--p-t3,#64748B);flex-shrink:0}
 .v2t-exp-item b{display:block;font-size:13px;font-weight:600;color:var(--p-t1,#1E293B)}
 .v2t-exp-item small{display:block;font-size:11px;color:var(--p-t4,#94A3B8);margin-top:2px}
+
+/* ============ 企微 H5 移动视图（wx- 命名空间，桌面 CSS 语义不受影响） ============ */
+/* 占位容器：Task 6 / Task 7 替换为真实移动组件后，仅保留基础样式 */
+.wx-placeholder{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;text-align:center;font-size:14px;color:var(--p-t3,#64748B);
+  background:var(--p-bg,#F8FAFC)}
