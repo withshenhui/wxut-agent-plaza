@@ -9,6 +9,7 @@ import * as catApi from '../api/category';
 import * as modelApi from '../api/model';
 import * as userApi from '../api/user';
 import * as logApi from '../api/log';
+import { summarizeLog } from './logContent.js';
 import ClientAdmin from './V2ClientAdmin.jsx';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
@@ -1505,16 +1506,23 @@ function LogsAdmin() {
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
-          <thead><tr><th>时间</th><th>操作人</th><th>内容</th></tr></thead>
+          <thead><tr><th style={{ width: 152 }}>时间</th><th>操作人</th><th>内容</th><th style={{ width: 140 }}>IP</th><th style={{ width: 96 }}>浏览器</th></tr></thead>
           <tbody>
-            {(list.records || []).map((l) => (
-              <tr key={l.id}>
-                <td className="num" style={{ color: 'var(--p-t4)', whiteSpace: 'nowrap' }}>{(l.createTime || l.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
-                <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{l.operatorName || l.username || '—'}</td>
-                <td style={{ whiteSpace: 'normal' }}>{l.operation || l.content || '—'}{l.params ? <span style={{ color: 'var(--p-t4)', marginLeft: 8, fontSize: 12 }}>{l.params}</span> : null}</td>
-              </tr>
-            ))}
-            {!(list.records || []).length && <tr><td colSpan={3} style={{ textAlign: 'center', padding: 32, color: 'var(--p-t4)' }}>暂无日志</td></tr>}
+            {(list.records || []).map((l) => {
+              const s = summarizeLog(l.operation || l.content, l.params);
+              return (
+                <tr key={l.id}>
+                  <td className="num" style={{ color: 'var(--p-t4)', whiteSpace: 'nowrap' }}>{(l.createTime || l.createdAt || '').replace('T', ' ').slice(0, 19)}</td>
+                  <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{l.operatorName || l.username || '—'}</td>
+                  <td style={{ maxWidth: 420 }}>
+                    <span title={s.title} style={{ display: 'inline-block', maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'bottom' }}>{s.text || '—'}</span>
+                  </td>
+                  <td className="num" style={{ fontFamily: 'ui-monospace,"SF Mono",Menlo,Consolas,monospace', whiteSpace: 'nowrap', fontSize: 12.5, color: 'var(--p-t3)' }}>{l.ip || '—'}</td>
+                  <td title={l.os ? `${l.browser || '其他'} · ${l.os}` : undefined}>{l.browser || '—'}</td>
+                </tr>
+              );
+            })}
+            {!(list.records || []).length && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--p-t4)' }}>暂无日志</td></tr>}
           </tbody>
         </table>
         <div className="v2-tbl-foot">
