@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // 与 V1 完全一致的后端接口地址（request.js 同源相对路径策略）
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Icon, AgentAvatar, COLLEGE_MODELS, GATEWAY_BASE, SUGGEST_COLLEGE, SUGGEST_ALL, useMascot, useToast, IconBuilding, Pager } from './ui.jsx';
+import { Icon, AgentAvatar, useToast, IconBuilding, Pager } from './ui.jsx';
 import { getAgentDetail } from '../api/agent';
 import { getPublicConfig } from '../api/config';
 import { useV2User } from './V2User.jsx';
@@ -12,12 +12,12 @@ import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
 import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards, StudentProfileCard } from './V2Employment.jsx';
-import { XixiLoading, confirmDialog } from './ui.jsx';
+import { XixiLoading } from './ui.jsx';
 import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
-import { parseSseEvents } from './sse.js';
 import { isWecomEnv } from './wecomConfig.js';
 import MobilePlaza from './MobilePlaza.jsx';
-import MobileChatSheet from './MobileChatSheet.jsx';
+import MobileChatPage from './MobileChatPage.jsx';
+import { useAgentChat } from './useAgentChat.js';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -396,302 +396,14 @@ function mdLite(t) {
   return out.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
 }
 
-/* 就业助手：意向卡选项（与后端 guide 事件一致）——首屏即展示，对齐原型 */
-const EMP_GUIDE = {
-  cities: ['无锡', '苏州', '南京', '上海', '不限'],
-  types: ['全职', '实习', '都看'],
-  pays: ['5K 以下', '5-8K', '8-12K', '12K 以上', '不限'],
-};
-
 function ChatPage({ agent, onExit, onNeedLogin, user }) {
   const navigate = useNavigate();
-  const [convs, setConvs] = useState(() => loadConvs(agent.id));
-  // 就业助手：进入即呈现"欢迎词 + 意向卡"，不自动恢复上次会话（历史仍保留在左栏，可点开）
-  const [activeId, setActiveId] = useState(() => (
-    agent.agentType === 'native-employment' ? null : (loadConvs(agent.id)[0]?.id ?? null)));
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [toolStatus, setToolStatus] = useState('');
   const scrollRef = useRef(null);
-  const bottomRef = useRef(null);
-  const isMascot = useMascot(agent);
-  const gw = COLLEGE_MODELS[Number(agent.id)];
-  const agentSuggest = (agent.suggest || '').split('|').map((x) => x.trim()).filter(Boolean);
-  const suggestions = agentSuggest.length ? agentSuggest
-    : Number(agent.id) === 111 ? SUGGEST_ALL : (agent.categoryKey === 'college' ? SUGGEST_COLLEGE : []);
-  const storageKey = `v2-chat-${agent.id}`;
-  const active = convs.find((c) => c.id === activeId);
-  const [currentModel, setCurrentModel] = useState('');
-  const [phIdx, setPhIdx] = useState(0);
-
-  // placeholder 推荐问题：优先该智能体的建议，不足补通用问题
-  const phPool = suggestions.length ? suggestions : SUGGEST_ALL;
-  useEffect(() => {
-    const t = setInterval(() => setPhIdx((i) => (i + 1) % phPool.length), 4000);
-    return () => clearInterval(t);
-  }, [phPool.length]);
-
-  // 后台"大模型配置"当前生效的模型（脱敏公开端点）
-  useEffect(() => {
-    fetch(`${API_BASE}/configs/llm/current-model`).then((r) => r.json())
-      .then((j) => setCurrentModel(j.data || '')).catch(() => {});
-  }, []);
-
-  // 服务端对话历史：加载时拉API（跟登录人走），保存时双写API+localStorage
-  const serverSessionIds = useRef({}); // convId -> server sessionId 映射
-  const historyLoaded = useRef(false);
-  const remoteReady = useRef(false);   // 服务端历史已就绪（或无需拉取）前不写服务端，避免把本地缓存当新会话重复创建
-  const savedSig = useRef({});         // convId -> 已保存的最后一轮签名（防同一轮重复写、消息重复堆积）
-  useEffect(() => {
-    if (historyLoaded.current) return;
-    historyLoaded.current = true;
-    const tk = localStorage.getItem('user_token');
-    if (!tk) { remoteReady.current = true; return; }
-    fetch(`${API_BASE}/chat/history?agentId=${agent.id}`, { headers: { Authorization: `Bearer ${tk}` } })
-      .then((r) => r.json()).then((j) => {
-        const sessions = (j.data || []);
-        if (!sessions.length) { remoteReady.current = true; return; }
-        // 服务端有历史 → 覆盖本地（服务端是权威源）
-        const remote = sessions.map((s) => ({
-          id: Number(String(s.id).replace(/-/g, '').slice(0, 13)) || Date.now(),
-          title: s.title || '对话',
-          messages: (s.messages || []).map((m, i) => ({
-            id: i, sender: m.sender, content: m.content,
-            citations: null, guide: null, jobs: null, note: null,
-          })),
-          createdAt: s.createdAt || '',
-        }));
-        serverSessionIds.current = {};
-        sessions.forEach((s, i) => {
-          serverSessionIds.current[remote[i].id] = s.id;
-        });
-        setConvs(remote.slice(0, 30));
-        // 就业助手：历史只进左栏列表，不自动打开（进入即欢迎词+意向卡，对齐原型）
-        if (remote.length && agent.agentType !== 'native-employment') setActiveId(remote[0].id);
-        remoteReady.current = true;
-      }).catch(() => { remoteReady.current = true; });
-  }, [agent.id]);
-
-  // 对话完成后存服务端
-  const saveToServer = async (convId, title, messages) => {
-    const tk = localStorage.getItem('user_token');
-    if (!tk || !messages || !messages.length) return;
-    const sessionId = serverSessionIds.current[convId] || null;
-    // 只存最近一轮（user + agent两条），sessionId为null时后端自动建
-    const lastUser = [...messages].reverse().find((m) => m.sender === 'user');
-    const lastAgent = [...messages].reverse().find((m) => m.sender === 'agent' && !m.streaming);
-    if (!lastUser || !lastAgent) return;
-    try {
-      const r = await fetch(`${API_BASE}/chat/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tk}` },
-        body: JSON.stringify({
-          agentId: agent.id,
-          sessionId,
-          title: title || convTitle(messages),
-          messages: [
-            { sender: 'user', content: lastUser.content },
-            { sender: 'agent', content: lastAgent.content },
-          ],
-        }),
-      });
-      const j = await r.json();
-      if (j.data && j.data.sessionId) serverSessionIds.current[convId] = j.data.sessionId;
-      return true;
-    } catch { return false; }
-  };
-
-  // 持久化（localStorage 作为缓存层 + 服务端调用）
-  useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify(convs.slice(0, 30))); } catch {}
-    // 只在"本页新产生一轮对话"时写服务端：
-    //  - remoteReady：等服务端历史加载完，避免把本地缓存当新会话又建一条
-    //  - 消息 id 为时间戳（Date.now 量级）= 本页新生成；历史恢复的消息 id 是小序号 → 跳过
-    //  - savedSig：同一轮只写一次，避免重复写导致消息重复堆积
-    if (!remoteReady.current) return;
-    const conv = convs[0];
-    const lastMsg = conv?.messages?.[conv?.messages?.length - 1];
-    if (!conv || !lastMsg || lastMsg.sender !== 'agent' || lastMsg.streaming) return;
-    if (!(Number(lastMsg.id) > 1e12)) return;
-    const sig = `${lastMsg.id}|${(lastMsg.content || '').length}`;
-    if (savedSig.current[conv.id] === sig) return;
-    savedSig.current[conv.id] = sig;
-    saveToServer(conv.id, conv.title, conv.messages).then((ok) => { if (!ok) delete savedSig.current[conv.id]; });
-  }, [convs, storageKey]);
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [active?.messages?.length, toolStatus]);
-
-  const mutate = (convId, updater) => setConvs((prev) => prev.map((c) => (c.id === convId ? updater(c) : c)));
-  const newChat = () => {
-    const conv = { id: Date.now(), title: '新对话', messages: [], createdAt: Date.now() };
-    setConvs((prev) => [conv, ...prev]);
-    setActiveId(conv.id);
-    setInput('');
-    setLoading(false);
-    setToolStatus('');
-  };
-  const delConv = async (e, convId) => {
-    e.stopPropagation();
-    const conv = convs.find((c) => c.id === convId);
-    if (conv && conv.messages.length > 0 && !(await confirmDialog({ title: '删除对话', text: '确定删除这段对话历史吗？删除后不可恢复。', okText: '删除', danger: true }))) return;
-    setConvs((prev) => {
-      const next = prev.filter((c) => c.id !== convId);
-      if (activeId === convId) setActiveId(next[0]?.id ?? null);
-      return next;
-    });
-  };
-
-  const isRag = agent.agentType === 'native-rag';
-  const isEmp = agent.agentType === 'native-employment';
-  // 就业智能体：登录后取学生画像，展示个性化欢迎
-  const [empProfile, setEmpProfile] = useState(null);
-  useEffect(() => {
-    if (!isEmp || !user) return;
-    const tk = localStorage.getItem('user_token');
-    fetch(`${API_BASE}/employment/profile`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
-      .then((r) => r.json()).then((j) => { if (j.data) setEmpProfile(j.data); }).catch(() => {});
-  }, [isEmp, user]);
-  // 意向卡城市：取自真实岗位库（/employment/meta），无数据时回退 EMP_GUIDE 默认选项
-  const [empCities, setEmpCities] = useState(null);
-  useEffect(() => {
-    if (!isEmp || !user) return;
-    const tk = localStorage.getItem('user_token');
-    fetch(`${API_BASE}/employment/meta`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
-      .then((r) => r.json()).then((j) => { const cs = j.data && j.data.cities; if (cs && cs.length) setEmpCities(cs); }).catch(() => {});
-  }, [isEmp, user]);
-  const empProfileCard = empProfile ? `\n\n**你的学籍信息：** ${empProfile.name || ''} · ${empProfile.college || ''} · ${empProfile.major || ''} · ${empProfile.grade || ''}级` : '';
-  const welcome = () => ([
-    { id: 'w', sender: 'agent', guide: isEmp ? (empCities && empCities.length ? { ...EMP_GUIDE, cities: [...empCities, '不限'] } : EMP_GUIDE) : null, content: (gw || isRag || isEmp)
-      ? (isEmp
-        ? `你好，我是**${agent.name}**～我已读取你的学籍与成绩信息（见上方档案卡），结合在库校招岗位为你匹配适合的工作。\n\n先告诉我你的**求职意向**，我来为你匹配在库校招岗位：`
-        : isRag
-        ? `你好，我是**${agent.name}**。${agent.description || ''}\n\n你可以直接和我聊天，也可以问我学校制度与办事流程问题——涉及制度的问题我会查询知识库并附原文出处。`
-        : `你好，我是**${agent.name}**。${agent.description || ''}\n\n我接入了学院 MCP 数据查询服务，可直接查询学校数仓的实时数据（考勤、学籍、科研、消费等）。注意：考勤类数据约有 1–2 天同步延迟。`)
-      : `你好，我是**${agent.name}**。${agent.description || ''}\n\n该智能体的对话引擎正在接入中，当前可浏览广场其他智能体，或联系信息化与数据服务中心（dcc@wxit.edu.cn）咨询。` },
-  ]);
-
-  const msgs = active ? (active.messages.length ? active.messages : welcome()) : welcome();
-
-  const send = async (text) => {
-    const content = (text ?? input).trim();
-    if (!content || loading) return;
-    // 智慧就业助手依赖登录身份（登录账号=学号）读取学籍画像；游客直接引导登录，避免发出后落到 403
-    if (isEmp && !localStorage.getItem('user_token')) {
-      if (onNeedLogin) onNeedLogin('智慧就业助手需要登录后使用');
-      return;
-    }
-    setInput('');
-    // 无活动会话时自动开一段（首条消息即建会话）
-    let convId = activeId;
-    if (!convId) {
-      convId = Date.now();
-      const conv = { id: convId, title: content.slice(0, 20), messages: [], createdAt: Date.now() };
-      setConvs((prev) => [conv, ...prev]);
-      setActiveId(convId);
-    }
-    const userMsg = { id: Date.now(), sender: 'user', content };
-    mutate(convId, (c) => ({ ...c, title: c.title === '新对话' ? content.slice(0, 20) : c.title, messages: [...c.messages, userMsg] }));
-    if (isRag || isEmp) {
-      setLoading(true); setToolStatus('正在思考…');
-      const genId = Date.now() + 1;
-      mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
-      try {
-        const _tk = localStorage.getItem('user_token');
-        const _url = isEmp ? `${API_BASE}/employment/chat` : `${API_BASE}/kb/${agent.id}/chat`;
-        const resp = await fetch(`${_url}?q=${encodeURIComponent(content)}`, {
-          headers: _tk ? { Authorization: `Bearer ${_tk}` } : {},
-        });
-        if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let buf = ''; let acc = ''; let cites = null; let guideData = null; let jobsData = null;
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          // 只把已完整接收的块交给纯模块解析（末块留在 buf 等下一片，保持逐片上屏时机）
-          const parts = buf.split('\n\n');
-          buf = parts.pop();
-          for (const { name: evtName, data } of parseSseEvents(parts.join('\n\n'))) {
-            if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
-            else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
-            else if (evtName === 'guide') { try { guideData = JSON.parse(data); } catch {} }
-            else if (evtName === 'jobs') {
-              // 一到就上屏（后端会先发"规则排序"版再发"LLM 精排"版）→ 学生不用等正文流完才看到岗位卡
-              try { jobsData = JSON.parse(data); mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, jobs: jobsData } : m)) })); } catch {}
-            }
-            else if (evtName === 'text') {
-              try { acc += JSON.parse(data).data ?? ''; } catch {}
-              // 逐片上屏：SSE 分片驱动原生打字机效果
-              setToolStatus('');
-              mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc } : m)) }));
-            }
-            else if (evtName === 'error') { let m = '服务异常'; try { m = JSON.parse(data).message || m; } catch {} throw new Error(m); }
-          }
-        }
-        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc || '（未检索到相关内容）', streaming: false, citations: cites, guide: guideData, jobs: jobsData, note: cites && cites.length ? '依据：' + cites.length + ' 条知识库出处' : null } : m)) }));
-        // 对话用量上报（真实统计，供洞察页近7天对话）
-        fetch(`${API_BASE}/insight/track-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: agent.id }) }).catch(() => {});
-      } catch (e) {
-        mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
-      }
-      setLoading(false); setToolStatus('');
-      return;
-    }
-    if (!gw) {
-      mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: Date.now() + 1, sender: 'agent', content: '该智能体的对话引擎正在接入中。你可以在广场选择学院锡锡导员或全校数据查询进行实时数据问答。' }] }));
-      return;
-    }
-    setLoading(true); setToolStatus('');
-    const genId = Date.now() + 1;
-    mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: genId, sender: 'agent', content: '', streaming: true }] }));
-    try {
-      const _tk = localStorage.getItem('user_token');
-      const resp = await fetch(`${GATEWAY_BASE}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(_tk ? { Authorization: `Bearer ${_tk}` } : {}) },
-        body: JSON.stringify({ model: gw, messages: [{ role: 'user', content }], stream: true }),
-      });
-      if (!resp.ok || !resp.body) {
-        if (resp.status === 401 || resp.status === 403) {
-          let reason = '当前账号无该数据查询权限';
-          try { const j = await resp.json(); reason = j?.error?.message || reason; } catch {}
-          mutate(convId, (c) => ({ ...c, messages: [...c.messages, { id: Date.now() + 1, sender: 'agent', content: `⚠ ${reason}` }] }));
-          setLoading(false);
-          return;
-        }
-        throw new Error(`HTTP ${resp.status}`);
-      }
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buf = ''; let acc = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        // 只把已完整接收的块交给纯模块解析（末块留在 buf 等下一片，保持逐片上屏时机）
-        const parts = buf.split('\n\n');
-        buf = parts.pop();
-        for (const { data } of parseSseEvents(parts.join('\n\n'))) {
-          const payload = data.trim();
-          if (payload === '[DONE]') continue;
-          let evt; try { evt = JSON.parse(payload); } catch { continue; }
-          if (evt.type === 'tool') setToolStatus(evt.data?.message || '正在查询数据库…');
-          else if (evt.type === 'text') {
-            acc += evt.data ?? '';
-            const content2 = acc;
-            mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: content2 } : m)) }));
-          }
-        }
-      }
-      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: acc, streaming: false, note: '数据来源：学校数据中台 · 实时查询' } : m)) }));
-      // 对话用量上报（真实统计，供洞察页近7天对话）
-      fetch(`${API_BASE}/insight/track-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: agent.id }) }).catch(() => {});
-    } catch (e) {
-      mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: '查询失败：' + (e.message || '网络异常') + '，请稍后重试。', streaming: false } : m)) }));
-    }
-    setLoading(false); setToolStatus('');
-  };
+  // 对话内核（会话/历史/保存/欢迎语/三协议 SSE/删除/placeholder）与移动全页共用同一 hook
+  const {
+    convs, activeId, setActiveId, msgs, input, setInput, send, newChat, delConv,
+    loading, toolStatus, suggestions, phPool, phIdx, isRag, isEmp, gw, empProfile, currentModel, bottomRef,
+  } = useAgentChat(agent, { user, onNeedLogin });
 
   return (
     <div className="v2-chat-shell v2-chat-wide">
@@ -833,10 +545,6 @@ function ChatPage({ agent, onExit, onNeedLogin, user }) {
       </aside>
     </div>
   );
-}
-
-function loadConvs(agentId) {
-  try { return JSON.parse(localStorage.getItem(`v2-chat-${agentId}`) || '[]'); } catch { return []; }
 }
 
 /* ============ 模型服务 ============ */
@@ -1413,6 +1121,56 @@ function AboutPage() {
   );
 }
 
+function GuestGate({ onLogin }) {
+  return (
+    <div className="v2-guest-wrap">
+      <div className="v2-guest-left">
+        <img src="./v2-xixi.png" alt="锡锡 · 无锡职业技术大学 AI 形象" className="gg-mascot" />
+        <div className="gg-slogan">让 AI 成为校园的新基础设施</div>
+        <div className="gg-slogan-sub">学习答疑 · 制度查询 · 数据洞察，一个中台全部搞定</div>
+      </div>
+      <div className="v2-guest-right">
+        <div className="gg-card">
+          <div className="gg-brand">
+            <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
+            <div><div className="gg-t1">锡职大 AI 中台</div><div className="gg-t2">WXUT AI CENTER</div></div>
+          </div>
+          <div className="gg-title">请登录后使用</div>
+          <div className="gg-desc">平台功能与数据仅对校内师生开放，请使用学校统一身份认证登录。</div>
+          <button className="v2-btn gg-btn" onClick={onLogin}>统一身份认证登录</button>
+          <div className="gg-note">登录遇到问题？请联系信息化与数据服务中心 · dcc@wxut.edu.cn</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 企微移动视图提示层：桌面提示弹窗不在企微分支渲染，此处补可见反馈（未登录/无权限） */
+function WecomPrompt({ prompt, onClose, onRelogin }) {
+  const isLogin = prompt.kind === 'login';
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.45)', zIndex: 80,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ width: '100%', maxWidth: 320, background: '#fff', borderRadius: 16, padding: '20px 18px', textAlign: 'center' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#182234' }}>{isLogin ? '需要登录' : '暂无使用权限'}</div>
+        <p style={{ fontSize: 13.5, color: '#4A5A6E', lineHeight: 1.7, margin: '10px 0 0' }}>
+          {isLogin ? (prompt.msg || '请在企业微信工作台重新进入以完成登录') : (prompt.msg || '该智能体未对你的账号开放')}
+        </p>
+        <p style={{ fontSize: 12, color: '#7A8A9E', margin: '6px 0 0' }}>
+          {isLogin ? '如已登录仍提示，请在企微工作台重新进入以完成免密登录' : '如需开通权限，请联系信息化与数据服务中心（dcc@wxit.edu.cn）'}
+        </p>
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button style={{ flex: 1, height: 40, borderRadius: 10, border: '1px solid #E6ECF3', background: '#fff', color: '#4A5A6E', fontSize: 14 }} onClick={onClose}>继续浏览</button>
+          {isLogin
+            ? <button style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#4A6CF7', color: '#fff', fontSize: 14 }} onClick={onRelogin}>重新登录</button>
+            : <button style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#4A6CF7', color: '#fff', fontSize: 14 }} onClick={onClose}>我知道了</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SimplePage({ kind }) {
   if (kind === 'guide') return <GuideHub />;
   if (kind === 'about') return <AboutPage />;
@@ -1420,8 +1178,8 @@ function SimplePage({ kind }) {
 }
 
 /* ============ 企微 H5 移动视图 ============
- * 一期分派骨架：企微模式下 App 只渲染移动视图，桌面顶栏/页脚不外露。
- * MobilePlaza（T6）与 MobileChatSheet（T7）均为真实实现，各自 import 独立文件。*/
+ * 企微模式下 App 只渲染移动视图，桌面顶栏/页脚不外露。
+ * MobilePlaza（广场）与 MobileChatPage（全页对话）各自 import 独立文件；对话内核复用 useAgentChat。*/
 
 /* ============ 主应用 ============ */
 export default function V2App() {
@@ -1504,6 +1262,31 @@ export default function V2App() {
       })
       .catch(() => { /* 网络异常静默降游客 */ });
   }, [wecomMode]);
+
+  // 企微 OAuth 授权跳转：appid 取 sys_config `wecom.corpid`；redirect_uri 回企微 H5 入口（/v2/）。
+  // 未配置 corpid（本地/桌面调试）→ 静默不跳，留在页面显示登录提示。
+  const startWecomAuth = useCallback(() => {
+    getPublicConfig('wecom.corpid').then((d) => {
+      const corpid = d && d.configValue;
+      if (!corpid) return;
+      sessionStorage.setItem('v2-wecom-autoauth', '1');   // 一次性标记：防重定向环
+      const redirect = encodeURIComponent(window.location.origin + '/v2/');
+      window.location.replace(
+        `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${corpid}` +
+        `&redirect_uri=${redirect}&response_type=code&scope=snsapi_base&state=v2#wechat_redirect`
+      );
+    }).catch(() => { /* 配置读取失败：不跳 */ });
+  }, []);
+
+  // 未登录且无 code/mockUser → 自动走企微授权换 code（免密登录入口）。
+  useEffect(() => {
+    if (!wecomMode) return;
+    if (localStorage.getItem('user_token')) return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('code') || sp.get('mockUser')) return;
+    if (sessionStorage.getItem('v2-wecom-autoauth')) return;
+    startWecomAuth();
+  }, [wecomMode, startWecomAuth]);
 
   // 异步处理追踪：跨页面轮询"我可见库中处理中的文件"，完成/失败即弹提示（离开知识库也能收到）
   useEffect(() => {
@@ -1661,13 +1444,25 @@ export default function V2App() {
   }, [navigate]);
 
   // 企微模式分派：只渲染移动视图（不渲染桌面顶栏/页脚）。须先于 chatAgent 分支，
-  // 否则 chatAgent 会命中桌面对话页，MobileChatSheet 永不生效。
-  // MobilePlaza（T6）/ MobileChatSheet（T7）均为真实实现。
+  // 否则 chatAgent 会命中桌面对话页，移动全页对话永不生效。
+  // MobilePlaza（广场）/ MobileChatPage（全页对话，与桌面共用 useAgentChat 内核）均为真实实现。
   if (wecomMode) return (
     <>
       {chatAgent
-        ? <MobileChatSheet agent={chatAgent} user={user} onClose={() => { setChatAgent(null); navigate('/', { replace: true }); window.scrollTo(0, 0); }} />
+        ? <MobileChatPage agent={chatAgent} user={user} onNeedLogin={setLoginPrompt}
+                          onBack={() => { setChatAgent(null); navigate('/', { replace: true }); window.scrollTo(0, 0); }} />
         : <MobilePlaza agents={agents} cats={cats} onChat={launch} onNeedLogin={setLoginPrompt} />}
+      {/* 企微移动视图可见反馈：未登录/无权限被拦时给出提示（桌面弹窗不在本分支渲染） */}
+      {prompt && <WecomPrompt prompt={prompt} onClose={() => setPrompt(null)}
+                              onRelogin={() => { sessionStorage.removeItem('v2-wecom-autoauth'); startWecomAuth(); }} />}
+    </>
+  );
+
+  // 游客零可见：未登录时前台不展示任何功能与数据，仅显示登录引导（数据范围=无）
+  if (!user) return (
+    <>
+      <TopNav page={page} onNav={nav} user={user} guest={guest} onLogin={casLogin} onLogout={logout} perms={undefined} resolved={undefined} />
+      <GuestGate onLogin={casLogin} />
     </>
   );
 
