@@ -14,10 +14,11 @@ import V2Knowledge from './V2Knowledge.jsx';
 import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards, StudentProfileCard } from './V2Employment.jsx';
 import { XixiLoading, confirmDialog } from './ui.jsx';
 import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
+import { parseSseEvents } from './sse.js';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
-function escapeHtml2(s) {
+export function escapeHtml2(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 marked.use({
@@ -25,7 +26,7 @@ marked.use({
   gfm: true,
   renderer: { html(token) { return escapeHtml2(token.text); } },
 });
-function renderMd(text, maxRef) {
+export function renderMd(text, maxRef) {
   // 净化旧版历史数据中拼接的 HTML 尾注（改为 note 字段渲染）
   const cleaned = String(text || '').replace(/\n*<div class="v2-note-line">[\s\S]*?<\/div>\s*$/g, '').trim();
   try {
@@ -44,7 +45,7 @@ function renderMd(text, maxRef) {
 }
 
 /** 点击正文引用标记 [n]：滚动到该条引用卡并高亮（气泡级查找——引用卡是正文容器的兄弟节点） */
-function jumpToCite(e) {
+export function jumpToCite(e) {
   const el = e.target.closest ? e.target.closest('.v2-cref') : null;
   if (!el) return;
   const no = Number(el.getAttribute('data-ref'));
@@ -232,7 +233,7 @@ export function Footer({ onNav, toast, resolved }) {
 /* ============ 首页 hero ============ */
 /* 首页锡锡：气泡文案轮播（打字机 + 换句） */
 const HERO_BUBBLES = [
-  { b: '锵锵！锡职大AI中台上线啦！', sub: '呜呜叭叭 ~ 花筒吹起来' },
+  { b: '我是锡锡，你的校园 AI 助手', sub: '学习答疑 · 制度查询 · 数据洞察' },
   { b: '想查学院数据？问我呀', sub: '在校生 · 归寝 · 请假 · 消费 · 科研' },
   { b: '我接入了全校数仓', sub: '11 个学院 + 教职工 + 领导看板' },
   { b: '制度文件也可以问我', sub: '党建 / 教学 / 科研 / 人事 8 大类' },
@@ -547,9 +548,17 @@ function ChatPage({ agent, onExit, onNeedLogin, user }) {
     fetch(`${API_BASE}/employment/profile`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
       .then((r) => r.json()).then((j) => { if (j.data) setEmpProfile(j.data); }).catch(() => {});
   }, [isEmp, user]);
+  // 意向卡城市：取自真实岗位库（/employment/meta），无数据时回退 EMP_GUIDE 默认选项
+  const [empCities, setEmpCities] = useState(null);
+  useEffect(() => {
+    if (!isEmp || !user) return;
+    const tk = localStorage.getItem('user_token');
+    fetch(`${API_BASE}/employment/meta`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
+      .then((r) => r.json()).then((j) => { const cs = j.data && j.data.cities; if (cs && cs.length) setEmpCities(cs); }).catch(() => {});
+  }, [isEmp, user]);
   const empProfileCard = empProfile ? `\n\n**你的学籍信息：** ${empProfile.name || ''} · ${empProfile.college || ''} · ${empProfile.major || ''} · ${empProfile.grade || ''}级` : '';
   const welcome = () => ([
-    { id: 'w', sender: 'agent', guide: isEmp ? EMP_GUIDE : null, content: (gw || isRag || isEmp)
+    { id: 'w', sender: 'agent', guide: isEmp ? (empCities && empCities.length ? { ...EMP_GUIDE, cities: [...empCities, '不限'] } : EMP_GUIDE) : null, content: (gw || isRag || isEmp)
       ? (isEmp
         ? `你好，我是**${agent.name}**～我已读取你的学籍与成绩信息（见上方档案卡），结合在库校招岗位为你匹配适合的工作。\n\n先告诉我你的**求职意向**，我来为你匹配在库校招岗位：`
         : isRag
@@ -597,15 +606,10 @@ function ChatPage({ agent, onExit, onNeedLogin, user }) {
           const { value, done } = await reader.read();
           if (done) break;
           buf += decoder.decode(value, { stream: true });
+          // 只把已完整接收的块交给纯模块解析（末块留在 buf 等下一片，保持逐片上屏时机）
           const parts = buf.split('\n\n');
           buf = parts.pop();
-          for (const part of parts) {
-            const lines = part.split('\n');
-            let evtName = 'message'; let data = '';
-            for (const line of lines) {
-              if (line.startsWith('event:')) evtName = line.slice(6).trim();
-              else if (line.startsWith('data:')) data += line.slice(5);
-            }
+          for (const { name: evtName, data } of parseSseEvents(parts.join('\n\n'))) {
             if (evtName === 'tool') { try { setToolStatus(JSON.parse(data).message || '检索中…'); } catch {} }
             else if (evtName === 'citation') { try { cites = JSON.parse(data); } catch {} }
             else if (evtName === 'guide') { try { guideData = JSON.parse(data); } catch {} }
@@ -662,20 +666,18 @@ function ChatPage({ agent, onExit, onNeedLogin, user }) {
         const { value, done } = await reader.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
+        // 只把已完整接收的块交给纯模块解析（末块留在 buf 等下一片，保持逐片上屏时机）
         const parts = buf.split('\n\n');
         buf = parts.pop();
-        for (const part of parts) {
-          for (const line of part.split('\n')) {
-            if (!line.startsWith('data:')) continue;
-            const payload = line.slice(5).trim();
-            if (payload === '[DONE]') continue;
-            let evt; try { evt = JSON.parse(payload); } catch { continue; }
-            if (evt.type === 'tool') setToolStatus(evt.data?.message || '正在查询数据库…');
-            else if (evt.type === 'text') {
-              acc += evt.data ?? '';
-              const content2 = acc;
-              mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: content2 } : m)) }));
-            }
+        for (const { data } of parseSseEvents(parts.join('\n\n'))) {
+          const payload = data.trim();
+          if (payload === '[DONE]') continue;
+          let evt; try { evt = JSON.parse(payload); } catch { continue; }
+          if (evt.type === 'tool') setToolStatus(evt.data?.message || '正在查询数据库…');
+          else if (evt.type === 'text') {
+            acc += evt.data ?? '';
+            const content2 = acc;
+            mutate(convId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === genId ? { ...m, content: content2 } : m)) }));
           }
         }
       }
@@ -1287,27 +1289,131 @@ function GuideHub() {
 }
 
 /* ============ 简单内容页（campus/about 建设中；guide 走指南枢纽） ============ */
-function SimplePage({ kind }) {
-  const MAP = {
-    campus: ['数智化校园建设规划', '以 AI中台 为底座，教学 · 科研 · 管理 · 服务四线并进的智慧校园蓝图'],
-    about: ['关于 AI中台', '无锡职业技术大学 · 信息化与数据服务中心 出品'],
-  };
-  if (kind === 'guide') return <GuideHub />;
-  const [t, d] = MAP[kind] || MAP.campus;
+/* 数智化校园 · 建设规划（真实内容页） */
+function CampusPage() {
+  const icBox = { width: 38, height: 38, borderRadius: 10, background: 'var(--p-fill)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--el-primary)', flexShrink: 0 };
+  const lines = [
+    { ic: 'cap', t: '教学', d: '学习答疑、课程与实训辅导类智能体统一在广场获取，把 AI 助手带进课堂与自习。' },
+    { ic: 'flask', t: '科研', d: '文献检索、数据分析与科研数据查询（论文 / 横向），为教师科研提供数据与分析支撑。' },
+    { ic: 'clipboard', t: '管理', d: '智能填报、AI 数据洞察、制度问答，把重复性事务交给 AI，为管理与学工条线减负。' },
+    { ic: 'headset', t: '服务', d: '制度与办事流程问答、校园生活指引，让师生"问一次就办成"。' },
+  ];
+  const mods = [
+    { ic: 'spark', t: '智能体广场', d: '聚合全校智能体，按学院与场景分类，一处入口即用。' },
+    { ic: 'college', t: '学院锡锡导员', d: '11 个学院各有专属导员，实时回答本学院学生数据问题。' },
+    { ic: 'network', t: '全校数据查询', d: '面向校领导与管理部门，跨学院汇总数据一问即得。' },
+    { ic: 'chart', t: 'AI 数据洞察', d: '资助 / 安全 / 学业 / 心理 / 就业五个分析工作台，红黄绿灯识别关注线索。' },
+    { ic: 'doclog', t: 'AI 教师工作台', d: '数仓字段自动带出、材料 AI 起草、按原版式一键导出 Word。' },
+    { ic: 'book', t: '知识库中心', d: '学校制度与办事指南结构化知识库，支持问答并附原文出处。' },
+    { ic: 'monitor', t: 'AI超级门户', tag: '待规划', d: '桌面客户端，把中台能力带到每位师生的电脑上。' },
+    { ic: 'shield', t: '权限与安全', d: '统一身份认证与数据范围管控，敏感数据按角色可见、只读访问。' },
+    { ic: 'plug', t: '开放接入', d: '面向开发者的智能体开发平台，审核上架后进入广场复用。' },
+  ];
   return (
     <>
-      <div className="v2-sec-head"><h2>{t}</h2><p>{d}</p></div>
-      <div className="v2-body" style={{ maxWidth: 900 }}>
+      <div className="v2-sec-head">
+        <h2>数智化校园建设规划</h2>
+        <p>以 AI 中台为底座，教学 · 科研 · 管理 · 服务四线并进的智慧校园蓝图</p>
+      </div>
+      <div className="v2-body" style={{ maxWidth: 980 }}>
         <div className="v2-banner">
-          <div className="ic"><Icon name="info" size={26} /></div>
+          <div className="ic"><Icon name="landmark" size={24} /></div>
           <div>
-            <div className="t">V2 版本建设中</div>
-            <div className="d">该板块在 V2 中规划与 V1 相同的功能，内容与数据以 V1（当前正式版）为准，可从首页顶部返回。知识库中心为 V2 新增模块，能力建设中。</div>
+            <div className="t">一个底座：锡职大 AI 中台</div>
+            <div className="d">统一身份认证（CAS）+ 校园数据中台 + 校园智算算力与模型，向上支撑全校 AI 应用"一次接入、处处可用"。</div>
+          </div>
+        </div>
+
+        <div className="v2t-sec-head" style={{ marginTop: 18 }}><div className="v2t-sec-t">四条主线</div></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+          {lines.map((x) => (
+            <div className="v2-card" key={x.t}>
+              <div style={{ ...icBox, marginBottom: 9 }}><Icon name={x.ic} size={19} /></div>
+              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>{x.t}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.75 }}>{x.d}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="v2t-sec-head" style={{ marginTop: 20 }}><div className="v2t-sec-t">已落地模块<span className="v2t-cnt">面向全校师生</span></div></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+          {mods.map((m) => (
+            <div className="v2-card" key={m.t}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
+                <span style={{ ...icBox, width: 32, height: 32, borderRadius: 9 }}><Icon name={m.ic} size={16} /></span>
+                <span style={{ fontSize: 14, fontWeight: 800 }}>{m.t}</span>
+                {m.tag ? <span className="v2-tag grey" style={{ marginLeft: 'auto' }}>{m.tag}</span> : null}
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.75 }}>{m.d}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="v2-banner" style={{ marginTop: 18 }}>
+          <div className="ic"><Icon name="shield" size={22} /></div>
+          <div>
+            <div className="t">数据来源与合规</div>
+            <div className="d">数据来自学校数据中台（数仓储 / 考勤 / 请假 / 成绩 / 一卡通等），只读访问、按账号权限限定数据范围。洞察类分析仅为关注线索，不构成任何处理结论；涉及个人信息的业务分析须登录并具备对应角色。</div>
           </div>
         </div>
       </div>
     </>
   );
+}
+
+/* 关于 AI 中台（真实内容页） */
+function AboutPage() {
+  return (
+    <>
+      <div className="v2-sec-head">
+        <h2>关于 AI 中台</h2>
+        <p>无锡职业技术大学 · 信息化与数据服务中心 出品</p>
+      </div>
+      <div className="v2-body" style={{ maxWidth: 900 }}>
+        <div className="v2-card">
+          <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>平台简介</div>
+          <div style={{ fontSize: 13, color: 'var(--p-t2)', lineHeight: 1.9 }}>
+            锡职大 AI 中台是无锡职业技术大学面向全校师生建设的一体化人工智能应用平台。它以校园数据中台与智算算力为底座，
+            统一接入学校统一身份认证（CAS），聚合智能体广场、AI 数据洞察、智能填报、知识库中心等能力，
+            让 AI 成为教学、科研、管理与服务的新基础设施。平台面向师生开放，敏感数据按账号角色限定范围。
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
+          <div className="v2-card">
+            <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>技术架构</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.9 }}>
+              <li>前端：React + Vite 单页应用，桌面 / 大屏自适应</li>
+              <li>后端：Spring Boot 服务，统一 REST 接口与 SSE 流式对话</li>
+              <li>算力：校园智算一体机 + 移动云大模型，内网优先</li>
+              <li>认证：学校统一身份认证（CAS）单点登录</li>
+            </ul>
+          </div>
+          <div className="v2-card">
+            <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>数据来源与合规</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.9 }}>
+              <li>数据来自学校数据中台，只读访问</li>
+              <li>按账号角色限定数据范围（学院 / 全校）</li>
+              <li>洞察类结果仅为关注线索，不作处理依据</li>
+              <li>涉及个人信息须登录并具备对应权限</li>
+            </ul>
+          </div>
+        </div>
+        <div className="v2-banner" style={{ marginTop: 16 }}>
+          <div className="ic"><Icon name="phone" size={22} /></div>
+          <div>
+            <div className="t">联系我们</div>
+            <div className="d">无锡职业技术大学 信息化与数据服务中心 · dcc@wxit.edu.cn —— 平台使用、账号权限与数据接入咨询，欢迎来信。</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SimplePage({ kind }) {
+  if (kind === 'guide') return <GuideHub />;
+  if (kind === 'about') return <AboutPage />;
+  return <CampusPage />;
 }
 
 /* ============ 主应用 ============ */
