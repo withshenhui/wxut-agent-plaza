@@ -151,7 +151,17 @@ export default function MobileChatSheet({ agent, user, onClose }) {
                 )}
               </div>
               {m.sender === 'agent' && !m.streaming && m.guide && (
-                <EmploymentIntentCard guide={m.guide} onSubmit={(_picked, summary) => send(summary || '帮我推荐适合我的岗位')} />
+                <EmploymentIntentCard guide={m.guide} onSubmit={async (picked, summary) => {
+                  const tk = localStorage.getItem('user_token');
+                  try {
+                    await fetch(`${API_BASE}/employment/intent`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
+                      body: JSON.stringify(picked),
+                    });
+                  } catch (e) { /* 意向保存失败不阻塞推荐 */ }
+                  send(summary || '帮我推荐适合我的岗位');
+                }} />
               )}
               {m.sender === 'agent' && m.jobs && m.jobs.length > 0 && (m.content || !m.streaming) && (
                 <EmploymentJobCards jobs={m.jobs} onAsk={(q) => send(q)} />
