@@ -14,25 +14,35 @@ import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
 import FeaturesAdmin from './V2FeaturesAdmin.jsx';
 import * as feedbackApi from '../api/feedback';
+import * as insightApi from '../api/insight';
 import WecomSimulator from './WecomSimulator.jsx';
 
-const MENU = [
+/* 管理后台菜单：1 级＝主题分组，2 级＝具体页；仪表盘为单页 1 级 */
+const MENU_TREE = [
   { key: 'dashboard', icon: 'dashboard', label: '仪表盘' },
-  { key: 'agents', icon: 'spark', label: '智能体管理' },
-  { key: 'categories', icon: 'tag', label: '分类管理' },
-  { key: 'models', icon: 'chip', label: '模型管理' },
-  { key: 'users', icon: 'users', label: '用户管理' },
-];
-const SUB_MENU = [
-  { key: 'feedback', icon: 'send', label: '意见反馈' },
-  { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
-  { key: 'llm', icon: 'sliders', label: '大模型配置' },
-  { key: 'clients', icon: 'download', label: '客户端管理' },
-  { key: 'features', icon: 'ext', label: '前台功能管理' },
-  { key: 'simulator', icon: 'phone', label: '企微仿真' },
-  { key: 'basic', icon: 'gear', label: '基础配置' },
-  { key: 'files', icon: 'folder', label: '文件管理' },
-  { key: 'logs', icon: 'doclog', label: '操作日志' },
+  { id: 'agent', icon: 'spark', label: '智能体', children: [
+    { key: 'agents', icon: 'spark', label: '智能体管理' },
+    { key: 'categories', icon: 'tag', label: '分类管理' },
+  ] },
+  { id: 'model', icon: 'chip', label: '模型服务', children: [
+    { key: 'models', icon: 'chip', label: '模型管理' },
+    { key: 'llm', icon: 'sliders', label: '大模型配置' },
+  ] },
+  { id: 'rbac', icon: 'users', label: '用户与权限', children: [
+    { key: 'users', icon: 'users', label: '用户管理' },
+    { key: 'features', icon: 'ext', label: '前台功能管理' },
+  ] },
+  { id: 'content', icon: 'send', label: '内容运营', children: [
+    { key: 'xixi', icon: 'headset', label: '锡锡导员管理' },
+    { key: 'feedback', icon: 'send', label: '意见反馈' },
+    { key: 'clients', icon: 'download', label: '客户端管理' },
+    { key: 'simulator', icon: 'phone', label: '企微仿真' },
+  ] },
+  { id: 'settings', icon: 'gear', label: '系统设置', children: [
+    { key: 'basic', icon: 'gear', label: '基础配置' },
+    { key: 'files', icon: 'folder', label: '文件管理' },
+    { key: 'logs', icon: 'doclog', label: '操作日志' },
+  ] },
 ];
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
@@ -141,6 +151,7 @@ function TableSkeleton({ rows = 6, kpis = false }) {
 }
 
 export default function V2Admin({ user, onLogout }) {
+  const site = useSiteConfig();
   const [page, setPage] = useState(() => {
     // 初始 page 由地址栏决定：#/admin/{key}
     const h = window.location.hash || '';
@@ -149,6 +160,15 @@ export default function V2Admin({ user, onLogout }) {
   });
   const navigate = useNavigate();
   const toast = useToast();
+  // 分组菜单展开态：当前页所在分组默认展开
+  const [openGroups, setOpenGroups] = useState(() => {
+    const g = MENU_TREE.find((n) => n.children && n.children.some((c) => c.key === page));
+    return g ? { [g.id]: true } : {};
+  });
+  useEffect(() => {
+    const g = MENU_TREE.find((n) => n.children && n.children.some((c) => c.key === page));
+    if (g) setOpenGroups((p) => (p[g.id] ? p : { ...p, [g.id]: true }));
+  }, [page]);
   // 地址栏 → page（浏览器前进/后退/手输）
   useEffect(() => {
     const onHash = () => {
@@ -168,21 +188,27 @@ export default function V2Admin({ user, onLogout }) {
     <div className="v2-admin-app">
       <aside className="v2-sidebar">
         <div className="v2-side-brand">
-          <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
+          <img src={site.logo} alt="无锡职业技术大学校徽" />
           <div><div className="t1">锡职大AI中台 <span style={{ fontSize: 9, color: 'var(--el-primary)', fontWeight: 700 }}>V2</span></div><div className="t2">WXUT AI CENTER · ADMIN</div></div>
         </div>
         <nav className="v2-side-menu">
-          {MENU.map((m) => (
-            <div key={m.key} className={`v2-menu-item${page === m.key ? ' active' : ''}`} onClick={() => go(m.key)}>
-              <span className="ic"><Icon name={m.icon} /></span>{m.label}
+          {MENU_TREE.map((n) => (n.children ? (
+            <React.Fragment key={n.id}>
+              <div className={`v2-menu-item grp${openGroups[n.id] ? ' open' : ''}`} onClick={() => setOpenGroups((p) => ({ ...p, [n.id]: !p[n.id] }))}>
+                <span className="ic"><Icon name={n.icon} /></span>{n.label}
+                <span className="arr"><Icon name="chevD" size={12} style={{ transform: openGroups[n.id] ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} /></span>
+              </div>
+              {openGroups[n.id] && n.children.map((c) => (
+                <div key={c.key} className={`v2-menu-item sub${page === c.key ? ' active' : ''}`} onClick={() => go(c.key)}>
+                  <span className="ic"><Icon name={c.icon} /></span>{c.label}
+                </div>
+              ))}
+            </React.Fragment>
+          ) : (
+            <div key={n.key} className={`v2-menu-item${page === n.key ? ' active' : ''}`} onClick={() => go(n.key)}>
+              <span className="ic"><Icon name={n.icon} /></span>{n.label}
             </div>
-          ))}
-          <div className="v2-menu-group">系统设置</div>
-          {SUB_MENU.map((m) => (
-            <div key={m.key} className={`v2-menu-item sub${page === m.key ? ' active' : ''}`} onClick={() => go(m.key)}>
-              <span className="ic"><Icon name={m.icon} /></span>{m.label}
-            </div>
-          ))}
+          )))}
         </nav>
       </aside>
       <div className="v2-main">
@@ -218,6 +244,8 @@ export default function V2Admin({ user, onLogout }) {
 }
 
 /* ================= 仪表盘 ================= */
+const WB_LABEL = { funding: '精准资助分析', safety: '学生安全分析', academic: '学业预警分析', mental: '学生心理健康关怀', employment: '就业工作台' };
+
 function Dashboard({ go }) {
   const [st, setSt] = useState(null);
   const [loadedAt, setLoadedAt] = useState(null);
@@ -230,7 +258,8 @@ function Dashboard({ go }) {
       fetch(`${API_BASE}/models?category=general&size=200`).then((r) => r.json()),
       fetch(`${API_BASE}/models?category=vertical&size=200`).then((r) => r.json()),
       userApi.listUsers({ page: 1, size: 200 }).catch(() => null),
-    ]).then(([a, c, g, v, us]) => {
+      insightApi.usage().catch(() => null),
+    ]).then(([a, c, g, v, us, iu]) => {
       const agents = a.data?.records || [];
       const models = [...(g.data?.records || []), ...(v.data?.records || [])];
       const catMap = new Map();
@@ -254,6 +283,7 @@ function Dashboard({ go }) {
         on: agents.filter((x) => x.status === 1 && x.isBuilding !== 1).length,
         provs: [...provMap.entries()].sort((x, y) => y[1] - x[1]).slice(0, 7),
         local: models.filter((m) => (m.tags || []).includes('本地部署')).length,
+        insight: { rows: (iu && iu.rows) || [], total: (iu && iu.total) || 0 },
       });
       setLoadedAt(new Date());
     }).catch(() => setSt({ err: true }));
@@ -357,11 +387,38 @@ function Dashboard({ go }) {
           </div>
         </div>
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginTop: 14 }}>
+        <div className="v2-card">
+          <div className="ct">数据洞察使用排名</div>
+          <div className="cs">各分析工作台累计访问次数 · 含资助 / 安全 / 学业 / 心理 / 就业</div>
+          {(!st.insight || st.insight.rows.length === 0) ? (
+            <div className="v2-empty" style={{ padding: 18 }}>暂无访问数据 —— 师生进入 AI 数据洞察工作台后此处自动统计</div>
+          ) : (
+            <>
+              {st.insight.rows.map((r) => (
+                <div key={r.workbench} className="v2-hbar-row">
+                  <span className="v2-hbar-name">{WB_LABEL[r.workbench] || r.workbench}</span>
+                  <div className="v2-hbar-track">
+                    <div style={{ width: `${(r.n / (st.insight.rows[0].n || 1)) * 100}%`, background: 'var(--p-accent)' }} />
+                  </div>
+                  <span className="v2-hbar-val" title={'最近 ' + String(r.lastDate || '').slice(0, 10)}>{(r.n || 0).toLocaleString()} 次</span>
+                </div>
+              ))}
+              <div style={{ fontSize: 11.5, color: 'var(--p-t4)', marginTop: 8 }}>累计 {st.insight.total.toLocaleString()} 次访问</div>
+            </>
+          )}
+        </div>
+      </div>
     </>
   );
 }
 
 /* ================= 智能体管理 ================= */
+/* 只透传后端 AgentCreateDTO 认可的字段：列表对象里的 id / agentType / visitCount / categoryKey 等
+   未知字段若回传，后端 Jackson 会抛 UnrecognizedProperty → 500。此处统一白名单收口。 */
+const AGENT_DTO_KEYS = ['name', 'icon', 'description', 'detail', 'categoryId', 'externalUrl', 'isRecommended', 'isBuilding', 'sortOrder', 'status', 'tags'];
+const toAgentPayload = (o) => { const p = {}; AGENT_DTO_KEYS.forEach((k) => { if (o && o[k] !== undefined) p[k] = o[k]; }); return p; };
 function AgentsAdmin({ toast }) {
   const [list, setList] = useState(null);
   const [cats, setCats] = useState([]);
@@ -374,7 +431,8 @@ function AgentsAdmin({ toast }) {
   useEffect(() => { load(); }, []);
   const save = async (data) => {
     try {
-      const payload = { ...data, tags: typeof data.tags === 'string' ? data.tags.split(/[,，]/).map((s) => s.trim()).filter(Boolean) : data.tags };
+      const payload = toAgentPayload(data);
+      payload.tags = typeof data.tags === 'string' ? data.tags.split(/[,，]/).map((s) => s.trim()).filter(Boolean) : data.tags;
       if (data.id) await agentApi.updateAgent(data.id, payload);
       else await agentApi.createAgent(payload);
       toast(`已保存「${data.name}」`);
@@ -438,8 +496,8 @@ function AgentsAdmin({ toast }) {
                 <td><span className="v2-tag blue">{a.categoryName}</span></td>
                 <td style={{ whiteSpace: 'normal', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.description || ''}>{a.description}</td>
                 <td className="num" style={{ textAlign: 'right' }}>{(a.visitCount || 0).toLocaleString()}</td>
-                <td><Switch on={a.isRecommended === 1} onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isRecommended: v ? 1 : 0 }); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
-                <td><Switch on={a.isBuilding === 1} title="建设中：广场不展示" onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...a, isBuilding: v ? 1 : 0 }); toast(v ? `「${a.name}」已标记为建设中，广场不再展示` : `「${a.name}」已上架广场`); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
+                <td><Switch on={a.isRecommended === 1} onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...toAgentPayload(a), isRecommended: v ? 1 : 0 }); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
+                <td><Switch on={a.isBuilding === 1} title="建设中：广场不展示" onChange={async (v) => { try { await agentApi.updateAgent(a.id, { ...toAgentPayload(a), isBuilding: v ? 1 : 0 }); toast(v ? `「${a.name}」已标记为建设中，广场不再展示` : `「${a.name}」已上架广场`); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
                 <td><span className={`v2-tag ${a.status === 1 ? 'ok' : 'off'}`}>{a.status === 1 ? '启用' : '停用'}</span></td>
                 <td>
                   <button className="v2-link" onClick={() => setEdit(a)}>编辑</button>
@@ -624,6 +682,9 @@ function ModelsAdmin({ toast }) {
       .catch(() => { setList([]); toast('加载失败'); });
   };
   useEffect(() => { load(); }, []);
+  /* 类型下拉选项：页面上已出现的类型 + 常用标准类型（与列表一致，避免手填口径不一） */
+  const STD_TYPES = ['文本生成', '推理', '通用推理', '嵌入', 'Reranker', '多模态理解', '图片理解', '图片生成', '语音识别', '语音生成', '内容提取'];
+  const typeOptions = [...new Set([...(list || []).map((m) => m.type).filter(Boolean), ...(edit && edit.type ? [edit.type] : []), ...STD_TYPES])];
   const save = async (data) => {
     try {
       if (data.id) await modelApi.updateModel(data.id, data);
@@ -649,15 +710,16 @@ function ModelsAdmin({ toast }) {
       </div>
       <div className="v2-tbl-wrap">
         <table className="v2-table">
-          <thead><tr><th>模型名称</th><th>供应商</th><th>类型</th><th>描述</th><th>分类</th><th>操作</th></tr></thead>
+          <thead><tr><th>模型名称</th><th>供应商</th><th>类型</th><th>描述</th><th>分类</th><th style={{ width: 70 }}>建设中</th><th>操作</th></tr></thead>
           <tbody>
             {list.map((m) => (
               <tr key={m.id}>
-                <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12, color: 'var(--aink)', fontWeight: 500 }}>{m.name}</td>
+                <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12, color: 'var(--aink)', fontWeight: 500 }}>{m.name}{(m.tags || []).includes('建设中') && <span className="v2-tag mid" style={{ marginLeft: 6 }}>建设中</span>}</td>
                 <td>{m.provider}</td>
                 <td><span className="v2-tag blue">{m.type}</span></td>
                 <td style={{ whiteSpace: 'normal', maxWidth: 320 }}>{m.description}</td>
                 <td><span className={`v2-tag ${m.category === 'vertical' ? 'mid' : 'blue'}`}>{m.category === 'vertical' ? '垂类' : '通用'}</span></td>
+                <td><Switch on={(m.tags || []).includes('建设中')} title="建设中：模型服务页标记为建设中并沉底展示" onChange={async (v) => { try { const cur = m.tags || []; const tags = v ? [...cur.filter((t) => t !== '建设中'), '建设中'] : cur.filter((t) => t !== '建设中'); await modelApi.updateModel(m.id, { ...m, tags }); toast(v ? `「${m.name}」已标记为建设中` : `「${m.name}」已取消建设中`); load(); } catch (e) { toast('失败：' + e.message); } }} /></td>
                 <td>
                   <button className="v2-link" onClick={() => setEdit(m)}>编辑</button>
                   <button className="v2-link danger" onClick={() => del(m)}>删除</button>
@@ -680,7 +742,14 @@ function ModelsAdmin({ toast }) {
           ].map(([lb, k, hint, req]) => (
             <div className="v2-fm-row" key={k}>
               <span className={`v2-fm-label${req ? ' req' : ''}`}>{lb}</span>
-              <div className="v2-fm-body"><input className="v2-fm-i" value={typeof edit[k] === 'string' ? edit[k] : (Array.isArray(edit[k]) ? edit[k].join(',') : '')} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} placeholder={hint} /></div>
+              <div className="v2-fm-body">{k === 'type' ? (
+                <select className="v2-fm-i" value={edit.type || ''} onChange={(e) => setEdit({ ...edit, type: e.target.value })}>
+                  <option value="">请选择类型</option>
+                  {typeOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input className="v2-fm-i" value={typeof edit[k] === 'string' ? edit[k] : (Array.isArray(edit[k]) ? edit[k].join(',') : '')} onChange={(e) => setEdit({ ...edit, [k]: e.target.value })} placeholder={hint} />
+              )}</div>
             </div>
           ))}
           <div className="v2-fm-row">
@@ -816,7 +885,7 @@ function UsersAdmin({ toast }) {
                 <td className="num">{u.id}</td>
                 <td style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12 }}>{u.username}</td>
                 <td style={{ color: 'var(--aink)', fontWeight: 500 }}>{u.nickname}</td>
-                <td><span className={`v2-tag ${u.role === 'admin' ? 'blue' : u.role === 'leader' ? 'ok' : u.role === 'college_admin' ? 'mid' : ''}`}>{ROLE_LABELS[u.role] || u.role}</span></td>
+                <td><span className={`v2-role ${['admin', 'leader', 'college_admin'].includes(u.role) ? u.role : 'user'}`}>{ROLE_LABELS[u.role] || u.role}</span></td>
                 <td>{u.collegeId != null ? collegeName(u.collegeId) : <span style={{ color: 'var(--p-t4)' }} title="该账号尚未登录过，下次 CAS 登录时自动从数据中台同步学院归属">未同步</span>}</td>
                 <td><span className={`v2-tag ${u.status === 1 ? 'ok' : 'off'}`}>{u.status === 1 ? '启用' : '禁用'}</span></td>
                 <td>
@@ -1120,9 +1189,27 @@ function LlmAdmin({ toast }) {
 }
 
 /* ================= 基础配置 ================= */
-const BASIC_KEYS = [['site_name', '站点名称，显示在页面标题'], ['site_footer', '页脚文案'], ['upload_max_size', '上传大小上限（MB）'], ['upload_allowed_types', '允许上传的文件类型，逗号分隔']];
+const BASIC_KEYS = [
+  ['site_name', '系统名称', '显示在浏览器标题与页面品牌处'],
+  ['site_subtitle', '系统副标题', '显示在品牌名下方（如英文名 / 机构全称）'],
+  ['site_footer', '页脚文案', '显示在页面底部的版权与署名文字'],
+  ['upload_note_placeholder', '', ''],
+  ['upload_max_size', '上传大小上限', '上传文件的大小上限（MB）'],
+  ['upload_allowed_types', '允许上传的文件类型', '逗号分隔的文件扩展名，如 jpg,png,pdf,docx'],
+  ['labelstudio.base_url', 'Label Studio 地址', 'AI数据工场标注对接：如 http://210.28.144.245:8082'],
+  ['labelstudio.token', 'Label Studio Token', '标注对接令牌（请求头 Authorization: Token <token>）'],
+];
 function BasicAdmin({ toast }) {
   const [vals, setVals] = useState(null);
+  const [lsMsg, setLsMsg] = useState('');
+  const testLs = () => {
+    const tk = localStorage.getItem('admin_token');
+    setLsMsg('检测中…');
+    fetch(`${API_BASE}/dataset/labelstudio/ping`, { headers: tk ? { Authorization: 'Bearer ' + tk } : {} })
+      .then((r) => r.json())
+      .then((j) => { const d = j?.data || {}; setLsMsg(d.ok ? `连通 ✓（Label Studio 项目数 ${d.projects ?? '?'}）` : `失败：${d.error || j?.message || '未知'}（先保存地址与 Token）`); })
+      .catch((e) => setLsMsg('请求失败：' + e.message));
+  };
   const load = () => configApi.listConfigs().then((d) => {
     const map = {};
     (Array.isArray(d) ? d : d?.records || []).forEach((c) => { map[c.configKey] = c.configValue; });
@@ -1130,6 +1217,27 @@ function BasicAdmin({ toast }) {
   }).catch(() => { setVals({}); toast('加载失败'); });
   useEffect(() => { load(); }, []);
   if (!vals) return <div className="v2-loading">加载中…</div>;
+  const [logoUp, setLogoUp] = useState(false);
+  const onLogoUpload = async (e) => {
+    const f = e.target && e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!/^image\//.test(f.type || '')) { toast('请选择图片文件（PNG / JPG / SVG）'); e.target.value = ''; return; }
+    setLogoUp(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', f);
+      const d = await fileApi.uploadFile(fd);
+      const url = `${API_BASE}/files/download/${d.id}`;
+      await configApi.updateConfig('site_logo', url);
+      setVals({ ...vals, site_logo: url });
+      toast('系统 Logo 已更新，前台刷新后生效');
+    } catch (e2) { toast('上传失败：' + e2.message); }
+    setLogoUp(false);
+    e.target.value = '';
+  };
+  const resetLogo = () => configApi.updateConfig('site_logo', '')
+    .then(() => { setVals({ ...vals, site_logo: '' }); toast('已恢复默认 Logo'); })
+    .catch((e) => toast('失败：' + e.message));
   const save = async () => {
     try {
       await Promise.all(BASIC_KEYS.map(([k]) => vals[k] !== undefined && configApi.updateConfig(k, vals[k])));
@@ -1139,13 +1247,13 @@ function BasicAdmin({ toast }) {
   return (
     <>
       <div className="v2-page-head">
-        <div><div className="v2-ph-title">基础配置</div><div className="v2-ph-sub">站点名称、页脚与上传限制等全局参数</div></div>
+        <div><div className="v2-ph-title">基础配置</div><div className="v2-ph-sub">系统名称、Logo、页脚与上传限制等全局参数</div></div>
       </div>
       <div className="v2-card" style={{ maxWidth: 760 }}>
         <div className="v2-kv-form">
-          {BASIC_KEYS.map(([k, hint]) => (
+          {BASIC_KEYS.map(([k, label, hint]) => (
             <div className="v2-kv-row" key={k}>
-              <span className="k" style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>{k}</span>
+              <span className="k">{label}</span>
               <span className="v"><input className="v2-fm-i" value={vals[k] ?? ''} onChange={(e) => setVals({ ...vals, [k]: e.target.value })} /><div className="v2-fm-hint">{hint}</div></span>
             </div>
           ))}
@@ -1155,7 +1263,7 @@ function BasicAdmin({ toast }) {
       <div className="v2-card" style={{ maxWidth: 760, marginTop: 14 }}>
         <div className="v2-kv-form">
           <div className="v2-kv-row">
-            <span className="k" style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>游客模式</span>
+            <span className="k">游客模式</span>
             <span className="v">
               <div className="v2-guest-switch">
                 <button type="button" className={'v2-sw' + ((vals['guest.mode'] ?? 'on') !== 'off' ? ' on' : '')} aria-label="游客模式开关"
@@ -1167,9 +1275,38 @@ function BasicAdmin({ toast }) {
                   }} />
                 <span style={{ fontSize: 12.5, color: 'var(--p-t2)' }}>{(vals['guest.mode'] ?? 'on') !== 'off' ? '已开启：游客可免登录浏览广场与模型服务' : '已关闭：访问任意页面均需统一身份认证登录'}</span>
               </div>
-              <div className="v2-fm-hint">guest.mode：开启后游客免登录浏览；关闭后全站强制登录，未登录用户（含演示场景）无法进入任何页面</div>
+              <div className="v2-fm-hint">开启后游客免登录浏览广场与模型服务；关闭后全站强制登录，未登录用户（含演示场景）无法进入任何页面</div>
             </span>
           </div>
+        </div>
+      </div>
+      <div className="v2-card" style={{ maxWidth: 760, marginTop: 14 }}>
+        <div className="v2-kv-form">
+          <div className="v2-kv-row">
+            <span className="k">系统 Logo</span>
+            <span className="v">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <img src={(vals['site_logo'] && String(vals['site_logo']).trim()) || './v2-logo.png?v=2'} alt="系统 Logo"
+                  style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 12, border: '1px solid var(--p-line2)', background: '#FAFBFD', padding: 6 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <label className="v2-btn ghost" style={{ cursor: 'pointer', height: 34, display: 'inline-flex', alignItems: 'center', padding: '0 14px', margin: 0 }}>
+                      {logoUp ? '上传中…' : '上传 Logo'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={onLogoUpload} />
+                    </label>
+                    {vals['site_logo'] && <button className="v2-btn ghost" onClick={resetLogo}>恢复默认</button>}
+                  </div>
+                  <div className="v2-fm-hint">建议透明背景 PNG / SVG，正方形或横向均可；用于顶栏品牌位、页脚、登录页与浏览器图标，保存后前台刷新生效</div>
+                </div>
+              </div>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="v2-card" style={{ maxWidth: 760, marginTop: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button className="v2-btn ghost" onClick={testLs}>测试 Label Studio 连通</button>
+          <span style={{ fontSize: 12.5, color: 'var(--p-t3)' }}>{lsMsg || 'AI数据工场标注对接：填好上方「Label Studio 地址 / Token」并保存后，点此自检'}</span>
         </div>
       </div>
     </>
