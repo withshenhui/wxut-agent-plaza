@@ -36,6 +36,7 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
   const loadDetail = (id, jump) => { setDetail(null); api.getDataset(id).then((d) => { setDetail(d); if (jump) { const dd = (d && d.dataset) || {}; const p = [(dd.item_count || 0) > 0, (dd.cleaned_count || 0) > 0, (dd.annotated_count || 0) > 0, ((d && d.versions) || []).length > 0]; const i = p.findIndex((x) => !x); setStep(STEPS[i < 0 ? 4 : i][0]); } }).catch((e) => { toast(e.message || '加载失败'); setDetail({ dataset: null }); }); };
   useEffect(() => { if (cur != null) loadDetail(cur, true); }, [cur]);
 
+  if (location.pathname === '/dataset/manual') return <LSUsageManual onBack={() => navigate('/dataset')} />;
   if (!user && onNeedLogin) onNeedLogin && onNeedLogin('AI 数据工场需要登录后使用');
 
   const doCreate = async () => {
@@ -151,7 +152,7 @@ export function DataWorkshop({ toast, user, onNeedLogin, resolved }) {
         <>
           <StepIngest id={cur} step={step} detail={detail} reload={reload} toast={toast} fileRef={fileRef} />
           <StepClean id={cur} step={step} detail={detail} reload={reload} toast={toast} busy={busy} setBusy={setBusy} />
-          <StepAnnot id={cur} step={step} detail={detail} reload={reload} toast={toast} resRef={resRef} />
+          <StepAnnot id={cur} step={step} detail={detail} reload={reload} toast={toast} resRef={resRef} onOpenManual={() => navigate('/dataset/manual')} />
           <StepVersion id={cur} step={step} detail={detail} reload={reload} toast={toast} />
           <StepExport id={cur} step={step} detail={detail} />
         </>
@@ -310,8 +311,57 @@ function StepClean({ id, step, detail, reload, toast, busy, setBusy }) {
   );
 }
 
+/* ===== 标注平台（Label Studio）操作手册 ===== */
+function LSUsageManual({ onBack }) {
+  const H = ({ children }) => <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--aink)', margin: '18px 0 8px' }}>{children}</div>;
+  const OL = ({ items }) => <ol style={{ margin: '0', paddingLeft: 20, fontSize: 13, color: 'var(--p-t1)', lineHeight: 2 }}>{items.map((s, i) => <li key={i}>{s}</li>)}</ol>;
+  return (
+    <div className="v2-body v2t-body" style={{ maxWidth: 900, paddingTop: 22 }}>
+      <a className="v2t-back" onClick={onBack} role="button" tabIndex={0}><Icon name="back" size={14} />返回数据集</a>
+      <div className="v2-sec-head" style={{ marginTop: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 22 }}>标注平台操作手册</h2>
+          <p style={{ fontSize: 12.5, color: 'var(--p-t3)', marginTop: 6 }}>AI 数据工场 · 标注环节（Label Studio）· 两种标注方式与你需要点的地方</p>
+        </div>
+      </div>
+      <div className="v2-card" style={{ lineHeight: 1.9 }}>
+        <H>一、两种标注方式（二选一）</H>
+        <div style={{ fontSize: 13, color: 'var(--p-t2)' }}>
+          <div style={{ marginBottom: 6 }}>• <b>在线（推荐）</b>：中台「推送」→ 在标注平台标 → 回来「拉取」。全自动，不用传文件。</div>
+          <div>• <b>离线（文件）</b>：中台「导出标注任务」下载 JSON → 手动在标注平台导入 → 标完导出结果 → 回「导入结果」。</div>
+        </div>
+
+        <H>二、在线方式（推荐）</H>
+        <OL items={[
+          '在数据集详情「标注」环节，点「新建标注任务」，选模板（文本分类 / 问答质量 / 实体标注 NER）并填标注说明。',
+          '在任务行点「推送」——中台会自动在标注平台建好项目并把这批数据导进去。',
+          '点右上「打开标注平台」，用账号登录后进入对应项目开始标注。',
+          '标注完成后回到本页点「拉取」——结果回到中台，状态变「已回传」，并显示质量指标（覆盖率等）。',
+          '如需复核，可对任务「审核」通过或驳回；通过后到「导出」环节导出训练格式数据集。',
+        ]} />
+
+        <H>三、离线方式（用「导出标注任务」）</H>
+        <OL items={[
+          '在任务行点「导出标注任务」——下载一个 Label Studio 格式的 JSON。',
+          '打开标注平台 → 项目 → Import，上传该 JSON。',
+          '在平台里标注；标完在项目 → Export 下载结果 JSON。',
+          '回到本页任务行点「导入结果」，上传该结果 JSON——即完成回填。',
+        ]} />
+
+        <H>四、常见问题</H>
+        <div style={{ fontSize: 13, color: 'var(--p-t2)' }}>
+          <div>• <b>看不到「推送/拉取」？</b>说明标注平台未配置好——去后台「基础配置」填 Label Studio 地址与 Token，点「测试连通」。</div>
+          <div>• <b>推送后平台里没数据？</b>确认点的是同一任务行，并稍等刷新项目。</div>
+          <div>• <b>标注界面是英文？</b>Label Studio 官方无中文界面，可用浏览器「翻译成中文」。</div>
+          <div>• <b>想标实体（NER）？</b>建任务时模板选「实体标注(NER)」，平台里会出现实体标签工具。</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===== 步骤3：标注 ===== */
-function StepAnnot({ id, step, detail, reload, toast, resRef }) {
+function StepAnnot({ id, step, detail, reload, toast, resRef, onOpenManual }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', instruction: '', template: 'text_classification' });
   const [busy, setBusy] = useState(false);
@@ -335,6 +385,7 @@ function StepAnnot({ id, step, detail, reload, toast, resRef }) {
         <div><div style={{ fontSize: 14.5, fontWeight: 800 }}>标注</div><div style={{ fontSize: 12, color: 'var(--p-t3)', marginTop: 2 }}>建任务 → 推送到 AI数据工场标注 → 回传结果</div></div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           {(detail && detail.labelstudio) ? <a className="btn-primary" href={detail.labelstudio} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="ext" size={13} /> 打开标注平台</a> : null}
+          <button className="v2-btn ghost" onClick={onOpenManual}>标注操作手册</button>
           <button className="v2-btn" onClick={() => setOpen(true)}><Icon name="plus" size={14} /> 新建标注任务</button>
         </div>
       </div>
