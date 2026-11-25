@@ -20,9 +20,36 @@ function WarnBar({ children }) {
   );
 }
 
+/* ---------- AI教师工作台 · 能力目录（分类 + 卡片） ----------
+   左侧分类筛选；可用卡仅「智能填报」，其余为「规划中」占位（暂无后端）。 */
+const WB_CATS = [
+  { key: 'form', label: '智能填报' },
+  { key: 'teach', label: '教学教研' },
+  { key: 'office', label: '公文办公' },
+  { key: 'research', label: '科研辅助' },
+  { key: 'student', label: '学生工作' },
+];
+const WB_CARDS = [
+  { t: '智能填报', cat: 'form', avail: true, ic: 'doclog',
+    d: '年度考核、职称评审等高频表格：数仓字段自动带出，总结类材料 AI 起草，导出保持原版式 Word 文件。仅可为本人填报。',
+    tags: [{ c: 'blue', x: '4 套模板' }, { c: 'green', x: '可导出 Word' }] },
+  { t: '教案与课件大纲', cat: 'teach', ic: 'book', d: '按课程标准与章节一键生成单元教案、课件大纲，可直接编辑。' },
+  { t: '出题组卷', cat: 'teach', ic: 'clipboard', d: '选择/填空/简答/实操批量出题，自动匹配答案、难度分级并组卷。' },
+  { t: 'PPT 一键制作', cat: 'teach', ic: 'chart', d: '把大纲要点转成演示文稿，自动套用校模板，导出可编辑文件。' },
+  { t: '成绩分析报告', cat: 'teach', ic: 'grad', d: '班级成绩分布、不及格预警与试卷难度一页报告，学期末一键生成。' },
+  { t: '公文写作助手', cat: 'office', ic: 'briefcase', d: '通知、请示、报告等一键起草，按校内公文格式输出。' },
+  { t: '会议纪要', cat: 'office', ic: 'headset', d: '录音转写并提取要点与待办，一键生成规范会议纪要。' },
+  { t: '表格智能清洗合并', cat: 'office', ic: 'wrench', d: '各部门乱格式 Excel 自动统一列名、合并多表并透视汇总。' },
+  { t: '批量文档处理', cat: 'office', ic: 'folder', d: 'PDF 拆分/合并/格式转换与关键信息提取，批量处理省时。' },
+  { t: '中英文献翻译润色', cat: 'office', ic: 'globe', d: '学术翻译 + 语法润色 + 参考文献格式化，保持术语一致。' },
+  { t: '科研申报辅助', cat: 'research', ic: 'flask', d: '申报书/论文结构建议与文献综述提纲，附写作要点。' },
+  { t: '评语批量生成', cat: 'student', ic: 'chat', d: '结合成绩、考勤与活动数据，为全班学生逐一生成学期评语初稿。' },
+];
+
 /* ---------- 频道首页 ---------- */
 export function TeacherHome({ user, requireLogin, toast, openWizard, onNav }) {
   const [tab, setTab] = useState('records');
+  const [cat, setCat] = useState('all');
   const [records, setRecords] = useState(null);
   const [recordsErr, setRecordsErr] = useState('');
 
@@ -49,54 +76,58 @@ export function TeacherHome({ user, requireLogin, toast, openWizard, onNav }) {
         <div className="v2t-sub">为教学与管理工作减负 · 数仓数据自动带出、填报材料 AI 起草、按原版式一键导出 · 面向全校教职工</div>
       </div>
       <div className="v2t-dash">
-        <div className="v2t-sec-head"><div className="v2t-sec-t">智能填报工作台<span className="v2t-cnt">1 个可用 · 3 个规划中</span></div></div>
-        <div className="v2t-wb-grid">
-          <div className="v2t-wb-card" role="button" tabIndex={0}
-            onClick={() => { if (!requireLogin('智能填报需要登录后使用')) return; openWizard(); }}>
-            <div className="v2t-wb-ic"><Icon name="doclog" size={21} /></div>
-            <div className="v2t-wb-t">智能填报</div>
-            <div className="v2t-wb-d">年度考核、职称评审等高频表格：数仓字段自动带出，总结类材料 AI 起草，导出保持原版式 Word 文件。仅可为本人填报。</div>
-            <div className="v2t-wb-meta"><span className="v2t-tag blue">4 套模板</span><span className="v2t-tag green">可导出 Word</span></div>
-            <span className="v2t-go">进入工作台<Icon name="chevR" size={13} /></span>
+        <div className="v2-mdl-layout">
+          <aside className="v2-mdl-filter">
+            <div className="fh"><span>分类</span></div>
+            <div className="fgrp">
+              <label className={`fopt${cat === 'all' ? ' on' : ''}`} onClick={() => setCat('all')}>
+                <span className="lb">全部</span><em>{WB_CARDS.length}</em>
+              </label>
+              {WB_CATS.map((c) => (
+                <label key={c.key} className={`fopt${cat === c.key ? ' on' : ''}`} onClick={() => setCat(c.key)}>
+                  <span className="lb">{c.label}</span>
+                  <em>{WB_CARDS.filter((x) => x.cat === c.key).length}</em>
+                </label>
+              ))}
+            </div>
+          </aside>
+          <div>
+            {WB_CATS.filter((c) => cat === 'all' || c.key === cat).map((c) => {
+              const items = WB_CARDS.filter((x) => x.cat === c.key);
+              const avail = items.filter((x) => x.avail).length;
+              return (
+                <div key={c.key}>
+                  <div className="v2t-sec-head">
+                    <div className="v2t-sec-t">{c.label}
+                      <span className="v2t-cnt">{avail} 个可用 · {items.length - avail} 个规划中</span>
+                    </div>
+                  </div>
+                  <div className="v2t-wb-grid">
+                    {items.map((x) => (x.avail ? (
+                      <div className="v2t-wb-card" role="button" tabIndex={0} key={x.t}
+                        onClick={() => { if (!requireLogin('智能填报需要登录后使用')) return; openWizard(); }}>
+                        <div className="v2t-wb-ic"><Icon name={x.ic} size={21} /></div>
+                        <div className="v2t-wb-t">{x.t}</div>
+                        <div className="v2t-wb-d">{x.d}</div>
+                        <div className="v2t-wb-meta">{(x.tags || []).map((t, i) => <span key={i} className={`v2t-tag ${t.c}`}>{t.x}</span>)}</div>
+                        <span className="v2t-go">进入工作台<Icon name="chevR" size={13} /></span>
+                      </div>
+                    ) : (
+                      <div className="v2t-wb-card dim" key={x.t}>
+                        <div className="v2t-wb-ic"><Icon name={x.ic} size={21} /></div>
+                        <div className="v2t-wb-t">{x.t}</div>
+                        <div className="v2t-wb-d">{x.d}</div>
+                        <div className="v2t-wb-meta"><span className="v2t-tag grey">规划中</span></div>
+                      </div>
+                    )))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {[
-            { t: '公文写作助手', d: '通知、请示、报告、会议纪要一键起草，按校内公文格式输出。', ic: 'edit' },
-            { t: '成绩分析报告', d: '班级成绩分布、不及格预警与试卷难度一页报告，学期末一键生成。', ic: 'chart' },
-            { t: '评语批量生成', d: '结合成绩、考勤与活动数据，为全班学生逐一生成学期评语初稿。', ic: 'chat' },
-          ].map((c) => (
-            <div className="v2t-wb-card dim" key={c.t}>
-              <div className="v2t-wb-ic"><Icon name={c.ic} size={21} /></div>
-              <div className="v2t-wb-t">{c.t}</div>
-              <div className="v2t-wb-d">{c.d}</div>
-              <div className="v2t-wb-meta"><span className="v2t-tag grey">规划中</span></div>
-            </div>
-          ))}
         </div>
 
-        <div className="v2t-sec-head" style={{ marginTop: 4 }}>
-          <div className="v2t-sec-t">通用智能体<span className="v2t-cnt">8 个规划中</span></div>
-        </div>
-        <div className="v2t-wb-grid">
-          {[
-            { t: '教案与课件大纲', d: '按课程标准与章节一键生成单元教案、课件大纲，可直接编辑。', ic: 'book' },
-            { t: '出题组卷', d: '选择/填空/简答/实操批量出题，自动匹配答案、难度分级并组卷。', ic: 'clipboard' },
-            { t: 'PPT 一键制作', d: '把大纲要点转成演示文稿，自动套用校模板，导出可编辑文件。', ic: 'chart' },
-            { t: '会议纪要', d: '录音转写并提取要点与待办，一键生成规范会议纪要。', ic: 'headset' },
-            { t: '表格智能清洗合并', d: '各部门乱格式 Excel 自动统一列名、合并多表并透视汇总。', ic: 'wrench' },
-            { t: '批量文档处理', d: 'PDF 拆分/合并/格式转换与关键信息提取，批量处理省时。', ic: 'doclog' },
-            { t: '中英文献翻译润色', d: '学术翻译 + 语法润色 + 参考文献格式化，保持术语一致。', ic: 'globe' },
-            { t: '科研申报辅助', d: '申报书/论文结构建议与文献综述提纲，附写作要点。', ic: 'flask' },
-          ].map((c) => (
-            <div className="v2t-wb-card dim" key={c.t}>
-              <div className="v2t-wb-ic"><Icon name={c.ic} size={21} /></div>
-              <div className="v2t-wb-t">{c.t}</div>
-              <div className="v2t-wb-d">{c.d}</div>
-              <div className="v2t-wb-meta"><span className="v2t-tag grey">规划中</span></div>
-            </div>
-          ))}
-        </div>
-
-        <div className="v2t-sec-head" style={{ marginTop: 4 }}>
+        <div className="v2t-sec-head" style={{ marginTop: 20 }}>
           <div className="v2t-sec-t">我的填报记录<span className="v2t-cnt">仅本人可见</span></div>
         </div>
         {!user ? (
