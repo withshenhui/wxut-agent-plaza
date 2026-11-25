@@ -13,6 +13,7 @@ import ClientAdmin from './V2ClientAdmin.jsx';
 import * as fileApi from '../api/file';
 import * as configApi from '../api/config';
 import FeaturesAdmin from './V2FeaturesAdmin.jsx';
+import ConversationAdmin from './ConversationAdmin.jsx';
 import * as feedbackApi from '../api/feedback';
 import * as insightApi from '../api/insight';
 import WecomSimulator from './WecomSimulator.jsx';
@@ -42,13 +43,14 @@ const MENU_TREE = [
     { key: 'basic', icon: 'gear', label: '基础配置' },
     { key: 'files', icon: 'folder', label: '文件管理' },
     { key: 'logs', icon: 'doclog', label: '操作日志' },
+    { key: 'conversations', icon: 'chat', label: '对话管理' },
   ] },
 ];
 const TITLES = {
   dashboard: '仪表盘', agents: '智能体管理', categories: '分类管理', models: '模型管理',
   users: '用户管理', feedback: '意见反馈', xixi: '锡锡导员管理', llm: '大模型配置', basic: '基础配置',
   clients: '客户端管理', files: '文件管理', logs: '操作日志', features: '前台功能管理',
-  simulator: '企微仿真',
+  simulator: '企微仿真', conversations: '对话管理',
 };
 
 const ROUTE_KEYS = Object.keys(TITLES);
@@ -237,6 +239,7 @@ export default function V2Admin({ user, onLogout }) {
           {page === 'simulator' && <WecomSimulator toast={toast} />}
           {page === 'files' && <FilesAdmin toast={toast} />}
           {page === 'logs' && <LogsAdmin />}
+          {page === 'conversations' && <ConversationAdmin toast={toast} />}
         </div>
       </div>
     </div>
