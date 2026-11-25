@@ -12,6 +12,7 @@ import { SceneWorkbench } from './V2Scene.jsx';
 import V2Teacher from './V2Teacher.jsx';
 import V2Knowledge from './V2Knowledge.jsx';
 import { EmploymentWorkbench, EmploymentIntentCard, EmploymentJobCards, StudentProfileCard } from './V2Employment.jsx';
+import { DataWorkshop } from './V2Dataset.jsx';
 import { XixiLoading } from './ui.jsx';
 import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } from './featureConfig.js';
 import { isWecomEnv } from './wecomConfig.js';
@@ -127,13 +128,37 @@ function gateCheck(feature, { user, perms, requireLogin, setLoginPrompt, setPerm
 
 /** 顶栏导航：完全由功能注册表驱动（V2App 统一加载 resolved 后经 prop 传入）。
  *  加载期间（resolved===undefined）不渲染链接，避免闪现待隐藏项。 */
+/** 系统信息（后台「基础配置」site_name / site_subtitle / site_logo / site_footer）——模块级缓存，全站一次加载 */
+const SITE_DEFAULTS = { name: '锡职大AI中台', subtitle: 'WXUT AI Center', logo: './v2-logo.png?v=2', footer: '© 2026 Wuxi University of Technology' };
+let siteCache = null;
+export function useSiteConfig() {
+  const [site, setSite] = useState(siteCache || SITE_DEFAULTS);
+  useEffect(() => {
+    if (siteCache) return;
+    const get = (k) => getPublicConfig(k).then((d) => (d && d.configValue) || '').catch(() => '');
+    Promise.all([get('site_name'), get('site_subtitle'), get('site_logo'), get('site_footer')]).then(([n, st, lg, f]) => {
+      siteCache = { name: n || SITE_DEFAULTS.name, subtitle: st || SITE_DEFAULTS.subtitle,
+        logo: (lg || '').trim() || SITE_DEFAULTS.logo, footer: (f || '').trim() || SITE_DEFAULTS.footer };
+      setSite(siteCache);
+      try {
+        if (n) document.title = n;
+        if ((lg || '').trim()) { // 系统 Logo 同步为浏览器 favicon
+          document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((el) => el.setAttribute('href', lg));
+        }
+      } catch (e) { /* noop */ }
+    });
+  }, []);
+  return site;
+}
+
 export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbBadge, resolved }) {
+  const site = useSiteConfig();
   const NAVS = resolved === undefined ? [] : renderNavs(resolved, { user, perms });
   return (
     <nav className="v2-topnav">
       <a className="v2-brand" href="#/" onClick={(e) => { e.preventDefault(); onNav('plaza'); }}>
-        <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
-        <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
+        <img src={site.logo} alt="校徽" />
+        <div><div className="t1">{site.name}</div><div className="t2">{site.subtitle}</div></div>
       </a>
       <div className="v2-nav-links">
         {resolved === undefined ? null : NAVS.map((n) => n.external ? (
@@ -180,28 +205,31 @@ export function TopNav({ page, onNav, user, guest, onLogin, onLogout, perms, kbB
 }
 
 /* ============ 页脚 ============ */
-export function Footer({ onNav, toast, resolved }) {
+export function Footer({ onNav, toast, resolved, user, onDevGuide }) {
   // 管理后台入口随功能注册表显隐（admin.dashboard.enabled===false 时隐藏）；其余内容页入口不变
   const showAdmin = !resolved || resolved.byKey['admin.dashboard']?.enabled !== false;
+  const site = useSiteConfig();
+  // 「平台服务」与顶栏同源：由功能注册表动态渲染（标签/顺序/显隐一致），不写死
+  const footNavs = resolved === undefined ? [] : renderNavs(resolved, { user, perms: (user && user.perms) || [] });
   return (
     <footer className="v2-site-foot">
       <div className="v2-foot-inner">
         <div className="v2-foot-grid">
           <div className="v2-foot-brand">
             <div className="row">
-              <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
-              <div><div className="t1">锡职大AI中台</div><div className="t2">WXUT AI Center</div></div>
+              <img src={site.logo} alt="校徽" />
+              <div><div className="t1">{site.name}</div><div className="t2">{site.subtitle}</div></div>
             </div>
             <div className="desc">无锡职业技术大学全校统一的智能体入口与 AI 能力底座。让 AI 成为校园的新基础设施 —— 智能体对话、制度问答、数据洞察、教师工作台与桌面客户端，点开即用。</div>
           </div>
           <div className="v2-foot-col">
             <div className="h">平台服务</div>
-            <div className="lnk" onClick={() => onNav('plaza')}>智能体广场</div>
-            <div className="lnk" onClick={() => onNav('insight')}>AI 数据洞察</div>
-            <div className="lnk" onClick={() => onNav('teacher')}>AI教师工作台</div>
-            <div className="lnk" onClick={() => onNav('kb')}>知识库中心</div>
-            <div className="lnk" onClick={() => onNav('models')}>模型服务</div>
-            <div className="lnk" onClick={() => window.open('/v2/harness/', '_blank')}>XixiBuddy 桌面客户端</div>
+            {footNavs.map((n) => (
+              <div className="lnk" key={n.key}
+                onClick={() => (n.external ? window.open(n.href, '_blank') : onNav(n.key))}>
+                {n.label}{n.isNew ? ' NEW' : ''}
+              </div>
+            ))}
           </div>
           <div className="v2-foot-col">
             <div className="h">了解平台</div>
@@ -213,7 +241,7 @@ export function Footer({ onNav, toast, resolved }) {
           <div className="v2-foot-col">
             <div className="h">开发者</div>
             <div className="lnk" onClick={() => onNav('dev')}>智能体开发平台</div>
-            <div className="lnk" onClick={() => onNav('guide')}>上架广场指引</div>
+            <div className="lnk" onClick={() => (onDevGuide ? onDevGuide() : onNav('dev'))}>上架广场指引</div>
             <div className="lnk" onClick={() => onNav('kb')}>知识库（文档问答）</div>
             {showAdmin && <div className="lnk" onClick={() => { window.location.hash = '#/admin/login'; window.scrollTo(0, 0); }}>AI中台管理后台</div>}
           </div>
@@ -226,7 +254,7 @@ export function Footer({ onNav, toast, resolved }) {
         </div>
         <div className="v2-foot-copy">
           <span><b>无锡职业技术大学 · 信息化与数据服务中心</b></span>
-          <span>© 2026 Wuxi University of Technology</span>
+          <span>{site.footer}</span>
         </div>
       </div>
     </footer>
@@ -264,7 +292,7 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
     return () => { clearInterval(t); clearTimeout(swap); };
   }, [bIdx]);
   return (
-    <div className="v2-hero">
+    <div className="v2-hero v2-hero-home">
       <div className="v2-hero-inner">
         <div className="v2-hero-copy">
           <div className="v2-kicker">WUXI UNIVERSITY OF TECHNOLOGY · AI CENTER</div>
@@ -313,9 +341,11 @@ function Hero({ agents, onChat, onSearch, q, onXixiBlocked }) {
 /* ============ 广场 ============ */
 function Plaza({ agents, cats, q, setQ, onChat, onNav, toast, onXixiBlocked }) {
   const [cat, setCat] = useState('全部');
+  // 广场只展示"可用/建设中"的智能体：过滤掉已下架（status=0），避免下架项混入列表与计数
+  const vis = agents.filter((a) => a.status !== 0);
   const labels = ['全部', ...cats.map((c) => c.label)];
-  const cnt = (l) => (l === '全部' ? agents.length : agents.filter((a) => a.categoryName === l).length);
-  const rows = agents.filter((a) =>
+  const cnt = (l) => (l === '全部' ? vis.length : vis.filter((a) => a.categoryName === l).length);
+  const rows = vis.filter((a) =>
     (cat === '全部' || a.categoryName === cat) &&
     (!q || (a.name + a.description + a.categoryName + (a.tags || []).join('')).includes(q)));
   // 「全部」tab：推荐置顶 + 使用次数降序；建设中排最后（其余 tab 保持原顺序）
@@ -1073,48 +1103,48 @@ function CampusPage() {
 }
 
 /* 关于 AI 中台（真实内容页） */
+const AB_DEF = {
+  title: '关于 AI 中台',
+  subtitle: '无锡职业技术大学 · 信息化与数据服务中心 出品',
+  intro: '锡职大 AI 中台是无锡职业技术大学面向全校师生建设的一体化人工智能应用平台。它以校园数据中台与智算算力为底座，统一接入学校统一身份认证（CAS），聚合智能体广场、AI 数据洞察、智能填报、知识库中心等能力，让 AI 成为教学、科研、管理与服务的新基础设施。平台面向师生开放，敏感数据按账号角色限定范围。',
+  arch: '前端：React + Vite 单页应用，桌面 / 大屏自适应\n后端：Spring Boot 服务，统一 REST 接口与 SSE 流式对话\n算力：校园智算一体机 + 移动云大模型，内网优先\n认证：学校统一身份认证（CAS）单点登录',
+  compliance: '数据来自学校数据中台，只读访问\n按账号角色限定数据范围（学院 / 全校）\n洞察类结果仅为关注线索，不作处理依据\n涉及个人信息须登录并具备对应权限',
+  contact: '无锡职业技术大学 信息化与数据服务中心 · dcc@wxit.edu.cn —— 平台使用、账号权限与数据接入咨询，欢迎来信。',
+};
 function AboutPage() {
+  const [ab, setAb] = useState(null);
+  useEffect(() => {
+    const keys = ['title', 'subtitle', 'intro', 'arch', 'compliance', 'contact'];
+    Promise.all(keys.map((k) => getPublicConfig('about.' + k).then((d) => [k, (d && d.configValue) || '']).catch(() => [k, ''])))
+      .then((pairs) => { const m = {}; pairs.forEach(([k, v]) => { m[k] = v; }); setAb(m); });
+  }, []);
+  const val = (k) => (ab && ab[k] && ab[k].trim()) ? ab[k] : AB_DEF[k];
+  const lines = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean);
   return (
     <>
-      <div className="v2-sec-head">
-        <h2>关于 AI 中台</h2>
-        <p>无锡职业技术大学 · 信息化与数据服务中心 出品</p>
-      </div>
+      <div className="v2-sec-head"><h2>{val('title')}</h2><p>{val('subtitle')}</p></div>
       <div className="v2-body" style={{ maxWidth: 900 }}>
         <div className="v2-card">
           <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>平台简介</div>
-          <div style={{ fontSize: 13, color: 'var(--p-t2)', lineHeight: 1.9 }}>
-            锡职大 AI 中台是无锡职业技术大学面向全校师生建设的一体化人工智能应用平台。它以校园数据中台与智算算力为底座，
-            统一接入学校统一身份认证（CAS），聚合智能体广场、AI 数据洞察、智能填报、知识库中心等能力，
-            让 AI 成为教学、科研、管理与服务的新基础设施。平台面向师生开放，敏感数据按账号角色限定范围。
-          </div>
+          <div style={{ fontSize: 13, color: 'var(--p-t2)', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{val('intro')}</div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
           <div className="v2-card">
             <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>技术架构</div>
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.9 }}>
-              <li>前端：React + Vite 单页应用，桌面 / 大屏自适应</li>
-              <li>后端：Spring Boot 服务，统一 REST 接口与 SSE 流式对话</li>
-              <li>算力：校园智算一体机 + 移动云大模型，内网优先</li>
-              <li>认证：学校统一身份认证（CAS）单点登录</li>
+              {lines(val('arch')).map((t, i) => <li key={i}>{t}</li>)}
             </ul>
           </div>
           <div className="v2-card">
             <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 8 }}>数据来源与合规</div>
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--p-t3)', lineHeight: 1.9 }}>
-              <li>数据来自学校数据中台，只读访问</li>
-              <li>按账号角色限定数据范围（学院 / 全校）</li>
-              <li>洞察类结果仅为关注线索，不作处理依据</li>
-              <li>涉及个人信息须登录并具备对应权限</li>
+              {lines(val('compliance')).map((t, i) => <li key={i}>{t}</li>)}
             </ul>
           </div>
         </div>
         <div className="v2-banner" style={{ marginTop: 16 }}>
           <div className="ic"><Icon name="phone" size={22} /></div>
-          <div>
-            <div className="t">联系我们</div>
-            <div className="d">无锡职业技术大学 信息化与数据服务中心 · dcc@wxit.edu.cn —— 平台使用、账号权限与数据接入咨询，欢迎来信。</div>
-          </div>
+          <div><div className="t">联系我们</div><div className="d">{val('contact')}</div></div>
         </div>
       </div>
     </>
@@ -1122,6 +1152,7 @@ function AboutPage() {
 }
 
 function GuestGate({ onLogin }) {
+  const site = useSiteConfig();
   return (
     <div className="v2-guest-wrap">
       <div className="v2-guest-left">
@@ -1132,7 +1163,7 @@ function GuestGate({ onLogin }) {
       <div className="v2-guest-right">
         <div className="gg-card">
           <div className="gg-brand">
-            <img src="./v2-logo.png?v=2" alt="无锡职业技术大学校徽" />
+            <img src={site.logo} alt="校徽" />
             <div><div className="gg-t1">锡职大 AI 中台</div><div className="gg-t2">WXUT AI CENTER</div></div>
           </div>
           <div className="gg-title">请登录后使用</div>
@@ -1184,6 +1215,7 @@ function SimplePage({ kind }) {
 /* ============ 主应用 ============ */
 export default function V2App() {
   const [page, setPage] = useState('plaza');
+  const site = useSiteConfig();
   const [agents, setAgents] = useState([]);
   const [cats, setCats] = useState([]);
   const [q, setQ] = useState('');
@@ -1203,6 +1235,7 @@ export default function V2App() {
   const [teacherRec, setTeacherRec] = useState(null);  // 继续填报的记录 id
   const [teacherTpl, setTeacherTpl] = useState(null);  // 智能填报：地址栏 #/teacher/form/{模板id}/{步骤} 中的模板
   const [teacherStep, setTeacherStep] = useState(null); // 智能填报：地址栏中的当前步骤
+  const [teacherRecords, setTeacherRecords] = useState(null); // 智能填报：我的填报记录页（#/teacher/form/{模板id}/records）
   const [insightTab, setInsightTab] = useState('overview'); // 数据洞察：公开洞察/工作台 tab
   const [kbBadge, setKbBadge] = useState(0);   // 知识库：后台处理完成未读提示（红点）
   const [resolved, setResolved] = useState(undefined); // 前台功能注册表（undefined=加载中）：导航/守卫唯一来源
@@ -1375,24 +1408,31 @@ export default function V2App() {
     // 洞察频道内Tab路由化：#/insight = 公开洞察，#/insight/scenes = AI场景分析（工作台列表）
     if (p === 'insight') {
       setInsightTab(segs[1] === 'scenes' ? 'workbench' : 'overview');
-      if (segs[1] === 'scenes') return; // 已完成路由（后续不覆盖）
+      if (segs[1] === 'scenes') { setPage('insight'); return; } // 必须回到频道页，否则冷启动停在首页
     }
     // 页面/频道直链：统一走注册表 gate（游客放行浏览，登录后缺权限/未开放拦截）
     const f = featureByKey(resolved, p);
     if (f && !gateCheck(f, ctx)) { setPage('plaza'); setWorkbench(null); setTeacherWizard(false); return; }
     setTeacherWizard(p === 'teacher' && segs[1] === 'form');
     setTeacherTpl(p === 'teacher' && segs[1] === 'form' && segs[2] ? Number(segs[2]) : null);
-    setTeacherStep(p === 'teacher' && segs[1] === 'form' && segs[3] ? Number(segs[3]) : null);
+    setTeacherStep(p === 'teacher' && segs[1] === 'form' && /^\d+$/.test(segs[3] || '') ? Number(segs[3]) : null);
     // 第四段=记录 id：#/teacher/form/{模板}/{步骤}/{记录}——刷新/分享直达恢复
     setTeacherRec(p === 'teacher' && segs[1] === 'form' && segs[4] ? Number(segs[4]) : null);
+    // 「我的填报记录」独立页：#/teacher/form/{模板id}/records
+    setTeacherRecords(p === 'teacher' && segs[1] === 'form' && segs[3] === 'records' && segs[2] ? Number(segs[2]) : null);
     setWorkbench(null);
     if (wantDevGuide) { setPage('dev'); setShowGuide(true); return; }
-    setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about'].includes(p) ? p : 'plaza');
+    setPage(['plaza', 'models', 'insight', 'teacher', 'dev', 'kb', 'campus', 'guide', 'about', 'dataset'].includes(p) ? p : 'plaza');
   }, [location.pathname, agents, navigate, resolved]);
+
+  // 路由切换后回到页面顶部（SPA 默认会保留滚动位置）；并禁用浏览器自动滚动恢复，避免前进/后退回到旧位置
+  useEffect(() => { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
 
   useEffect(() => {
     // includeBuilding=1：前台也取建设中卡片（显示工程图标，排序沉底）
-    fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
+    // includeDisabled=1：取全量（含已下架），使首页"智能体/累计访问"与后台、数据洞察同口径；列表渲染时再过滤掉已下架
+    fetch(`${API_BASE}/agents?size=300&includeBuilding=1&includeDisabled=1`).then((r) => r.json())
       .then((j) => setAgents(j.data?.records || [])).catch((e) => setLoadErr(e.message));
     fetch(`${API_BASE}/categories`).then((r) => r.json())
       .then((j) => setCats((j.data || []).filter((c) => c.status === 1))).catch(() => {});
@@ -1443,6 +1483,13 @@ export default function V2App() {
     window.scrollTo(0, 0);
   }, [navigate]);
 
+  // 教师工作台首页直接点某张表 → 带模板直达第 2 步（确认信息 · 填素材）
+  const beginFill = useCallback((tplId) => {
+    setTeacherRec(null);
+    navigate('/teacher/form/' + (tplId || 0) + '/2');
+    window.scrollTo(0, 0);
+  }, [navigate]);
+
   // 企微模式分派：只渲染移动视图（不渲染桌面顶栏/页脚）。须先于 chatAgent 分支，
   // 否则 chatAgent 会命中桌面对话页，移动全页对话永不生效。
   // MobilePlaza（广场）/ MobileChatPage（全页对话，与桌面共用 useAgentChat 内核）均为真实实现。
@@ -1451,7 +1498,7 @@ export default function V2App() {
       {chatAgent
         ? <MobileChatPage agent={chatAgent} user={user} onNeedLogin={setLoginPrompt}
                           onBack={() => { setChatAgent(null); navigate('/', { replace: true }); window.scrollTo(0, 0); }} />
-        : <MobilePlaza agents={agents} cats={cats} onChat={launch} onNeedLogin={setLoginPrompt} />}
+        : <MobilePlaza agents={agents} cats={cats} onChat={launch} onNeedLogin={setLoginPrompt} user={user} />}
       {/* 企微移动视图可见反馈：未登录/无权限被拦时给出提示（桌面弹窗不在本分支渲染） */}
       {prompt && <WecomPrompt prompt={prompt} onClose={() => setPrompt(null)}
                               onRelogin={() => { sessionStorage.removeItem('v2-wecom-autoauth'); startWecomAuth(); }} />}
@@ -1483,7 +1530,9 @@ export default function V2App() {
         : <Plaza agents={agents} cats={cats} q={q} setQ={setQ} onChat={launch} onNav={guardNav} toast={toast} onXixiBlocked={() => setPermPrompt('全校锡锡面向校领导与管理员开放')} />)}
       {page === 'models' && <Models toast={toast} />}
       {page === 'insight' && !workbench && (
-        <InsightHome tab={insightTab} setTab={(t) => { setInsightTab(t); navigate(t === 'workbench' ? '/insight/scenes' : '/insight', { replace: true }); }} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
+        <InsightHome resolved={resolved} tab={insightTab} setTab={(t) => { setInsightTab(t); navigate(t === 'workbench' ? '/insight/scenes' : '/insight', { replace: true }); }} perms={user ? (user.perms || []) : []} onOpenWorkbench={(w) => {
+          const ch = featureByKey(resolved, 'insight.' + w.key);
+          if (ch && ch.enabled === false) { toast('该分析应用暂未开放'); return; }
           if (!requireLogin()) { setLoginPrompt(w.title + '需要登录后使用'); return; }
           if (!hasPerm('insight.' + w.key)) { setPermPrompt('该分析工作台未对您的账号开放'); return; }
           if (w.status === 'building') { toast('该分析应用建设中，敬请期待'); return; }
@@ -1505,17 +1554,22 @@ export default function V2App() {
         : <Dev toast={toast} onGuide={() => { navigate('/dev/guide'); window.scrollTo(0, 0); }} />)}
       {page === 'teacher' && (
         <V2Teacher user={user} requireLogin={requireLogin} toast={toast}
+          resolved={resolved}
           wizard={teacherWizard}
           openRecordId={teacherRec}
           initialTplId={teacherTpl}
           initialStep={teacherStep}
+          recordsTplId={teacherRecords}
           openWizard={openWizard}
+          onStartFill={beginFill}
           onExitWizard={() => { setTeacherWizard(false); setTeacherRec(null); navigate('/teacher'); }}
           onNav={nav} />
       )}
       {['campus', 'guide', 'about'].includes(page) && <SimplePage kind={page} />}
       {page === 'kb' && <V2Knowledge user={user} requireLogin={requireLogin} toast={toast} />}
-      <Footer onNav={guardNav} toast={toast} resolved={resolved} />
+      {page === 'dataset' && <DataWorkshop toast={toast} user={user} resolved={resolved} onNeedLogin={setLoginPrompt} />}
+      <Footer onNav={guardNav} toast={toast} resolved={resolved} user={user}
+        onDevGuide={() => { navigate('/dev/guide'); window.scrollTo(0, 0); }} />
 
       {prompt && (
         <div className="v2-modal-mask" onMouseDown={(e) => { if (e.target === e.currentTarget) setPrompt(null); }}>
@@ -1523,7 +1577,7 @@ export default function V2App() {
             <div className="v2-md-head"><div className="t">{prompt.kind === 'perm' ? '暂无使用权限' : '需要登录'}</div><button className="v2-md-close" onClick={() => setPrompt(null)}>✕</button></div>
             <div className="v2-md-body" style={{ paddingBottom: 8 }}>
               <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
-                <img src="./v2-logo.png?v=2" alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
+                <img src={site.logo} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} />
               </div>
               <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--aink)', fontWeight: 600, margin: '8px 0 4px' }}>{prompt.msg}</p>
               {prompt.kind === 'login' && (

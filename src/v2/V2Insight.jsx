@@ -94,7 +94,8 @@ function OverviewTab() {
   const [ov, setOv] = useState(null);   // 真实总览（在校生/近7天对话/学院活跃/场景分布）
 
   useEffect(() => {
-    fetch(`${API_BASE}/agents?size=100&includeBuilding=1`).then((r) => r.json())
+    // includeDisabled=1：取全量（含已下架），与后台仪表盘同口径（平台智能体总数 / 累计访问）
+    fetch(`${API_BASE}/agents?size=300&includeBuilding=1&includeDisabled=1`).then((r) => r.json())
       .then((j) => setAgents(j.data?.records || [])).catch(() => setAgents([]));
     Promise.all([
       fetch(`${API_BASE}/models?category=general&size=50`).then((r) => r.json()).catch(() => ({})),
@@ -121,7 +122,7 @@ function OverviewTab() {
 
   const st = useMemo(() => {
     const list = agents || [];
-    const online = list.filter((a) => a.isBuilding !== 1);
+    const online = list.filter((a) => a.isBuilding !== 1 && a.status !== 0);
     const building = list.filter((a) => a.isBuilding === 1);
     const visits = list.reduce((s, a) => s + (a.visitCount || 0), 0);
     const catMap = new Map();
@@ -132,7 +133,7 @@ function OverviewTab() {
     });
     const cats = [...catMap.entries()].sort((x, y) => y[1].n - x[1].n);
     const top = [...online].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 10);
-    const rec = list.filter((a) => a.isRecommended === 1).length;
+    const rec = list.filter((a) => a.status !== 0 && a.isRecommended === 1).length;
 
     const ms = models || [];
     const local = ms.filter((m) => (m.tags || []).includes('本地部署'));
@@ -161,6 +162,10 @@ function OverviewTab() {
   const trend = chat7d ? chat7d.map((x) => [x.d, x.n]) : OV.trend;
   const chat7Total = chat7d ? chat7d.reduce((s, x) => s + (x.n || 0), 0) : null;
   const students = (ov && ov.students && ov.students.count != null) ? ov.students : null;
+  // 知识库规模（后端 /insight/overview → kb: { libs, files, chunks }，真实计数）
+  const kb = (ov && ov.kb) ? ov.kb : null;
+  // MCP 工具总数（后端配置驱动，缺省 84；前端保留同缺省，避免离线时留白）
+  const mcpTools = (ov && ov.mcpTools != null) ? Number(ov.mcpTools) : 84;
   const collegeAct = (ov && Array.isArray(ov.collegeActivity) && ov.collegeActivity.length) ? ov.collegeActivity.map((x) => [x.name, x.n]) : OV.collegeActivity;
   const scenes = (() => {
     const rows = (ov && Array.isArray(ov.scenes)) ? ov.scenes : [];
@@ -170,21 +175,30 @@ function OverviewTab() {
   const maxTrend = Math.max(1, ...trend.map((x) => x[1]));
   const maxTop = Math.max(1, ...st.top.map((a) => a.visitCount || 0));
   const maxCat = Math.max(1, ...st.cats.map(([, c]) => c.n));
-  const maxProv = Math.max(1, ...st.provs.map(([, v]) => v));
   const maxType = Math.max(1, ...st.types.map(([, v]) => v));
   const maxKb = Math.max(1, ...st.kb.map(([, v]) => v));
+  /* 模型服务构成：四项为不同维度（通用/垂类=类别，本地/云端=部署），条形须按本组最大值归一 */
+  const mscRows = [
+    ['通用模型', st.generalN, 'var(--el-primary)'],
+    ['垂类模型', st.ms.length - st.generalN, 'var(--p-secondary)'],
+    ['本地部署（一体机）', st.local.length, 'var(--p-success)'],
+    ['云端合作', st.ms.length - st.local.length, '#8B5CF6'],
+  ];
+  const maxMsc = Math.max(1, ...mscRows.map(([, v]) => v));
   const fmt = (n) => (n || 0).toLocaleString();
   const pct = (n, d) => (d ? Math.round((n / d) * 100) + '%' : '0%');
   const subT = { fontSize: 12.5, fontWeight: 600, color: 'var(--p-t2)', margin: '10px 0 2px' };
 
   return (<>
-        {/* KPI 行 */}
-        <div className="v2-kpi-row" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+        {/* KPI 行（6 卡：窄屏 <1200px 由 .v2-kpi-6 媒体查询自适应为 3 列） */}
+        <div className="v2-kpi-row v2-kpi-6">
           {[
             { lb: '在校生', vl: students ? fmt(students.count) : '—', cmp: students ? `学籍口径（在校） · 数据日期 ${students.asOf}` : '学籍数仓加载中', bar: 'var(--el-primary)' },
-            { lb: '近 7 天对话', vl: chat7Total == null ? '—' : fmt(chat7Total), cmp: '按天累计 · 覆盖 11 个学院锡锡导员', bar: 'var(--p-secondary)' },
+            { lb: '近 7 天对话', vl: chat7Total == null ? '—' : fmt(chat7Total), cmp: '按天累计 · 全平台', bar: 'var(--p-secondary)' },
             { lb: '智能体广场', vl: `${fmt(st.list.length)}<small>个</small>`, cmp: `已上线 ${st.online.length} · 建设中 ${st.building.length} · 累计访问 ${fmt(st.visits)} 次`, bar: '#8B5CF6', html: true },
             { lb: '平台模型', vl: `${fmt(st.ms.length)}<small>个</small>`, cmp: `本地部署 ${st.local.length} · 云端合作 ${st.ms.length - st.local.length}`, bar: 'var(--p-success)', html: true },
+            { lb: '知识库', vl: kb ? `${fmt(kb.libs)}<small>个</small>` : '—', cmp: kb ? `文件 ${fmt(kb.files)} · 知识块 ${fmt(kb.chunks)}` : '知识库统计加载中', bar: '#0EA5E9', html: true },
+            { lb: 'MCP 工具', vl: `${fmt(mcpTools)}<small>个</small>`, cmp: '锡锡导员 MCP · 全校服务', bar: '#F59E0B', html: true },
           ].map((k) => (
             <div key={k.lb} className="v2-kpi">
               <span className="bar" style={{ background: k.bar }} />
@@ -250,15 +264,10 @@ function OverviewTab() {
         <div className="v2-ov-grid">
           <div className="v2-card">
             <div className="ct">模型服务构成 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--p-t4)' }}>· {st.ms.length} 个接入</span></div>
-            {[
-              ['通用模型', st.generalN, 'var(--el-primary)'],
-              ['垂类模型', st.ms.length - st.generalN, 'var(--p-secondary)'],
-              ['本地部署（一体机）', st.local.length, 'var(--p-success)'],
-              ['云端合作', st.ms.length - st.local.length, '#8B5CF6'],
-            ].map(([name, v, c]) => (
+            {mscRows.map(([name, v, c]) => (
               <div key={name} className="v2-hbar-row">
                 <span className="v2-hbar-name" style={{ width: 108 }}>{name}</span>
-                <div className="v2-hbar-track"><div style={{ width: `${(v / maxProv) * 100}%`, background: c }} /></div>
+                <div className="v2-hbar-track"><div style={{ width: `${(v / maxMsc) * 100}%`, background: c }} /></div>
                 <span className="v2-hbar-val">{v} 个 · {pct(v, st.ms.length)}</span>
               </div>
             ))}
