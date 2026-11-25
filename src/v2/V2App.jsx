@@ -17,6 +17,7 @@ import { FEATURE_DEFAULTS, resolveFeatures, renderNavs, featureByKey, needOf } f
 import { parseSseEvents } from './sse.js';
 import { isWecomEnv } from './wecomConfig.js';
 import MobilePlaza from './MobilePlaza.jsx';
+import MobileChatSheet from './MobileChatSheet.jsx';
 import { marked } from 'marked';
 
 // marked：GFM 表格 + 换行分段；raw HTML 一律转义防注入（V1 CollegeQueryPage 同款）
@@ -1420,12 +1421,7 @@ function SimplePage({ kind }) {
 
 /* ============ 企微 H5 移动视图 ============
  * 一期分派骨架：企微模式下 App 只渲染移动视图，桌面顶栏/页脚不外露。
- * MobilePlaza 已是真实实现（T6，import 自 ./MobilePlaza.jsx）；
- * MobileChatSheet 仍为占位，Task 7 以真实实现替换（替换时删除本段占位）。*/
-// TODO(T7): 用真实 MobileChatSheet 替换（企微移动端半屏对话层）
-function MobileChatSheet(_props) {
-  return <div className="wx-placeholder">企微移动版 · 对话（Task 7 实现）</div>;
-}
+ * MobilePlaza（T6）与 MobileChatSheet（T7）均为真实实现，各自 import 独立文件。*/
 
 /* ============ 主应用 ============ */
 export default function V2App() {
@@ -1666,7 +1662,7 @@ export default function V2App() {
 
   // 企微模式分派：只渲染移动视图（不渲染桌面顶栏/页脚）。须先于 chatAgent 分支，
   // 否则 chatAgent 会命中桌面对话页，MobileChatSheet 永不生效。
-  // MobilePlaza 为真实实现（T6）；MobileChatSheet 仍为占位，Task 7 替换为真实实现。
+  // MobilePlaza（T6）/ MobileChatSheet（T7）均为真实实现。
   if (wecomMode) return (
     <>
       {chatAgent
