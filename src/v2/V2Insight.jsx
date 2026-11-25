@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon, useToast, XixiLoading } from './ui.jsx';
 import { useV2User } from './V2User.jsx';
 import { exportCsv, exportExcel } from './exportUtil.js';
+import { trackView } from '../api/insight';
 import { listKbs } from '../api/kb';
 
 const API_BASE = import.meta.env.PROD ? '/agent-plaza/api/v1' : '/api/v1';
@@ -74,7 +75,19 @@ const WORKBENCHES = [
     fresh: '消费+考勤每日更新',
     status: 'ready',
   },
+  {
+    key: 'employment',
+    title: '就业分析',
+    ic: 'chart',
+    desc: '汇聚招聘岗位与学生就业意向，按专业/成绩做匹配分析，输出帮扶名单与就业态势，辅助就业办精准施策。',
+    tags: ['学工/就业办', '岗位匹配', '帮扶名单'],
+    role: '就业工作岗',
+    fresh: '岗位数据每日采集',
+    status: 'ready',
+  },
 ];
+/* 工作台展示元数据索引：卡片文案以内置元数据为准，顺序/启用以注册表 children 为准 */
+const WB_META = Object.fromEntries(WORKBENCHES.map((w) => [w.key, w]));
 
 /* ---------------- 公开洞察：平台生态统计（/agents + /models 实时聚合） ---------------- */
 /* 知识库中心公开层统计的游客基线（未登录时后端 /kb/list 需鉴权，回退此值，截至 2026-11 真实值） */
@@ -103,7 +116,11 @@ function OverviewTab() {
       });
     }).catch(() => setKbSt(KB_FALLBACK));
     // 公开总览（真实数据：在校生/近7天对话/学院活跃/场景分布）
-    fetch(`${API_BASE}/insight/overview`).then((r) => r.json())
+    // 注意：/insight/overview 后端要求登录（SecurityConfig 对 /api/v1/insight/** 强制 authenticated），
+    // 必须携带 user_token，否则匿名请求一律 403 → ov=null → 在校生/近7天对话显示"—"。
+    const ovTk = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
+    fetch(`${API_BASE}/insight/overview`, { headers: ovTk ? { Authorization: 'Bearer ' + ovTk } : {} })
+      .then((r) => r.json())
       .then((j) => setOv(j && j.data ? j.data : null)).catch(() => setOv(null));
   }, []);
 
@@ -282,8 +299,24 @@ function OverviewTab() {
 }
 
 /* ================= 频道首页 ================= */
-export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
+export function InsightHome({ onOpenWorkbench, tab, setTab, perms, resolved }) {
   const { user, casLogin } = useV2User();
+
+  /* 工作台卡片：以功能注册表 insight.children 为唯一来源（后台「前台功能管理」可逐个启用/停用并即时生效）。
+     - 停用（enabled===false）→ 前台不展示；
+     - 'export' 是权限项、非工作台 → 排除；
+     - 注册表未就绪时回退内置元数据顺序，保证不空。 */
+  const children = resolved && resolved.byKey && resolved.byKey['insight'] && resolved.byKey['insight'].children;
+  const cards = (children && children.length
+    ? children
+        .filter((c) => c.enabled !== false && c.key !== 'export' && WB_META[c.key])
+        .map((c) => ({
+          ...WB_META[c.key],
+          title: c.label || WB_META[c.key].title,
+          // 状态以注册表为准（后台「前台功能管理」可改）；缺省按已上线，不做硬编码兜底
+          status: c.status === 'planning' ? 'planning' : 'ready',
+        }))
+    : WORKBENCHES);
 
   return (
     <>
@@ -304,7 +337,12 @@ export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
         <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--aink)', margin: '6px 0 6px' }}>AI场景分析</div>
         <p style={{ fontSize: 12.5, color: 'var(--p-t3)', margin: '0 0 14px' }}>面向业务部门的分析应用 · <b style={{ color: 'var(--p-t2)' }}>数据范围随账号所属学院</b>：学院账号仅可查看本学院数据，配置为「全校」的账号（如校资助中心）可查看与切换全部学院</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-          {WORKBENCHES.map((w) => (
+          {cards.length === 0 && (
+            <div className="v2-card" style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--p-t3)', fontSize: 13, padding: '28px 0' }}>
+              暂无可用的分析应用（可在后台「前台功能管理 · AI 数据洞察」中启用）
+            </div>
+          )}
+          {cards.map((w) => (
             <div key={w.key} className="v2-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--el-primary-l9)', color: 'var(--el-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -313,7 +351,7 @@ export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--aink)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     {w.title}
-                    {w.status === 'building' && <span className="v2-tag mid">建设中</span>}
+                    {w.status === 'planning' && <span className="v2-tag" style={{ background: '#F4F4F5', color: '#909399' }}>规划中</span>}
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--p-t4)', marginTop: 2 }}>{w.fresh}</div>
                 </div>
@@ -323,12 +361,12 @@ export function InsightHome({ onOpenWorkbench, tab, setTab, perms }) {
                 {w.tags.map((t) => <span key={t} className="v2-tag blue">{t}</span>)}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid #F3F6FA' }}>
-                {perms && perms.length > 0 && !perms.includes('insight.' + w.key) && w.status !== 'building' && (
+                {perms && perms.length > 0 && !perms.includes('insight.' + w.key) && w.status !== 'planning' && (
                   <span className="v2-tag" style={{ background: '#F4F4F5', color: '#909399' }}>未开通</span>
                 )}
                 <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }}>需要角色：{w.role}</span>
-                <button className="v2-btn" disabled={w.status === 'building'} onClick={() => onOpenWorkbench(w)}>
-                  {w.status === 'building' ? '敬请期待' : '进入分析'} →
+                <button className="v2-btn" disabled={w.status === 'planning'} onClick={() => onOpenWorkbench(w)}>
+                  {w.status === 'planning' ? '敬请期待' : '进入分析'} →
                 </button>
               </div>
             </div>
@@ -711,6 +749,7 @@ function DetailAiInsight({ detail, detailData, win }) {
 }
 
 export function FundingWorkbench({ onBack, toast, user, canExport, dataScope }) {
+  useEffect(() => { trackView('funding'); }, []);
   const [win, setWin] = useState(30);
   const [filters, setFilters] = useState({ college: '', grade: '', level: '', q: '' });
   const [detail, setDetail] = useState(null);

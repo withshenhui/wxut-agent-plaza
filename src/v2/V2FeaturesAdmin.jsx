@@ -12,6 +12,10 @@ const ROLES = [['user', '普通用户'], ['college_admin', '学院管理员'], [
 const ROLE_LABEL = Object.fromEntries(ROLES);
 /* 功能类型展示 */
 const KIND_LABELS = { page: '页面', channel: '频道', route: '路由', external: '外链', perm: '权限项' };
+/* 数据权限：角色 → 数据范围（none/college/all），由 sys_config rbac.data_scope 驱动，不写死代码 */
+const SCOPE_DEFAULTS = { guest: 'none', user: 'college', college_admin: 'college', leader: 'all', admin: 'all' };
+const SCOPE_ROLES = [['guest', '游客（未登录）'], ['user', '普通用户'], ['college_admin', '学院管理员'], ['leader', '校领导'], ['admin', '平台管理员']];
+const SCOPE_OPTS = [['none', '无'], ['college', '本院'], ['all', '全校']];
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const navIndexOf = (nav, key) => (nav || []).findIndex((n) => n.key === key);
@@ -43,21 +47,31 @@ export default function FeaturesAdmin({ toast: toastProp }) {
   const ctxToast = useToast();
   const toast = toastProp || ctxToast;
   const [cfg, setCfg] = useState(null);
+  const [scopeCfg, setScopeCfg] = useState(null);
   const [tab, setTab] = useState('feat');
   const [saving, setSaving] = useState(false);
   const [linkEdit, setLinkEdit] = useState(null); // 自定义外链新增/编辑弹窗
 
-  const load = () => configApi.getConfig('v2.features')
-    .then((d) => {
-      let v = null;
-      try { v = JSON.parse(d?.configValue || 'null'); } catch { /* 解析失败走默认 */ }
-      // 兜底：注册表为空/非法 → 深拷贝 FEATURE_DEFAULTS
-      setCfg(v && Array.isArray(v.features) && v.features.length ? v : clone(FEATURE_DEFAULTS));
-    })
-    .catch(() => setCfg(clone(FEATURE_DEFAULTS)));
+  const load = () => {
+    configApi.getConfig('v2.features')
+      .then((d) => {
+        let v = null;
+        try { v = JSON.parse(d?.configValue || 'null'); } catch { /* 解析失败走默认 */ }
+        // 兜底：注册表为空/非法 → 深拷贝 FEATURE_DEFAULTS
+        setCfg(v && Array.isArray(v.features) && v.features.length ? v : clone(FEATURE_DEFAULTS));
+      })
+      .catch(() => setCfg(clone(FEATURE_DEFAULTS)));
+    configApi.getConfig('rbac.data_scope')
+      .then((d) => {
+        let v = null;
+        try { v = JSON.parse(d?.configValue || 'null'); } catch { /* 走默认 */ }
+        setScopeCfg(v && typeof v === 'object' ? { ...SCOPE_DEFAULTS, ...v } : { ...SCOPE_DEFAULTS });
+      })
+      .catch(() => setScopeCfg({ ...SCOPE_DEFAULTS }));
+  };
   useEffect(() => { load(); }, []);
 
-  if (!cfg) return <FeaturesSkeleton />;
+  if (!cfg || !scopeCfg) return <FeaturesSkeleton />;
 
   /* 写入 feature / 子功能（childKey 为空即顶层功能） */
   const patchFeat = (key, kv, childKey) => setCfg((c) => ({
@@ -78,6 +92,7 @@ export default function FeaturesAdmin({ toast: toastProp }) {
     setSaving(true);
     try {
       await configApi.updateConfig('v2.features', JSON.stringify(cfg));
+      await configApi.updateConfig('rbac.data_scope', JSON.stringify(scopeCfg));
       toast('已保存，前台刷新后生效');
       load();
     } catch (e) { toast('保存失败：' + e.message); }
@@ -121,11 +136,14 @@ export default function FeaturesAdmin({ toast: toastProp }) {
       <div className="v2-tabs" style={{ marginBottom: 16 }}>
         <div className={'v2-tab' + (tab === 'feat' ? ' on' : '')} onClick={() => setTab('feat')}>功能与门槛</div>
         <div className={'v2-tab' + (tab === 'role' ? ' on' : '')} onClick={() => setTab('role')}>角色默认</div>
+        <div className={'v2-tab' + (tab === 'scope' ? ' on' : '')} onClick={() => setTab('scope')}>数据权限</div>
       </div>
 
       {tab === 'feat'
         ? <FeatTable cfg={cfg} patchFeat={patchFeat} patchNav={patchNav} setCfg={setCfg} toast={toast} onEditLink={setLinkEdit} />
-        : <RoleMatrix cfg={cfg} setCfg={setCfg} toast={toast} />}
+        : tab === 'role'
+          ? <RoleMatrix cfg={cfg} setCfg={setCfg} toast={toast} />
+          : <ScopeTab scopeCfg={scopeCfg} setScopeCfg={setScopeCfg} />}
 
       <div style={{ marginTop: 14, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="v2-btn" disabled={saving} onClick={save}>{saving ? '保存中…' : '保存配置'}</button>
@@ -238,6 +256,7 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
               <th style={{ ...th, width: 200 }}>路由 / 类型</th>
               <th style={{ ...th, width: 110 }}>门槛</th>
               <th style={{ ...th, width: 170 }}>权限点</th>
+              <th style={{ ...th, width: 92 }}>状态</th>
               <th style={{ ...th, width: 58 }}>启用</th>
               <th style={{ ...th, width: 74 }}>顶栏显示</th>
               <th style={{ ...th, width: 58 }}>NEW</th>
@@ -249,7 +268,7 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
               if (!rows.length) return null;
               return (
                 <React.Fragment key={g}>
-                  <tr><td colSpan={8} style={groupRow}>{g}</td></tr>
+                  <tr><td colSpan={9} style={groupRow}>{g}</td></tr>
                   {rows.map((f) => {
                     const isChannel = f.kind === 'channel' && (f.children || []).length > 0;
                     const idx = navIndexOf(nav, f.key);
@@ -268,7 +287,7 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
                                 <Icon name="chevR" size={12} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
                               </button>
                             )}
-                            <input className="v2-fm-i" value={f.label || ''} style={{ width: 168 }} onChange={(e) => setLabel(f, e.target.value)} />
+                            <input className="v2-fm-i" value={((onNav ? (nav[idx].label || f.label) : f.label) || '')} style={{ width: 168 }} title={onNav ? '对应前台顶栏显示的名称' : '功能名称（未列入前台顶栏）'} onChange={(e) => setLabel(f, e.target.value)} />
                             <span style={{ marginLeft: 8, fontSize: 10.5, color: 'var(--p-t4)' }}>{f.key}</span>
                           </td>
                           <td style={{ ...tdx, fontSize: 12, color: 'var(--p-t3)' }}>
@@ -276,9 +295,11 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
                             <span style={{ fontFamily: 'ui-monospace,Menlo,monospace' }}>{routeText(f)}</span>
                           </td>
                           <td style={tdx}>
-                            <select className="v2-select" style={{ height: 30, fontSize: 12.5 }} value={f.gate || 'guest'} onChange={(e) => patchFeat(f.key, { gate: e.target.value })}>
-                              {GATES.map(([k, lb]) => <option key={k} value={k}>{lb}</option>)}
-                            </select>
+                            {f.kind === 'perm'
+                              ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }} title="纯权限项，无进入门槛">—</span>
+                              : <select className="v2-select" style={{ height: 30, fontSize: 12.5 }} value={f.gate || 'guest'} onChange={(e) => patchFeat(f.key, { gate: e.target.value })}>
+                                  {GATES.map(([k, lb]) => <option key={k} value={k}>{lb}</option>)}
+                                </select>}
                           </td>
                           <td style={tdx}>
                             <input className="v2-fm-i" style={{ width: 150, fontSize: 12 }} value={f.permKey || ''} disabled={(f.gate || 'guest') !== 'perm'}
@@ -286,8 +307,13 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
                               placeholder={(f.gate || 'guest') === 'perm' ? '如 insight.funding' : '门槛非「需权限」'}
                               onChange={(e) => patchFeat(f.key, { permKey: e.target.value || null })} />
                           </td>
+                          <td style={tdx}><span style={{ fontSize: 11.5, color: 'var(--p-t4)' }} title="工作台状态在子功能行设置">—</span></td>
                           <td style={tdx}><Switch on={f.enabled !== false} onChange={(v) => setEnabled(f.key, null, v, f.label, f.kind)} title="启用 / 停用" /></td>
-                          <td style={tdx}><Switch on={!f.navHidden} onChange={(v) => setNavShown(f, v)} title="是否在顶栏显示" /></td>
+                          <td style={tdx}>{f.kind === 'perm'
+                            ? <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }} title="纯权限项，不涉及顶栏">—</span>
+                            : onNav
+                              ? <Switch on={!f.navHidden} onChange={(v) => setNavShown(f, v)} title="是否在顶栏显示" />
+                              : <span style={{ fontSize: 11.5, color: 'var(--p-t4)' }} title="该功能未列入前台顶栏">—</span>}</td>
                           <td style={tdx}><Switch on={onNav ? !!nav[idx].isNew : !!f.isNew} onChange={(v) => setNew(f, v)} title="NEW 角标" /></td>
                         </tr>
                         {isChannel && open && f.children.map((ch) => (
@@ -309,6 +335,12 @@ function FeatTable({ cfg, patchFeat, patchNav, setCfg, toast, onEditLink }) {
                                 title={ch.permKey || '无权限点'}
                                 placeholder={(ch.gate || 'guest') === 'perm' ? '如 insight.funding' : '门槛非「需权限」'}
                                 onChange={(e) => patchFeat(f.key, { permKey: e.target.value || null }, ch.key)} />
+                            </td>
+                            <td style={tdx}>
+                              <select className="v2-select" style={{ height: 30, fontSize: 12.5 }} value={ch.status === 'planning' ? 'planning' : 'ready'} title="前台工作台卡片状态（已上线 / 规划中）" onChange={(e) => patchFeat(f.key, { status: e.target.value }, ch.key)}>
+                                <option value="ready">已上线</option>
+                                <option value="planning">规划中</option>
+                              </select>
                             </td>
                             <td style={tdx}><Switch on={ch.enabled !== false} onChange={(v) => setEnabled(f.key, ch.key, v, ch.label, 'child')} title="启用 / 停用" /></td>
                             <td style={tdx}><span style={{ fontSize: 11, color: 'var(--p-t4)' }}>随频道</span></td>
@@ -440,6 +472,35 @@ function RoleMatrix({ cfg, setCfg, toast }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ================= Tab3：数据权限（角色 → 数据范围） ================= */
+function ScopeTab({ scopeCfg, setScopeCfg }) {
+  const setRole = (role, v) => setScopeCfg((c) => ({ ...c, [role]: v }));
+  return (
+    <>
+      <div className="v2-notice blue" style={{ marginBottom: 14 }}>
+        <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name="info" size={15} /></span>
+        <span>数据范围决定可查看的数仓数据：<b>无</b>＝看不到任何数据；<b>本院</b>＝仅本学院；<b>全校</b>＝全部学院（学院归属为「全校」的账号以其学院设置优先）。此配置由 <code>sys_config: rbac.data_scope</code> 驱动，不写死在代码，保存后立即生效。</span>
+      </div>
+      <div className="v2-card" style={{ maxWidth: 760 }}>
+        <div className="ct">数据权限矩阵</div>
+        <div className="cs">行＝角色；列＝数据范围；游客固定为「无」（未登录不展示任何功能与数据）</div>
+        <div style={{ marginTop: 10 }}>
+          {SCOPE_ROLES.map(([r, lb]) => (
+            <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 4px', borderBottom: '1px solid var(--p-line2)' }}>
+              <span style={{ minWidth: 150, color: 'var(--aink)', fontWeight: 500 }}>{lb}{r === 'guest' && <span style={{ fontSize: 11, color: 'var(--p-t4)', marginLeft: 6 }}>（固定）</span>}</span>
+              {r === 'guest'
+                ? <span style={{ fontSize: 12.5, color: 'var(--p-t3)' }}>无 —— 未登录不展示任何功能与数据</span>
+                : <select className="v2-select" style={{ width: 160 }} value={scopeCfg[r] || 'college'} onChange={(e) => setRole(r, e.target.value)}>
+                    {SCOPE_OPTS.map(([v, vl]) => <option key={v} value={v}>{vl}</option>)}
+                  </select>}
+            </div>
+          ))}
         </div>
       </div>
     </>
